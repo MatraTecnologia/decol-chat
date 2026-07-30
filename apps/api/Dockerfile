@@ -28,10 +28,13 @@ FROM base AS builder
 COPY --from=installer /app/ .
 COPY --from=pruner /app/out/full/ .
 
-# Prisma client (gitignored, precisa ser gerado antes do build). Dummy URL —
-# `prisma generate` só lê o schema, não conecta.
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm --filter @workspace/api db:generate
-# `turbo build` builda @workspace/shared (via `^build`) antes da API.
+# `prisma.config.ts` faz env('DATABASE_URL') e lança se a var não existir, mesmo
+# em `generate`, que só lê o schema e não conecta. Precisa valer para todo o
+# estágio: `turbo build` dispara `db:generate` de novo via `dependsOn`, num shell
+# próprio. Dummy — a URL real vem das env vars do serviço em runtime.
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+
+# `turbo build` roda db:generate (dependsOn) e builda @workspace/shared (^build).
 RUN pnpm turbo build --filter=@workspace/api
 
 # ── Runtime ──────────────────────────────────────────
