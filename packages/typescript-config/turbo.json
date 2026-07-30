@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tags": ["lib"],
+  "tasks": {
+    "build": {
+      "outputs": []
+    }
+  }
+}

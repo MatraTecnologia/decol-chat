@@ -1,0 +1,38 @@
+{
+  "name": "@workspace/shared",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    "./roles": {
+      "types": "./src/roles.ts",
+      "default": "./dist/roles.js"
+    },
+    "./auth-cookie": {
+      "types": "./src/auth-cookie.ts",
+      "default": "./dist/auth-cookie.js"
+    },
+    "./permissions": {
+      "types": "./src/permissions.ts",
+      "default": "./dist/permissions.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.23"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "^6.0.3"
+  }
+}

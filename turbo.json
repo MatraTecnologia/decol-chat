@@ -1,0 +1,70 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalEnv": ["NODE_ENV", "REDIS_URL", "SKIP_ENV_VALIDATION"],
+  "boundaries": {
+    "tags": {
+      "lib": {
+        "dependencies": {
+          "deny": ["app"]
+        }
+      }
+    }
+  },
+  "tasks": {
+    "db:generate": {
+      "inputs": [
+        "prisma/schema.prisma",
+        "prisma/zod-generator.config.json",
+        "prisma.config.ts",
+        "scripts/fix-zod-imports.ts"
+      ],
+      "outputs": ["src/generated/**"],
+      "passThroughEnv": ["DATABASE_URL"]
+    },
+    "build": {
+      "dependsOn": ["^build", "db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"]
+    },
+    "dashboard#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_BASE_URL",
+        "NEXT_PUBLIC_APP_NAME",
+        "NEXT_PUBLIC_APP_DESCRIPTION",
+        "NEXT_PUBLIC_APP_KEYWORDS",
+        "NEXT_PUBLIC_APP_CREATOR",
+        "NEXT_PUBLIC_COMPANY_NAME",
+        "NEXT_PUBLIC_INDEXABLE",
+        "NEXT_PUBLIC_COOKIE_DOMAIN",
+        "NEXT_PUBLIC_GOOGLE_VERIFICATION",
+        "NEXT_PUBLIC_BING_VERIFICATION",
+        "APP_NAME"
+      ]
+    },
+    "lint": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": []
+    },
+    "format": {
+      "outputs": []
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

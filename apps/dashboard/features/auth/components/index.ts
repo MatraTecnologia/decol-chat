@@ -1,0 +1,6 @@
+export { ProfileManagementDialog } from './profile-management-dialog'
+export { ChangePasswordDialog } from './change-password-dialog'
+export { EnableTwoFactorDialog } from './enable-two-factor-dialog'
+export { DisableTwoFactorDialog } from './disable-two-factor-dialog'
+export { BackupCodesDialog } from './backup-codes-dialog'
+export { DeleteAccountDialog } from './delete-account-dialog'
