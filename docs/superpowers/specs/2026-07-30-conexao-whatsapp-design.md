@@ -154,7 +154,7 @@ Ambas **opcionais** no schema de `apps/api/src/env.ts`. Torná-las obrigatórias
 | `PUT` | `/whatsapp` | admin | Salva/atualiza; valida contra a Graph API antes de gravar |
 | `DELETE` | `/whatsapp` | admin | Remove a conexão |
 | `GET` | `/whatsapp/health` | admin | `GET /{phone_number_id}` → nome exibido, número, qualidade, tier |
-| `POST` | `/whatsapp/test-message` | admin | `POST /{phone_number_id}/messages` com texto |
+| `POST` | `/whatsapp/test-message` | admin | `POST /{phone_number_id}/messages` — texto livre ou template |
 | `GET` | `/whatsapp/logs` | admin | Últimas 200 entradas do Redis (seed do console) |
 | `GET` | `/webhooks/whatsapp` | **nenhuma** | Handshake de verificação |
 | `POST` | `/webhooks/whatsapp` | **nenhuma** | Ingestão de eventos |
@@ -228,6 +228,8 @@ Meta → POST /webhooks/whatsapp (status: sent → delivered → read)
 
 O usuário vê as duas pontas do mesmo `wamid` no console. É isso que prova que a integração funciona.
 
+**Por que o envio de teste aceita dois modos:** a Cloud API só entrega **texto livre** dentro da janela de 24h aberta pelo destinatário; fora dela responde `131047`. Pior: o `POST /messages` retorna 200 com `wamid` mesmo quando a mensagem vai falhar — `wamid` significa "aceito para processamento", não entrega. O resultado real (`sent`/`delivered`/`read`/`failed`) chega **exclusivamente** pelo webhook, e não existe endpoint de consulta de status. Por isso o formulário oferece também o modo **template** (`hello_world`/`en_US` existe em toda conta), que funciona com a janela fechada e permite provar o envio sem depender do destinatário escrever primeiro.
+
 ---
 
 ## Tratamento de erros
@@ -269,7 +271,7 @@ O passo 8 é o que confirma que a validação de assinatura está de fato ligada
 
 ## Notas de implementação
 
-- Fixar a versão da Graph API numa constante única em `graph-client.ts` (ex.: `v23.0`), nunca espalhada pelas chamadas.
+- Fixar a versão da Graph API numa constante única em `graph-client.ts` (`v25.0`), nunca espalhada pelas chamadas. A Meta descontinua versões com frequência e responde com o header `x-ad-api-version-warning` antes de cortar — vale conferir esse header ao depurar.
 - Os nomes de parâmetro do fluxo de Embedded Signup **não** foram confirmados contra a doc atual da Meta — irrelevante para a Fase 1, mas deve ser verificado no início da Fase 2.
 - `pnpm generate:api` precisa rodar depois das rotas existirem e com a API respondendo em `/health` (ver `CLAUDE.md` raiz).
 - `pnpm db:push` para materializar o model — o projeto usa `db:push`, não migrations.

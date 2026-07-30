@@ -1,4 +1,4 @@
-export const GRAPH_API_VERSION = 'v23.0'
+export const GRAPH_API_VERSION = 'v25.0'
 
 const GRAPH_BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`
 const REQUEST_TIMEOUT_MS = 15_000
@@ -102,5 +102,29 @@ export const sendTextMessage = (
       to,
       type: 'text',
       text: { preview_url: false, body: text },
+    }),
+  })
+
+// Texto livre só é aceito dentro da janela de 24h aberta pelo destinatário.
+// Fora dela a Meta responde 131047 — template é o único caminho.
+export const sendTemplateMessage = (
+  token: string,
+  phoneNumberId: string,
+  to: string,
+  templateName: string,
+  languageCode: string,
+) =>
+  request<{ messages: { id: string }[] }>(`/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'template',
+      template: { name: templateName, language: { code: languageCode } },
     }),
   })

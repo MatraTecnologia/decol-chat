@@ -180,7 +180,10 @@ export const zCheckWhatsappHealthResponse = z.object({
 
 export const zSendWhatsappTestMessageBody = z.object({
   to: z.string().min(1),
-  text: z.string().min(1),
+  kind: z.enum(['text', 'template']).optional().default('text'),
+  text: z.string().optional(),
+  templateName: z.string().optional(),
+  languageCode: z.string().optional().default('en_US'),
 })
 
 /**

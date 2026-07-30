@@ -213,7 +213,7 @@ export const checkWhatsappHealth = <ThrowOnError extends boolean = false>(
   })
 
 /**
- * Envia uma mensagem de texto de teste
+ * Envia uma mensagem de teste (texto livre ou template)
  */
 export const sendWhatsappTestMessage = <ThrowOnError extends boolean = false>(
   options: Options<SendWhatsappTestMessageData, ThrowOnError>,

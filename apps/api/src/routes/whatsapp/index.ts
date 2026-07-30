@@ -19,6 +19,7 @@ import { isEncryptionConfigured } from '@/lib/whatsapp/crypto.js'
 import {
   GraphApiError,
   getPhoneNumberInfo,
+  sendTemplateMessage,
   sendTextMessage,
 } from '@/lib/whatsapp/graph-client.js'
 
@@ -317,10 +318,13 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
       schema: {
         operationId: 'sendWhatsappTestMessage',
         tags: ['WhatsApp'],
-        summary: 'Envia uma mensagem de texto de teste',
+        summary: 'Envia uma mensagem de teste (texto livre ou template)',
         body: z.object({
           to: z.string().min(1),
-          text: z.string().min(1),
+          kind: z.enum(['text', 'template']).default('text'),
+          text: z.string().optional(),
+          templateName: z.string().optional(),
+          languageCode: z.string().default('en_US'),
         }),
         response: { 200: z.object({ messageId: z.string() }) },
       },
@@ -335,22 +339,38 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
       const connection = await getConnection()
       if (!connection) return reply.notFound(request.t('NOT_FOUND'))
 
-      const { to, text } = request.body
+      const { to, kind, text, templateName, languageCode } = request.body
+
+      if (kind === 'text' && !text) {
+        return reply.badRequest('Informe o texto da mensagem')
+      }
+      if (kind === 'template' && !templateName) {
+        return reply.badRequest('Informe o nome do template')
+      }
 
       try {
-        const result = await sendTextMessage(
-          connection.accessToken,
-          connection.phoneNumberId,
-          to,
-          text,
-        )
+        const result =
+          kind === 'template'
+            ? await sendTemplateMessage(
+                connection.accessToken,
+                connection.phoneNumberId,
+                to,
+                templateName as string,
+                languageCode,
+              )
+            : await sendTextMessage(
+                connection.accessToken,
+                connection.phoneNumberId,
+                to,
+                text as string,
+              )
 
         const messageId = result.messages[0]?.id ?? ''
 
         await safePushWebhookLog(app, {
           direction: 'outbound',
-          summary: `message to=${to} wamid=${messageId || '-'}`,
-          payload: { to, text, result },
+          summary: `${kind} to=${to} wamid=${messageId || '-'}`,
+          payload: { to, kind, text, templateName, languageCode, result },
         })
 
         return { messageId }

@@ -471,7 +471,7 @@ export const checkWhatsappHealthOptions = (
   })
 
 /**
- * Envia uma mensagem de texto de teste
+ * Envia uma mensagem de teste (texto livre ou template)
  */
 export const sendWhatsappTestMessageMutation = (
   options?: Partial<Options<SendWhatsappTestMessageData>>,

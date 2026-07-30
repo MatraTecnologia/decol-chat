@@ -184,24 +184,60 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
         )
 
       if (!valid) {
+        const reason = !connection
+          ? 'conexão não configurada'
+          : !rawBody
+            ? 'raw body ausente'
+            : 'assinatura não confere'
+
         await safePushWebhookLog(app, {
           direction: 'inbound_event',
           signatureValid: false,
-          summary: 'assinatura inválida',
+          summary: `assinatura inválida (${reason})`,
           headers: loggableHeaders(request),
-          payload: request.body,
+          payload: {
+            reason,
+            signatureHeader: headerValue(request, SIGNATURE_HEADER) ?? null,
+            rawBody: rawBody?.toString('utf8') ?? null,
+            parsedBody: request.body ?? null,
+          },
         })
 
         return reply.unauthorized('Assinatura inválida')
       }
 
-      await safePushWebhookLog(app, {
-        direction: 'inbound_event',
-        signatureValid: true,
-        summary: summarizePayload(request.body),
-        headers: loggableHeaders(request),
-        payload: request.body,
-      })
+      // Daqui pra baixo a assinatura já foi aceita e a resposta é sempre 200:
+      // a Meta reenvia em erro e desativa a assinatura após falhas repetidas.
+      // Um payload em formato inesperado não pode derrubar a ingestão nem,
+      // pior, sumir com o registro que explicaria o que chegou.
+      try {
+        await safePushWebhookLog(app, {
+          direction: 'inbound_event',
+          signatureValid: true,
+          summary: summarizePayload(request.body),
+          headers: loggableHeaders(request),
+          payload: request.body,
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+
+        app.log.error({ err: error }, 'Falha ao processar webhook do WhatsApp')
+
+        await safePushWebhookLog(app, {
+          direction: 'inbound_event',
+          signatureValid: true,
+          summary: `erro ao processar: ${message}`,
+          headers: loggableHeaders(request),
+          payload: {
+            error: message,
+            stack: error instanceof Error ? error.stack : undefined,
+            // rawBody entra porque request.body pode estar vazio quando o
+            // problema foi no parse — é o único registro do que a Meta mandou
+            rawBody: rawBody?.toString('utf8') ?? null,
+            parsedBody: request.body ?? null,
+          },
+        })
+      }
 
       return { received: true }
     },

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Check, Copy, Send } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { type Control, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -35,24 +35,121 @@ import { Button } from '@workspace/ui/components/button'
 import { Input } from '@workspace/ui/components/input'
 import { Spinner } from '@workspace/ui/components/spinner'
 import { Textarea } from '@workspace/ui/components/textarea'
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@workspace/ui/components/toggle-group'
 
 const apiErrorMessage = (error: unknown, fallback: string) =>
   typeof error === 'string'
     ? error
     : ((error as { message?: string } | null)?.message ?? fallback)
 
-const testMessageSchema = z.object({
-  to: z
-    .string()
-    .min(10, 'Informe o número completo, com país e DDD')
-    .regex(/^\d+$/, 'Use apenas dígitos — sem +, espaços ou traços'),
-  text: z
-    .string()
-    .min(1, 'Escreva o texto da mensagem')
-    .max(1000, 'Máximo de 1000 caracteres'),
-})
+const testMessageSchema = z
+  .object({
+    kind: z.enum(['text', 'template']),
+    to: z
+      .string()
+      .min(10, 'Informe o número completo, com país e DDD')
+      .regex(/^\d+$/, 'Use apenas dígitos — sem +, espaços ou traços'),
+    text: z.string().max(1000, 'Máximo de 1000 caracteres'),
+    templateName: z.string(),
+    languageCode: z.string(),
+  })
+  .refine(data => data.kind !== 'text' || data.text.trim().length > 0, {
+    message: 'Escreva o texto da mensagem',
+    path: ['text'],
+  })
+  .refine(
+    data => data.kind !== 'template' || data.templateName.trim().length > 0,
+    {
+      message: 'Informe o nome do template',
+      path: ['templateName'],
+    },
+  )
+  .refine(
+    data => data.kind !== 'template' || data.languageCode.trim().length > 0,
+    {
+      message: 'Informe o código de idioma',
+      path: ['languageCode'],
+    },
+  )
 
 type TestMessageFormValues = z.infer<typeof testMessageSchema>
+
+type ModeFieldsProps = {
+  control: Control<TestMessageFormValues>
+  isDisabled: boolean
+}
+
+const TextModeFields = ({ control, isDisabled }: ModeFieldsProps) => (
+  <FormField
+    control={control}
+    name="text"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Mensagem</FormLabel>
+        <FormControl>
+          <Textarea
+            rows={3}
+            placeholder="Texto que será entregue no WhatsApp"
+            disabled={isDisabled}
+            {...field}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+)
+
+const TemplateModeFields = ({ control, isDisabled }: ModeFieldsProps) => (
+  <div className="grid gap-4 sm:grid-cols-2">
+    <FormField
+      control={control}
+      name="templateName"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Nome do template</FormLabel>
+          <FormControl>
+            <Input
+              placeholder="hello_world"
+              autoComplete="off"
+              disabled={isDisabled}
+              {...field}
+            />
+          </FormControl>
+          <FormDescription>
+            Precisa estar aprovado no WhatsApp Manager.
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+
+    <FormField
+      control={control}
+      name="languageCode"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Código de idioma</FormLabel>
+          <FormControl>
+            <Input
+              placeholder="en_US"
+              autoComplete="off"
+              disabled={isDisabled}
+              {...field}
+            />
+          </FormControl>
+          <FormDescription>
+            Exatamente o idioma cadastrado no template (ex.: en_US, pt_BR).
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </div>
+)
 
 const SentMessageId = ({ messageId }: { messageId: string }) => {
   const [copied, setCopied] = useState(false)
@@ -105,10 +202,15 @@ export const TestMessageForm = () => {
   const form = useForm<TestMessageFormValues>({
     resolver: zodResolver(testMessageSchema),
     defaultValues: {
+      kind: 'text',
       to: '',
       text: 'Mensagem de teste da bancada de integração.',
+      templateName: 'hello_world',
+      languageCode: 'en_US',
     },
   })
+
+  const kind = form.watch('kind')
 
   const send = useMutation({
     ...sendWhatsappTestMessageMutation(),
@@ -134,8 +236,18 @@ export const TestMessageForm = () => {
   const isDisabled = isLoadingConnection || !isConfigured || send.isPending
 
   const onSubmit = (values: TestMessageFormValues) => {
+    const to = values.to.trim()
+
     send.mutate({
-      body: { to: values.to.trim(), text: values.text.trim() },
+      body:
+        values.kind === 'template'
+          ? {
+              to,
+              kind: 'template',
+              templateName: values.templateName.trim(),
+              languageCode: values.languageCode.trim(),
+            }
+          : { to, kind: 'text', text: values.text.trim() },
     })
   }
 
@@ -148,14 +260,53 @@ export const TestMessageForm = () => {
         <div className="space-y-1">
           <CardTitle className="text-base">Mensagem de teste</CardTitle>
           <CardDescription>
-            Envia um texto pela Graph API e registra a chamada no console como
-            evento de saída.
+            Envia um texto livre ou um template aprovado pela Graph API e
+            registra a chamada no console como evento de saída.
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de envio</FormLabel>
+                  <FormControl>
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      size="sm"
+                      spacing={1}
+                      value={field.value}
+                      onValueChange={value => value && field.onChange(value)}
+                      disabled={isDisabled}
+                    >
+                      <ToggleGroupItem
+                        value="text"
+                        aria-label="Enviar texto livre"
+                      >
+                        Texto livre
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="template"
+                        aria-label="Enviar template"
+                      >
+                        Template
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </FormControl>
+                  <FormDescription>
+                    Texto livre só é entregue se o contato escreveu para você nas
+                    últimas 24h. Fora dessa janela a Meta recusa o envio (erro
+                    131047) — use um template aprovado.
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="to"
@@ -180,24 +331,14 @@ export const TestMessageForm = () => {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="text"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mensagem</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      rows={3}
-                      placeholder="Texto que será entregue no WhatsApp"
-                      disabled={isDisabled}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {kind === 'template' ? (
+              <TemplateModeFields
+                control={form.control}
+                isDisabled={isDisabled}
+              />
+            ) : (
+              <TextModeFields control={form.control} isDisabled={isDisabled} />
+            )}
 
             {!isLoadingConnection && !isConfigured && (
               <p className="text-muted-foreground text-sm">

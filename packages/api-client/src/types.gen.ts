@@ -319,7 +319,10 @@ export type CheckWhatsappHealthResponse =
 export type SendWhatsappTestMessageData = {
   body: {
     to: string
-    text: string
+    kind?: 'text' | 'template'
+    text?: string
+    templateName?: string
+    languageCode?: string
   }
   path?: never
   query?: never

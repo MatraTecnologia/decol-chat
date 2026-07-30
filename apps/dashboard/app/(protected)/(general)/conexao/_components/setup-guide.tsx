@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from '@workspace/ui/components/card'
 
+import { Separator } from '@workspace/ui/components/separator'
+
 import { cn } from '@workspace/ui/lib/utils'
 
 const Code = ({ children }: { children: React.ReactNode }) => (
@@ -324,6 +326,156 @@ const steps: Step[] = [
   },
 ]
 
+const troubleshooting: Step[] = [
+  {
+    value: 'err-133010',
+    title: '(#133010) Account not registered',
+    content: (
+      <>
+        <p>
+          O número existe na WABA mas nunca foi vinculado à Cloud API. Confirme
+          listando os números da conta e olhando o campo{' '}
+          <Code>platform_type</Code> — se vier <Code>NOT_APPLICABLE</Code>, é
+          exatamente isso:
+        </p>
+        <Cmd>{`GET https://graph.facebook.com/v25.0/<WABA_ID>/phone_numbers?access_token=<TOKEN>`}</Cmd>
+        <p>
+          A correção é registrar o número na Cloud API. O <Code>pin</Code> são 6
+          dígitos e, se o número nunca teve PIN de verificação em duas etapas,
+          esta chamada <strong>define</strong> esse PIN — anote o valor usado:
+        </p>
+        <Cmd>{`POST https://graph.facebook.com/v25.0/<PHONE_NUMBER_ID>/register
+{ "messaging_product": "whatsapp", "pin": "123456" }`}</Cmd>
+        <p>
+          Exige token com a permissão <Code>whatsapp_business_management</Code>{' '}
+          (passo 3). Depois do registro, <Code>platform_type</Code> passa a{' '}
+          <Code>CLOUD_API</Code> e o envio funciona.
+        </p>
+      </>
+    ),
+  },
+  {
+    value: 'err-131030',
+    title: '(#131030) Recipient phone number not in allowed list',
+    content: (
+      <>
+        <p>
+          Acontece somente com <strong>número de teste</strong>, que envia apenas
+          para destinatários pré-autorizados — no máximo <strong>5</strong>. Se o
+          erro aparece, você ainda está no número de teste provisionado pela
+          Meta.
+        </p>
+        <p>
+          Adicione o destinatário em{' '}
+          <strong>WhatsApp → Configuração da API</strong>, campo{' '}
+          <strong>Para</strong> →{' '}
+          <strong>Gerenciar lista de números de telefone</strong>. A Meta envia um
+          código de confirmação por WhatsApp para o número adicionado; sem
+          confirmar esse código ele não entra na lista.
+        </p>
+      </>
+    ),
+  },
+  {
+    value: 'err-131047',
+    title: '(#131047) API respondeu 200 com wamid e a mensagem nunca chegou',
+    content: (
+      <>
+        <p>
+          O caso mais traiçoeiro: o envio retorna <Code>200</Code> com um{' '}
+          <Code>wamid</Code>, o console registra <Code>outbound</Code> e nada
+          chega ao destinatário.
+        </p>
+        <p>
+          Motivo: <strong>texto livre só é aceito dentro da janela de 24h</strong>{' '}
+          aberta pelo destinatário (passo 7). Se ele nunca escreveu para o seu
+          número, a janela está fechada e a mensagem é descartada depois de
+          aceita.
+        </p>
+        <p>Duas saídas:</p>
+        <ul className="ml-4 list-disc space-y-1">
+          <li>
+            Peça ao destinatário que mande qualquer mensagem para o seu número —
+            isso abre a janela por 24h e libera texto livre.
+          </li>
+          <li>
+            Envie um <strong>template aprovado</strong>. O{' '}
+            <Code>hello_world</Code> em <Code>en_US</Code> já existe em toda
+            conta, e o formulário de <strong>Mensagem de teste</strong> desta
+            página tem um modo Template para isso.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    value: 'webhook-mudo',
+    title: 'Webhook verificado, mas só os eventos do botão Testar chegam',
+    content: (
+      <>
+        <p>
+          Handshake OK, o botão <strong>Testar</strong> do App Dashboard entrega
+          eventos no console e mesmo assim nenhum evento real aparece: o app não
+          está inscrito no campo <Code>messages</Code> da WABA.
+        </p>
+        <p>Confira a inscrição:</p>
+        <Cmd>{`GET https://graph.facebook.com/v25.0/<WABA_ID>/subscribed_apps?access_token=<TOKEN>`}</Cmd>
+        <p>
+          Se a resposta vier com <Code>data: []</Code>, inscreva o app:
+        </p>
+        <Cmd>{`POST https://graph.facebook.com/v25.0/<WABA_ID>/subscribed_apps`}</Cmd>
+        <p>
+          E marque o checkbox do campo <Code>messages</Code> em{' '}
+          <strong>WhatsApp → Configuração → Webhook → Gerenciar</strong> (passo
+          6). É esse campo que entrega tanto as mensagens recebidas quanto os
+          status de entrega — vêm os dois ou não vem nenhum.
+        </p>
+      </>
+    ),
+  },
+  {
+    value: 'status-entrega',
+    title: 'wamid não é confirmação de entrega',
+    content: (
+      <>
+        <p>
+          A resposta do envio devolve um <Code>wamid</Code>, o que significa
+          apenas <strong>aceito para processamento</strong>. Não é entrega.
+        </p>
+        <p>
+          O status real — <Code>sent</Code>, <Code>delivered</Code>,{' '}
+          <Code>read</Code>, <Code>failed</Code> — chega exclusivamente pelo
+          webhook.{' '}
+          <strong>
+            Não existe endpoint para consultar o status de uma mensagem
+          </strong>
+          : sem o campo <Code>messages</Code> assinado, você fica sem qualquer
+          visibilidade de entrega.
+        </p>
+      </>
+    ),
+  },
+  {
+    value: 'nono-digito',
+    title: 'Números brasileiros: o nono dígito some na resposta',
+    content: (
+      <>
+        <p>
+          A Meta normaliza números brasileiros. Um envio para{' '}
+          <Code>5543998414904</Code> retorna <Code>wa_id</Code>{' '}
+          <Code>554398414904</Code>, <strong>sem o nono dígito</strong>.
+        </p>
+        <p>
+          Ao correlacionar mensagens por número, guarde o <Code>wa_id</Code>{' '}
+          devolvido pela API, nunca o número que você enviou — senão o{' '}
+          <Code>wa_id</Code> que volta no webhook nunca bate com o registro
+          local.
+        </p>
+      </>
+    ),
+  },
+]
+
 export const SetupGuide = () => {
   return (
     <Card className="shadow-none">
@@ -331,7 +483,8 @@ export const SetupGuide = () => {
         <CardTitle>Manual de configuração</CardTitle>
         <CardDescription>
           Passo a passo para conectar um número da WhatsApp Cloud API a esta
-          instalação, do app na Meta até o status de entrega chegando no console.
+          instalação, do app na Meta até o status de entrega chegando no console
+          — mais os erros que aparecem no caminho.
         </CardDescription>
       </CardHeader>
 
@@ -362,6 +515,27 @@ export const SetupGuide = () => {
               <AccordionTrigger>{step.title}</AccordionTrigger>
               <AccordionContent className="text-muted-foreground space-y-3 text-sm leading-relaxed">
                 {step.content}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+
+        <Separator />
+
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold">Solução de problemas</h3>
+          <p className="text-muted-foreground text-sm">
+            Erros da Meta encontrados na configuração real, com o diagnóstico e a
+            chamada que resolveu cada um.
+          </p>
+        </div>
+
+        <Accordion type="multiple" className="w-full">
+          {troubleshooting.map(item => (
+            <AccordionItem key={item.value} value={item.value}>
+              <AccordionTrigger>{item.title}</AccordionTrigger>
+              <AccordionContent className="text-muted-foreground space-y-3 text-sm leading-relaxed">
+                {item.content}
               </AccordionContent>
             </AccordionItem>
           ))}
