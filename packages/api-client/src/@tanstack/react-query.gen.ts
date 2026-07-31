@@ -10,46 +10,91 @@ import {
 
 import { client } from '../client.gen'
 import {
+  blockContact,
   checkWhatsappHealth,
   deleteWhatsappConnection,
+  getContact,
+  getConversation,
   getWhatsappConnection,
+  getWhatsappReadiness,
   healthCheck,
+  listContacts,
+  listConversations,
   listMembers,
+  listMessages,
   listUsers,
   listWhatsappLogs,
+  listWhatsappPhoneNumbers,
   livenessProbe,
+  markConversationRead,
   type Options,
   readinessProbe,
   receiveWhatsappWebhook,
+  registerWhatsappNumber,
+  sendMessage,
+  sendTemplateMessage,
   sendWhatsappTestMessage,
+  startConversation,
+  subscribeWhatsappApp,
+  updateContact,
   updateWhatsappConnection,
   verifyWhatsappWebhook,
 } from '../sdk.gen'
 import type {
+  BlockContactData,
+  BlockContactResponse,
   CheckWhatsappHealthData,
   CheckWhatsappHealthResponse,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponse,
+  GetContactData,
+  GetContactResponse,
+  GetConversationData,
+  GetConversationResponse,
   GetWhatsappConnectionData,
   GetWhatsappConnectionResponse,
+  GetWhatsappReadinessData,
+  GetWhatsappReadinessResponse,
   HealthCheckData,
   HealthCheckError,
   HealthCheckResponse,
+  ListContactsData,
+  ListContactsResponse,
+  ListConversationsData,
+  ListConversationsResponse,
   ListMembersData,
   ListMembersResponse,
+  ListMessagesData,
+  ListMessagesResponse,
   ListUsersData,
   ListUsersResponse,
   ListWhatsappLogsData,
   ListWhatsappLogsResponse,
+  ListWhatsappPhoneNumbersData,
+  ListWhatsappPhoneNumbersResponse,
   LivenessProbeData,
   LivenessProbeResponse,
+  MarkConversationReadData,
+  MarkConversationReadResponse,
   ReadinessProbeData,
   ReadinessProbeError,
   ReadinessProbeResponse,
   ReceiveWhatsappWebhookData,
   ReceiveWhatsappWebhookResponse,
+  RegisterWhatsappNumberData,
+  RegisterWhatsappNumberResponse,
+  SendMessageData,
+  SendMessageResponse,
+  SendTemplateMessageData,
+  SendTemplateMessageResponse,
   SendWhatsappTestMessageData,
   SendWhatsappTestMessageResponse,
+  StartConversationData,
+  StartConversationResponse,
+  SubscribeWhatsappAppData,
+  SubscribeWhatsappAppResponse,
+  UpdateContactData,
+  UpdateContactResponse,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponse,
   VerifyWhatsappWebhookData,
@@ -171,6 +216,487 @@ export const readinessProbeOptions = (options?: Options<ReadinessProbeData>) =>
     queryKey: readinessProbeQueryKey(options),
   })
 
+export const listContactsQueryKey = (options?: Options<ListContactsData>) =>
+  createQueryKey('listContacts', options, false, ['Contacts'])
+
+/**
+ * Lista contatos visíveis para o solicitante
+ */
+export const listContactsOptions = (options?: Options<ListContactsData>) =>
+  queryOptions<
+    ListContactsResponse,
+    DefaultError,
+    ListContactsResponse,
+    ReturnType<typeof listContactsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listContacts({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listContactsQueryKey(options),
+  })
+
+const createInfiniteParams = <
+  K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>,
+>(
+  queryKey: QueryKey<Options>,
+  page: K,
+) => {
+  const params = { ...queryKey[0] }
+  if (page.body) {
+    params.body = {
+      ...(queryKey[0].body as any),
+      ...(page.body as any),
+    }
+  }
+  if (page.headers) {
+    params.headers = {
+      ...queryKey[0].headers,
+      ...page.headers,
+    }
+  }
+  if (page.path) {
+    params.path = {
+      ...(queryKey[0].path as any),
+      ...(page.path as any),
+    }
+  }
+  if (page.query) {
+    params.query = {
+      ...(queryKey[0].query as any),
+      ...(page.query as any),
+    }
+  }
+  return params as unknown as typeof page
+}
+
+export const listContactsInfiniteQueryKey = (
+  options?: Options<ListContactsData>,
+): QueryKey<Options<ListContactsData>> =>
+  createQueryKey('listContacts', options, true)
+
+/**
+ * Lista contatos visíveis para o solicitante
+ */
+export const listContactsInfiniteOptions = (
+  options?: Options<ListContactsData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListContactsResponse,
+    DefaultError,
+    InfiniteData<ListContactsResponse>,
+    QueryKey<Options<ListContactsData>>,
+    | number
+    | Pick<
+        QueryKey<Options<ListContactsData>>[0],
+        'body' | 'headers' | 'path' | 'query'
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListContactsData>>[0],
+          'body' | 'headers' | 'path' | 'query'
+        > =
+          typeof pageParam === 'object'
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await listContacts({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: listContactsInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, 'initialData'>
+}
+
+export const getContactQueryKey = (options: Options<GetContactData>) =>
+  createQueryKey('getContact', options, false, ['Contacts'])
+
+/**
+ * Detalha um contato com as conversas recentes dele
+ */
+export const getContactOptions = (options: Options<GetContactData>) =>
+  queryOptions<
+    GetContactResponse,
+    DefaultError,
+    GetContactResponse,
+    ReturnType<typeof getContactQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getContact({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getContactQueryKey(options),
+  })
+
+/**
+ * Atualiza os dados editáveis do contato
+ */
+export const updateContactMutation = (
+  options?: Partial<Options<UpdateContactData>>,
+): UseMutationOptions<
+  UpdateContactResponse,
+  DefaultError,
+  Options<UpdateContactData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateContactResponse,
+    DefaultError,
+    Options<UpdateContactData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await updateContact({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Bloqueia ou desbloqueia o contato
+ */
+export const blockContactMutation = (
+  options?: Partial<Options<BlockContactData>>,
+): UseMutationOptions<
+  BlockContactResponse,
+  DefaultError,
+  Options<BlockContactData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    BlockContactResponse,
+    DefaultError,
+    Options<BlockContactData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await blockContact({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const listConversationsQueryKey = (
+  options?: Options<ListConversationsData>,
+) => createQueryKey('listConversations', options, false, ['Conversations'])
+
+/**
+ * Lista conversas visíveis para o solicitante
+ */
+export const listConversationsOptions = (
+  options?: Options<ListConversationsData>,
+) =>
+  queryOptions<
+    ListConversationsResponse,
+    DefaultError,
+    ListConversationsResponse,
+    ReturnType<typeof listConversationsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listConversations({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listConversationsQueryKey(options),
+  })
+
+export const listConversationsInfiniteQueryKey = (
+  options?: Options<ListConversationsData>,
+): QueryKey<Options<ListConversationsData>> =>
+  createQueryKey('listConversations', options, true)
+
+/**
+ * Lista conversas visíveis para o solicitante
+ */
+export const listConversationsInfiniteOptions = (
+  options?: Options<ListConversationsData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListConversationsResponse,
+    DefaultError,
+    InfiniteData<ListConversationsResponse>,
+    QueryKey<Options<ListConversationsData>>,
+    | number
+    | Pick<
+        QueryKey<Options<ListConversationsData>>[0],
+        'body' | 'headers' | 'path' | 'query'
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListConversationsData>>[0],
+          'body' | 'headers' | 'path' | 'query'
+        > =
+          typeof pageParam === 'object'
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await listConversations({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: listConversationsInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, 'initialData'>
+}
+
+export const getConversationQueryKey = (
+  options: Options<GetConversationData>,
+) => createQueryKey('getConversation', options, false, ['Conversations'])
+
+/**
+ * Detalha uma conversa com a janela de 24h calculada
+ */
+export const getConversationOptions = (options: Options<GetConversationData>) =>
+  queryOptions<
+    GetConversationResponse,
+    DefaultError,
+    GetConversationResponse,
+    ReturnType<typeof getConversationQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getConversation({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getConversationQueryKey(options),
+  })
+
+/**
+ * Zera o contador de mensagens não lidas da conversa
+ */
+export const markConversationReadMutation = (
+  options?: Partial<Options<MarkConversationReadData>>,
+): UseMutationOptions<
+  MarkConversationReadResponse,
+  DefaultError,
+  Options<MarkConversationReadData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    MarkConversationReadResponse,
+    DefaultError,
+    Options<MarkConversationReadData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await markConversationRead({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const listMessagesQueryKey = (options: Options<ListMessagesData>) =>
+  createQueryKey('listMessages', options, false, ['Messages'])
+
+/**
+ * Lista as mensagens de uma conversa (paginação por cursor)
+ */
+export const listMessagesOptions = (options: Options<ListMessagesData>) =>
+  queryOptions<
+    ListMessagesResponse,
+    DefaultError,
+    ListMessagesResponse,
+    ReturnType<typeof listMessagesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listMessages({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listMessagesQueryKey(options),
+  })
+
+export const listMessagesInfiniteQueryKey = (
+  options: Options<ListMessagesData>,
+): QueryKey<Options<ListMessagesData>> =>
+  createQueryKey('listMessages', options, true)
+
+/**
+ * Lista as mensagens de uma conversa (paginação por cursor)
+ */
+export const listMessagesInfiniteOptions = (
+  options: Options<ListMessagesData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListMessagesResponse,
+    DefaultError,
+    InfiniteData<ListMessagesResponse>,
+    QueryKey<Options<ListMessagesData>>,
+    | string
+    | Pick<
+        QueryKey<Options<ListMessagesData>>[0],
+        'body' | 'headers' | 'path' | 'query'
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListMessagesData>>[0],
+          'body' | 'headers' | 'path' | 'query'
+        > =
+          typeof pageParam === 'object'
+            ? pageParam
+            : {
+                query: {
+                  cursor: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await listMessages({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: listMessagesInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, 'initialData'>
+}
+
+/**
+ * Envia uma mensagem de texto na conversa
+ */
+export const sendMessageMutation = (
+  options?: Partial<Options<SendMessageData>>,
+): UseMutationOptions<
+  SendMessageResponse,
+  DefaultError,
+  Options<SendMessageData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SendMessageResponse,
+    DefaultError,
+    Options<SendMessageData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await sendMessage({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Envia uma mensagem de modelo (válida fora da janela de 24h)
+ */
+export const sendTemplateMessageMutation = (
+  options?: Partial<Options<SendTemplateMessageData>>,
+): UseMutationOptions<
+  SendTemplateMessageResponse,
+  DefaultError,
+  Options<SendTemplateMessageData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SendTemplateMessageResponse,
+    DefaultError,
+    Options<SendTemplateMessageData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await sendTemplateMessage({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Inicia uma conversa com um número novo via modelo (template)
+ */
+export const startConversationMutation = (
+  options?: Partial<Options<StartConversationData>>,
+): UseMutationOptions<
+  StartConversationResponse,
+  DefaultError,
+  Options<StartConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    StartConversationResponse,
+    DefaultError,
+    Options<StartConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await startConversation({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
 export const listMembersQueryKey = (options?: Options<ListMembersData>) =>
   createQueryKey('listMembers', options, false, ['Members'])
 
@@ -220,40 +746,6 @@ export const listUsersOptions = (options?: Options<ListUsersData>) =>
     },
     queryKey: listUsersQueryKey(options),
   })
-
-const createInfiniteParams = <
-  K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>,
->(
-  queryKey: QueryKey<Options>,
-  page: K,
-) => {
-  const params = { ...queryKey[0] }
-  if (page.body) {
-    params.body = {
-      ...(queryKey[0].body as any),
-      ...(page.body as any),
-    }
-  }
-  if (page.headers) {
-    params.headers = {
-      ...queryKey[0].headers,
-      ...page.headers,
-    }
-  }
-  if (page.path) {
-    params.path = {
-      ...(queryKey[0].path as any),
-      ...(page.path as any),
-    }
-  }
-  if (page.query) {
-    params.query = {
-      ...(queryKey[0].query as any),
-      ...(page.query as any),
-    }
-  }
-  return params as unknown as typeof page
-}
 
 export const listUsersInfiniteQueryKey = (
   options?: Options<ListUsersData>,
@@ -469,6 +961,116 @@ export const checkWhatsappHealthOptions = (
     },
     queryKey: checkWhatsappHealthQueryKey(options),
   })
+
+export const getWhatsappReadinessQueryKey = (
+  options?: Options<GetWhatsappReadinessData>,
+) => createQueryKey('getWhatsappReadiness', options, false, ['WhatsApp'])
+
+/**
+ * Diagnóstico completo do setup (roda todas as verificações)
+ */
+export const getWhatsappReadinessOptions = (
+  options?: Options<GetWhatsappReadinessData>,
+) =>
+  queryOptions<
+    GetWhatsappReadinessResponse,
+    DefaultError,
+    GetWhatsappReadinessResponse,
+    ReturnType<typeof getWhatsappReadinessQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getWhatsappReadiness({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getWhatsappReadinessQueryKey(options),
+  })
+
+export const listWhatsappPhoneNumbersQueryKey = (
+  options?: Options<ListWhatsappPhoneNumbersData>,
+) => createQueryKey('listWhatsappPhoneNumbers', options, false, ['WhatsApp'])
+
+/**
+ * Lista os números do WABA na Cloud API
+ */
+export const listWhatsappPhoneNumbersOptions = (
+  options?: Options<ListWhatsappPhoneNumbersData>,
+) =>
+  queryOptions<
+    ListWhatsappPhoneNumbersResponse,
+    DefaultError,
+    ListWhatsappPhoneNumbersResponse,
+    ReturnType<typeof listWhatsappPhoneNumbersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listWhatsappPhoneNumbers({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listWhatsappPhoneNumbersQueryKey(options),
+  })
+
+/**
+ * Registra o número na Cloud API com o PIN de verificação
+ */
+export const registerWhatsappNumberMutation = (
+  options?: Partial<Options<RegisterWhatsappNumberData>>,
+): UseMutationOptions<
+  RegisterWhatsappNumberResponse,
+  DefaultError,
+  Options<RegisterWhatsappNumberData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RegisterWhatsappNumberResponse,
+    DefaultError,
+    Options<RegisterWhatsappNumberData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await registerWhatsappNumber({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Inscreve o app no WABA para receber os webhooks
+ */
+export const subscribeWhatsappAppMutation = (
+  options?: Partial<Options<SubscribeWhatsappAppData>>,
+): UseMutationOptions<
+  SubscribeWhatsappAppResponse,
+  DefaultError,
+  Options<SubscribeWhatsappAppData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SubscribeWhatsappAppResponse,
+    DefaultError,
+    Options<SubscribeWhatsappAppData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await subscribeWhatsappApp({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
 
 /**
  * Envia uma mensagem de teste (texto livre ou template)

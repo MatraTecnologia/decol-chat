@@ -72,6 +72,7 @@ const credentialsSchema = z.object({
   appSecret: z.string().min(1, 'Cole o app secret completo'),
   phoneNumberId: z.string().min(1, 'Informe o Phone Number ID'),
   wabaId: z.string().min(1, 'Informe o WABA ID'),
+  appId: z.string(),
   verifyToken: z.string().min(1, 'Informe ou gere um verify token'),
   webhookBaseUrl: z.union([
     z.literal(''),
@@ -88,6 +89,7 @@ const toFormValues = (
   appSecret: '',
   phoneNumberId: connection?.phoneNumberId ?? '',
   wabaId: connection?.wabaId ?? '',
+  appId: connection?.appId ?? '',
   verifyToken: connection?.verifyToken ?? '',
   webhookBaseUrl: connection?.webhookBaseUrl ?? '',
 })
@@ -144,6 +146,7 @@ const CredentialsFields = ({
         appSecret: values.appSecret.trim(),
         phoneNumberId: values.phoneNumberId.trim(),
         wabaId: values.wabaId.trim(),
+        appId: values.appId.trim() || undefined,
         verifyToken: values.verifyToken.trim(),
         webhookBaseUrl: values.webhookBaseUrl.trim() || undefined,
       },
@@ -253,6 +256,35 @@ const CredentialsFields = ({
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="appId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                App ID{' '}
+                <span className="text-muted-foreground font-normal">
+                  (opcional)
+                </span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="1234567890123456"
+                  inputMode="numeric"
+                  disabled={isBusy}
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Não é segredo. Habilita a verificação de quais campos do webhook
+                o app tem assinados — sem ele, esse item do checklist fica sem
+                resposta.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

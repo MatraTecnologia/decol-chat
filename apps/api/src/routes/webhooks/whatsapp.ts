@@ -2,7 +2,12 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
-import { getConnection } from '@/lib/whatsapp/connection.js'
+import { whatsappInboundQueue } from '@/jobs/whatsapp-inbound.js'
+
+import {
+  getAccountByPhoneNumberId,
+  getConnection,
+} from '@/lib/whatsapp/connection.js'
 import { verifySignature } from '@/lib/whatsapp/signature.js'
 import { pushWebhookLog } from '@/lib/whatsapp/webhook-log.js'
 
@@ -23,6 +28,7 @@ interface MetaWebhookPayload {
     changes?: {
       field?: string
       value?: {
+        metadata?: { phone_number_id?: string }
         statuses?: { id?: string; status?: string; recipient_id?: string }[]
         messages?: { id?: string; from?: string; type?: string }[]
       }
@@ -73,13 +79,51 @@ const safePushWebhookLog = async (
 }
 
 /**
- * A leitura da conexão decifra os segredos e pode lançar quando a
- * WHATSAPP_ENCRYPTION_KEY não está configurada — sem conexão não há como
- * verificar nada, mas isso nunca pode virar 500 para a Meta.
+ * Teto para o enfileiramento.
+ *
+ * Com o Redis fora, o `add` do BullMQ **não rejeita**: o ioredis bufferiza o
+ * comando em memória e a promise fica pendurada até reconectar (verificado
+ * contra uma porta morta — 5s sem resolver nem rejeitar). Sem este teto o
+ * handler seguraria a resposta até a Meta desistir, que é justamente o que o
+ * 200 incondicional existe para evitar.
  */
-const safeGetConnection = async (app: FastifyInstance) => {
+const ENQUEUE_TIMEOUT_MS = 3_000
+
+const enqueueInbound = (payload: unknown) =>
+  Promise.race([
+    whatsappInboundQueue.add('inbound', { payload }),
+    new Promise((_, reject) => {
+      setTimeout(
+        () =>
+          reject(new Error(`enfileiramento excedeu ${ENQUEUE_TIMEOUT_MS}ms`)),
+        ENQUEUE_TIMEOUT_MS,
+      ).unref()
+    }),
+  ])
+
+const extractPhoneNumberId = (payload: unknown) =>
+  (payload as MetaWebhookPayload)?.entry?.[0]?.changes?.[0]?.value?.metadata
+    ?.phone_number_id ?? null
+
+/**
+ * A leitura da conta decifra os segredos e pode lançar quando a
+ * WHATSAPP_ENCRYPTION_KEY não está configurada — sem conta não há como
+ * verificar nada, mas isso nunca pode virar 500 para a Meta.
+ *
+ * O `phone_number_id` do payload escolhe a conta; o handshake GET não o traz e
+ * um número desconhecido não deve mudar a resposta, então ambos caem na conta
+ * ativa (que falha na assinatura se de fato for outra conta).
+ */
+const safeGetAccount = async (
+  app: FastifyInstance,
+  phoneNumberId: string | null,
+) => {
   try {
-    return await getConnection()
+    const byNumber = phoneNumberId
+      ? await getAccountByPhoneNumberId(phoneNumberId)
+      : null
+
+    return byNumber ?? (await getConnection())
   } catch (error) {
     app.log.error({ err: error }, 'Falha ao ler a conexão do WhatsApp')
     return null
@@ -132,7 +176,7 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       const token = request.query['hub.verify_token']
       const challenge = request.query['hub.challenge'] ?? ''
 
-      const connection = await safeGetConnection(app)
+      const connection = await safeGetAccount(app, null)
 
       const valid =
         mode === 'subscribe' &&
@@ -169,7 +213,10 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       },
     },
     async (request, reply) => {
-      const connection = await safeGetConnection(app)
+      const connection = await safeGetAccount(
+        app,
+        extractPhoneNumberId(request.body),
+      )
       const rawBody = request.rawBody
 
       // Sem raw body não há HMAC possível — nunca recalcular sobre o body
@@ -184,11 +231,15 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
         )
 
       if (!valid) {
+        const signatureHeader = headerValue(request, SIGNATURE_HEADER)
+
         const reason = !connection
           ? 'conexão não configurada'
           : !rawBody
             ? 'raw body ausente'
-            : 'assinatura não confere'
+            : !signatureHeader
+              ? 'header de assinatura ausente'
+              : 'assinatura não confere'
 
         await safePushWebhookLog(app, {
           direction: 'inbound_event',
@@ -197,7 +248,7 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
           headers: loggableHeaders(request),
           payload: {
             reason,
-            signatureHeader: headerValue(request, SIGNATURE_HEADER) ?? null,
+            signatureHeader: signatureHeader ?? null,
             rawBody: rawBody?.toString('utf8') ?? null,
             parsedBody: request.body ?? null,
           },
@@ -210,27 +261,37 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       // a Meta reenvia em erro e desativa a assinatura após falhas repetidas.
       // Um payload em formato inesperado não pode derrubar a ingestão nem,
       // pior, sumir com o registro que explicaria o que chegou.
+      await safePushWebhookLog(app, {
+        direction: 'inbound_event',
+        signatureValid: true,
+        summary: summarizePayload(request.body),
+        headers: loggableHeaders(request),
+        payload: request.body,
+      })
+
+      // Nada de processamento síncrono: a persistência é do worker, que pode
+      // ser retentado sem que a Meta veja um erro.
       try {
-        await safePushWebhookLog(app, {
-          direction: 'inbound_event',
-          signatureValid: true,
-          summary: summarizePayload(request.body),
-          headers: loggableHeaders(request),
-          payload: request.body,
-        })
+        await enqueueInbound(request.body)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
 
-        app.log.error({ err: error }, 'Falha ao processar webhook do WhatsApp')
+        app.log.error(
+          { err: error },
+          'Falha ao enfileirar evento do WhatsApp — evento perdido',
+        )
 
+        // Trade-off consciente: com o Redis fora, este evento se perde. Devolver
+        // erro faria a Meta reenviar, mas falhas repetidas desativam a
+        // assinatura inteira — perder um evento é menos grave que perder a
+        // integração. O registro abaixo é o que permite saber o que se perdeu.
         await safePushWebhookLog(app, {
           direction: 'inbound_event',
           signatureValid: true,
-          summary: `erro ao processar: ${message}`,
+          summary: `EVENTO PERDIDO: falha ao enfileirar (${message})`,
           headers: loggableHeaders(request),
           payload: {
             error: message,
-            stack: error instanceof Error ? error.stack : undefined,
             // rawBody entra porque request.body pode estar vazio quando o
             // problema foi no parse — é o único registro do que a Meta mandou
             rawBody: rawBody?.toString('utf8') ?? null,

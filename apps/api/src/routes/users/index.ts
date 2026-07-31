@@ -5,6 +5,7 @@ import { Prisma } from '@/generated/prisma/client.js'
 
 import { requireRole } from '@/lib/auth-guard.js'
 import { prisma } from '@/lib/prisma.js'
+import { ROLES, type RoleType } from '@workspace/shared/roles'
 
 import {
   paginate,
@@ -12,6 +13,11 @@ import {
   paginationQuerySchema,
   type PaginationParams,
 } from '@/utils/pagination.js'
+
+// `user` é o papel legado sem acesso ao painel — todo o resto é perfil interno.
+// Derivar de ROLES garante que um papel novo entre no filtro de staff sozinho.
+const NON_STAFF_ROLES: RoleType[] = ['user']
+const STAFF_ROLES = ROLES.filter(role => !NON_STAFF_ROLES.includes(role))
 
 const userResponseSchema = z.object({
   id: z.string(),
@@ -36,7 +42,7 @@ const usersRoutes: FastifyPluginAsyncZod = async app => {
         querystring: z
           .object({
             search: z.string().optional(),
-            role: z.enum(['admin', 'user']).optional(),
+            role: z.enum(ROLES).optional(),
             banned: z.coerce.boolean().optional(),
             isStaff: z
               .string()
@@ -58,9 +64,9 @@ const usersRoutes: FastifyPluginAsyncZod = async app => {
 
       const where: Prisma.UserWhereInput = {
         ...(isStaff === true && {
-          role: { in: ['admin'] },
+          role: { in: STAFF_ROLES },
         }),
-        ...(isStaff === false && { role: 'user' }),
+        ...(isStaff === false && { role: { in: NON_STAFF_ROLES } }),
         ...(isStaff === undefined && role && { role }),
         ...(banned !== undefined && { banned }),
         ...(search && {

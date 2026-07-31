@@ -269,6 +269,42 @@ O passo 8 é o que confirma que a validação de assinatura está de fato ligada
 
 ---
 
+## Fase 1.5 — Checklist de prontidão
+
+Adicionada depois da primeira configuração real, que expôs uma lacuna: a página configurava credenciais mas não ajudava em nada com a burocracia da Meta. Quatro erros seguidos exigiram curl manual — `133010` (número não registrado), Phone Number ID confundido com WABA ID, `subscribed_apps` vazio (webhook verificado mas sem eventos), e campo `messages` possivelmente não assinado.
+
+Nenhum desses é erro de código. Todos são chamadas de API que a página pode fazer. Deixá-los fora significa que cada nova conexão repete a mesma via-crúcis.
+
+### Formato
+
+Um painel de checklist que roda todas as verificações de uma vez e mostra cada item como OK / pendente / erro, com botão de correção na própria linha. Preferido ao wizard sequencial porque continua útil **depois** da primeira configuração — quando algo quebra em produção, o que importa é ver o estado inteiro num olhar, não percorrer passos de novo.
+
+### Verificações
+
+Executadas em ordem, com curto-circuito: pré-requisito falho torna os seguintes `skipped`, com o detalhe explicando de que dependem.
+
+| id | Verificação | Ação corretiva |
+|---|---|---|
+| `encryption` | `WHATSAPP_ENCRYPTION_KEY` presente | — |
+| `credentials` | Conexão salva | — |
+| `token` | Token responde na Graph API | — |
+| `phone_number` | Phone Number ID existe no WABA | `select_number` |
+| `phone_registered` | `platform_type === 'CLOUD_API'` | `register_number` |
+| `app_subscribed` | `subscribed_apps` não vazio | `subscribe_app` |
+| `messages_field` | Campo `messages` assinado | — |
+| `webhook_verified` | Handshake registrado no histórico | — |
+| `webhook_receiving` | Evento real com assinatura válida | — |
+
+As duas últimas leem o histórico do Redis em vez da Graph API — é o que faz o checklist provar o **ciclo**, não só a configuração. Nenhuma exceção escapa: erro da Graph API vira `status: 'error'` com a mensagem original da Meta no detalhe.
+
+### Campo novo
+
+`appId` no model (texto puro, **não** é segredo). Necessário para montar o app access token no formato `appId|appSecret`, exigido por `GET /{app_id}/subscriptions`. Sem ele, `messages_field` fica `skipped` em vez de quebrar.
+
+### Rotas
+
+`GET /whatsapp/readiness` (sem guarda de conexão — precisa responder justamente quando nada está configurado), `GET /whatsapp/phone-numbers`, `POST /whatsapp/register-number`, `POST /whatsapp/subscribe-app`.
+
 ## Notas de implementação
 
 - Fixar a versão da Graph API numa constante única em `graph-client.ts` (`v25.0`), nunca espalhada pelas chamadas. A Meta descontinua versões com frequência e responde com o header `x-ad-api-version-warning` antes de cortar — vale conferir esse header ao depurar.

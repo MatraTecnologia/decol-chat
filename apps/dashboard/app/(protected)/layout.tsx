@@ -46,10 +46,15 @@ export default async function ProtectedLayout({
             <SidebarProvider defaultOpen={defaultOpen}>
               <AppSidebar />
 
-              <SidebarInset className="overflow-x-hidden">
+              {/* h-svh + overflow-hidden tiram o scroll do body: o header fica
+                  fixo e cada tela rola no próprio container. É o que permite a
+                  Inbox dar scroll independente por coluna. */}
+              <SidebarInset className="h-svh overflow-hidden">
                 <ImpersonationBanner />
                 <Header />
-                <main className="flex flex-1 flex-col">{children}</main>
+                <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                  {children}
+                </main>
               </SidebarInset>
             </SidebarProvider>
           </NuqsAdapter>

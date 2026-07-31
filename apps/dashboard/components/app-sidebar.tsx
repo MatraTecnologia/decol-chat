@@ -4,7 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
 
-import { LayoutDashboard, Plug, Users } from 'lucide-react'
+import {
+  Contact,
+  LayoutDashboard,
+  MessagesSquare,
+  Plug,
+  Users,
+} from 'lucide-react'
 
 import {
   Sidebar,
@@ -35,6 +41,8 @@ interface SidebarItem {
 }
 
 const generalItems: SidebarItem[] = [
+  { href: '/conversations', label: 'Conversas', icon: MessagesSquare },
+  { href: '/contacts', label: 'Contatos', icon: Contact },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/conexao', label: 'Conexão', icon: Plug, adminOnly: true },
 ]

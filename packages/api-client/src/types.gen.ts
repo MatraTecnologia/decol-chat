@@ -92,6 +92,597 @@ export type ReadinessProbeResponses = {
 export type ReadinessProbeResponse =
   ReadinessProbeResponses[keyof ReadinessProbeResponses]
 
+export type ListContactsData = {
+  body?: never
+  path?: never
+  query?: {
+    q?: string
+    isBlocked?: string
+    page?: number
+    limit?: number
+  }
+  url: '/contacts/'
+}
+
+export type ListContactsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      whatsAppAccountId: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      email: string | null
+      notes: string | null
+      isBlocked: boolean
+      createdAt: Date
+      updatedAt: Date
+      conversationCount: number
+      openConversationCount: number
+      lastInteractionAt: Date | null
+    }>
+    meta: {
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+      hasNext: boolean
+    }
+  }
+}
+
+export type ListContactsResponse =
+  ListContactsResponses[keyof ListContactsResponses]
+
+export type GetContactData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/contacts/{id}'
+}
+
+export type GetContactResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    waId: string
+    phoneNumber: string
+    name: string | null
+    profileName: string | null
+    email: string | null
+    notes: string | null
+    isBlocked: boolean
+    createdAt: Date
+    updatedAt: Date
+    conversationCount: number
+    openConversationCount: number
+    lastInteractionAt: Date | null
+    conversations: Array<{
+      id: string
+      status: 'OPEN' | 'PENDING' | 'CLOSED'
+      priority: 'LOW' | 'MEDIUM' | 'HIGH'
+      subject: string | null
+      lastMessageAt: Date | null
+      assignedTo: {
+        id: string
+        name: string
+        image: string | null
+      } | null
+    }>
+  }
+}
+
+export type GetContactResponse = GetContactResponses[keyof GetContactResponses]
+
+export type UpdateContactData = {
+  body: {
+    name?: string | null
+    email?: string | null
+    notes?: string | null
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/contacts/{id}'
+}
+
+export type UpdateContactResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    waId: string
+    phoneNumber: string
+    name: string | null
+    profileName: string | null
+    email: string | null
+    notes: string | null
+    isBlocked: boolean
+    createdAt: Date
+    updatedAt: Date
+    conversationCount: number
+    openConversationCount: number
+    lastInteractionAt: Date | null
+  }
+}
+
+export type UpdateContactResponse =
+  UpdateContactResponses[keyof UpdateContactResponses]
+
+export type BlockContactData = {
+  body: {
+    blocked: boolean
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/contacts/{id}/block'
+}
+
+export type BlockContactResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    waId: string
+    phoneNumber: string
+    name: string | null
+    profileName: string | null
+    email: string | null
+    notes: string | null
+    isBlocked: boolean
+    createdAt: Date
+    updatedAt: Date
+    conversationCount: number
+    openConversationCount: number
+    lastInteractionAt: Date | null
+  }
+}
+
+export type BlockContactResponse =
+  BlockContactResponses[keyof BlockContactResponses]
+
+export type ListConversationsData = {
+  body?: never
+  path?: never
+  query?: {
+    status?: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH'
+    assignedToId?: string
+    teamId?: string
+    q?: string
+    scope?: 'mine' | 'unassigned' | 'all'
+    page?: number
+    limit?: number
+  }
+  url: '/conversations/'
+}
+
+export type ListConversationsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      whatsAppAccountId: string
+      contactId: string
+      assignedToId: string | null
+      teamId: string | null
+      status: 'OPEN' | 'PENDING' | 'CLOSED'
+      priority: 'LOW' | 'MEDIUM' | 'HIGH'
+      channel: 'WHATSAPP'
+      subject: string | null
+      lastMessageAt: Date | null
+      lastMessageText: string | null
+      lastInboundAt: Date | null
+      unreadCount: number
+      assignedAt: Date | null
+      closedAt: Date | null
+      closedById: string | null
+      createdAt: Date
+      updatedAt: Date
+      contact: {
+        id: string
+        waId: string
+        phoneNumber: string
+        name: string | null
+        profileName: string | null
+        isBlocked: boolean
+      }
+      assignedTo: {
+        id: string
+        name: string
+        email: string
+        image: string | null
+      } | null
+    }>
+    meta: {
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+      hasNext: boolean
+    }
+  }
+}
+
+export type ListConversationsResponse =
+  ListConversationsResponses[keyof ListConversationsResponses]
+
+export type GetConversationData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}'
+}
+
+export type GetConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+    canSendFreeText: boolean
+    windowExpiresAt: Date | null
+  }
+}
+
+export type GetConversationResponse =
+  GetConversationResponses[keyof GetConversationResponses]
+
+export type MarkConversationReadData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/read'
+}
+
+export type MarkConversationReadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type MarkConversationReadResponse =
+  MarkConversationReadResponses[keyof MarkConversationReadResponses]
+
+export type ListMessagesData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: {
+    cursor?: string
+    limit?: number
+  }
+  url: '/conversations/{id}/messages'
+}
+
+export type ListMessagesResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      conversationId: string
+      senderId: string | null
+      direction: 'INBOUND' | 'OUTBOUND'
+      type:
+        | 'TEXT'
+        | 'IMAGE'
+        | 'AUDIO'
+        | 'VIDEO'
+        | 'DOCUMENT'
+        | 'STICKER'
+        | 'LOCATION'
+        | 'CONTACTS'
+        | 'TEMPLATE'
+        | 'INTERACTIVE'
+        | 'REACTION'
+        | 'SYSTEM'
+        | 'UNSUPPORTED'
+      status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+      waMessageId: string | null
+      waTimestamp: Date | null
+      content: string | null
+      mediaId: string | null
+      mediaUrl: string | null
+      mediaMimeType: string | null
+      templateName: string | null
+      errorCode: string | null
+      errorMessage: string | null
+      deliveredAt: Date | null
+      readAt: Date | null
+      failedAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+      sender: {
+        id: string
+        name: string
+        email: string
+        image: string | null
+      } | null
+    }>
+    nextCursor: string | null
+  }
+}
+
+export type ListMessagesResponse =
+  ListMessagesResponses[keyof ListMessagesResponses]
+
+export type SendMessageData = {
+  body: {
+    text: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/messages'
+}
+
+export type SendMessageResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    conversationId: string
+    senderId: string | null
+    direction: 'INBOUND' | 'OUTBOUND'
+    type:
+      | 'TEXT'
+      | 'IMAGE'
+      | 'AUDIO'
+      | 'VIDEO'
+      | 'DOCUMENT'
+      | 'STICKER'
+      | 'LOCATION'
+      | 'CONTACTS'
+      | 'TEMPLATE'
+      | 'INTERACTIVE'
+      | 'REACTION'
+      | 'SYSTEM'
+      | 'UNSUPPORTED'
+    status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+    waMessageId: string | null
+    waTimestamp: Date | null
+    content: string | null
+    mediaId: string | null
+    mediaUrl: string | null
+    mediaMimeType: string | null
+    templateName: string | null
+    errorCode: string | null
+    errorMessage: string | null
+    deliveredAt: Date | null
+    readAt: Date | null
+    failedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    sender: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type SendMessageResponse =
+  SendMessageResponses[keyof SendMessageResponses]
+
+export type SendTemplateMessageData = {
+  body: {
+    templateName: string
+    languageCode?: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/messages/template'
+}
+
+export type SendTemplateMessageResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    conversationId: string
+    senderId: string | null
+    direction: 'INBOUND' | 'OUTBOUND'
+    type:
+      | 'TEXT'
+      | 'IMAGE'
+      | 'AUDIO'
+      | 'VIDEO'
+      | 'DOCUMENT'
+      | 'STICKER'
+      | 'LOCATION'
+      | 'CONTACTS'
+      | 'TEMPLATE'
+      | 'INTERACTIVE'
+      | 'REACTION'
+      | 'SYSTEM'
+      | 'UNSUPPORTED'
+    status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+    waMessageId: string | null
+    waTimestamp: Date | null
+    content: string | null
+    mediaId: string | null
+    mediaUrl: string | null
+    mediaMimeType: string | null
+    templateName: string | null
+    errorCode: string | null
+    errorMessage: string | null
+    deliveredAt: Date | null
+    readAt: Date | null
+    failedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    sender: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type SendTemplateMessageResponse =
+  SendTemplateMessageResponses[keyof SendTemplateMessageResponses]
+
+export type StartConversationData = {
+  body: {
+    phone: string
+    templateName: string
+    languageCode?: string
+    name?: string
+  }
+  path?: never
+  query?: never
+  url: '/conversations/start'
+}
+
+export type StartConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    conversation: {
+      id: string
+      whatsAppAccountId: string
+      contactId: string
+      assignedToId: string | null
+      teamId: string | null
+      status: 'OPEN' | 'PENDING' | 'CLOSED'
+      priority: 'LOW' | 'MEDIUM' | 'HIGH'
+      channel: 'WHATSAPP'
+      subject: string | null
+      lastMessageAt: Date | null
+      lastMessageText: string | null
+      lastInboundAt: Date | null
+      unreadCount: number
+      assignedAt: Date | null
+      closedAt: Date | null
+      closedById: string | null
+      createdAt: Date
+      updatedAt: Date
+      contact: {
+        id: string
+        waId: string
+        phoneNumber: string
+        name: string | null
+        profileName: string | null
+        isBlocked: boolean
+      }
+      assignedTo: {
+        id: string
+        name: string
+        email: string
+        image: string | null
+      } | null
+    }
+    created: boolean
+    previousAssignee: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type StartConversationResponse =
+  StartConversationResponses[keyof StartConversationResponses]
+
 export type ListMembersData = {
   body?: never
   path?: never
@@ -121,7 +712,7 @@ export type ListUsersData = {
   path?: never
   query?: {
     search?: string
-    role?: 'admin' | 'user'
+    role?: 'admin' | 'manager' | 'agent' | 'viewer' | 'user'
     banned?: boolean
     isStaff?: string
     page?: number
@@ -235,6 +826,7 @@ export type GetWhatsappConnectionResponses = {
       appSecret: string
       phoneNumberId: string
       wabaId: string
+      appId: string | null
       verifyToken: string
       webhookBaseUrl: string | null
       displayPhoneNumber: string | null
@@ -257,6 +849,7 @@ export type UpdateWhatsappConnectionData = {
     appSecret: string
     phoneNumberId: string
     wabaId: string
+    appId?: string
     verifyToken: string
     webhookBaseUrl?: string
   }
@@ -276,6 +869,7 @@ export type UpdateWhatsappConnectionResponses = {
       appSecret: string
       phoneNumberId: string
       wabaId: string
+      appId: string | null
       verifyToken: string
       webhookBaseUrl: string | null
       displayPhoneNumber: string | null
@@ -315,6 +909,97 @@ export type CheckWhatsappHealthResponses = {
 
 export type CheckWhatsappHealthResponse =
   CheckWhatsappHealthResponses[keyof CheckWhatsappHealthResponses]
+
+export type GetWhatsappReadinessData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/readiness'
+}
+
+export type GetWhatsappReadinessResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    checks: Array<{
+      id: string
+      label: string
+      status: 'ok' | 'pending' | 'error' | 'skipped'
+      detail: string
+      action: 'register_number' | 'subscribe_app' | 'select_number'
+    }>
+  }
+}
+
+export type GetWhatsappReadinessResponse =
+  GetWhatsappReadinessResponses[keyof GetWhatsappReadinessResponses]
+
+export type ListWhatsappPhoneNumbersData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/phone-numbers'
+}
+
+export type ListWhatsappPhoneNumbersResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      displayPhoneNumber: string | null
+      verifiedName: string | null
+      qualityRating: string | null
+      platformType: string | null
+      codeVerificationStatus: string | null
+    }>
+  }
+}
+
+export type ListWhatsappPhoneNumbersResponse =
+  ListWhatsappPhoneNumbersResponses[keyof ListWhatsappPhoneNumbersResponses]
+
+export type RegisterWhatsappNumberData = {
+  body: {
+    pin: string
+  }
+  path?: never
+  query?: never
+  url: '/whatsapp/register-number'
+}
+
+export type RegisterWhatsappNumberResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    success: boolean
+  }
+}
+
+export type RegisterWhatsappNumberResponse =
+  RegisterWhatsappNumberResponses[keyof RegisterWhatsappNumberResponses]
+
+export type SubscribeWhatsappAppData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/subscribe-app'
+}
+
+export type SubscribeWhatsappAppResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    success: boolean
+  }
+}
+
+export type SubscribeWhatsappAppResponse =
+  SubscribeWhatsappAppResponses[keyof SubscribeWhatsappAppResponses]
 
 export type SendWhatsappTestMessageData = {
   body: {

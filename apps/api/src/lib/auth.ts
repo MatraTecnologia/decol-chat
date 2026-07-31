@@ -16,7 +16,10 @@ import { redis } from './redis.js'
 import {
   ac,
   admin as adminRole,
+  agent as agentRole,
+  manager as managerRole,
   user as userRole,
+  viewer as viewerRole,
 } from '@workspace/shared/permissions'
 
 // Lazy-load email templates to avoid jiti resolution issues with @better-auth/cli
@@ -120,6 +123,9 @@ export const auth = betterAuth({
       ac,
       roles: {
         admin: adminRole,
+        manager: managerRole,
+        agent: agentRole,
+        viewer: viewerRole,
         user: userRole,
       },
     }),

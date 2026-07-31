@@ -9,37 +9,78 @@ import type {
 } from './client'
 import { client } from './client.gen'
 import {
+  blockContactResponseTransformer,
   checkWhatsappHealthResponseTransformer,
+  getContactResponseTransformer,
+  getConversationResponseTransformer,
   getWhatsappConnectionResponseTransformer,
+  listContactsResponseTransformer,
+  listConversationsResponseTransformer,
   listMembersResponseTransformer,
+  listMessagesResponseTransformer,
   listUsersResponseTransformer,
+  markConversationReadResponseTransformer,
+  sendMessageResponseTransformer,
+  sendTemplateMessageResponseTransformer,
+  startConversationResponseTransformer,
+  updateContactResponseTransformer,
   updateWhatsappConnectionResponseTransformer,
 } from './transformers.gen'
 import type {
+  BlockContactData,
+  BlockContactResponses,
   CheckWhatsappHealthData,
   CheckWhatsappHealthResponses,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponses,
+  GetContactData,
+  GetContactResponses,
+  GetConversationData,
+  GetConversationResponses,
   GetWhatsappConnectionData,
   GetWhatsappConnectionResponses,
+  GetWhatsappReadinessData,
+  GetWhatsappReadinessResponses,
   HealthCheckData,
   HealthCheckErrors,
   HealthCheckResponses,
+  ListContactsData,
+  ListContactsResponses,
+  ListConversationsData,
+  ListConversationsResponses,
   ListMembersData,
   ListMembersResponses,
+  ListMessagesData,
+  ListMessagesResponses,
   ListUsersData,
   ListUsersResponses,
   ListWhatsappLogsData,
   ListWhatsappLogsResponses,
+  ListWhatsappPhoneNumbersData,
+  ListWhatsappPhoneNumbersResponses,
   LivenessProbeData,
   LivenessProbeResponses,
+  MarkConversationReadData,
+  MarkConversationReadResponses,
   ReadinessProbeData,
   ReadinessProbeErrors,
   ReadinessProbeResponses,
   ReceiveWhatsappWebhookData,
   ReceiveWhatsappWebhookResponses,
+  RegisterWhatsappNumberData,
+  RegisterWhatsappNumberResponses,
+  SendMessageData,
+  SendMessageResponses,
+  SendTemplateMessageData,
+  SendTemplateMessageResponses,
   SendWhatsappTestMessageData,
   SendWhatsappTestMessageResponses,
+  StartConversationData,
+  StartConversationResponses,
+  SubscribeWhatsappAppData,
+  SubscribeWhatsappAppResponses,
+  UpdateContactData,
+  UpdateContactResponses,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponses,
   VerifyWhatsappWebhookData,
@@ -99,6 +140,186 @@ export const readinessProbe = <ThrowOnError extends boolean = false>(
     ReadinessProbeErrors,
     ThrowOnError
   >({ url: '/health/ready', ...options })
+
+/**
+ * Lista contatos visíveis para o solicitante
+ */
+export const listContacts = <ThrowOnError extends boolean = false>(
+  options?: Options<ListContactsData, ThrowOnError>,
+): RequestResult<ListContactsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<ListContactsResponses, unknown, ThrowOnError>(
+    {
+      responseTransformer: listContactsResponseTransformer,
+      url: '/contacts/',
+      ...options,
+    },
+  )
+
+/**
+ * Detalha um contato com as conversas recentes dele
+ */
+export const getContact = <ThrowOnError extends boolean = false>(
+  options: Options<GetContactData, ThrowOnError>,
+): RequestResult<GetContactResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<GetContactResponses, unknown, ThrowOnError>({
+    responseTransformer: getContactResponseTransformer,
+    url: '/contacts/{id}',
+    ...options,
+  })
+
+/**
+ * Atualiza os dados editáveis do contato
+ */
+export const updateContact = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateContactData, ThrowOnError>,
+): RequestResult<UpdateContactResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).patch<
+    UpdateContactResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: updateContactResponseTransformer,
+    url: '/contacts/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Bloqueia ou desbloqueia o contato
+ */
+export const blockContact = <ThrowOnError extends boolean = false>(
+  options: Options<BlockContactData, ThrowOnError>,
+): RequestResult<BlockContactResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<BlockContactResponses, unknown, ThrowOnError>(
+    {
+      responseTransformer: blockContactResponseTransformer,
+      url: '/contacts/{id}/block',
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    },
+  )
+
+/**
+ * Lista conversas visíveis para o solicitante
+ */
+export const listConversations = <ThrowOnError extends boolean = false>(
+  options?: Options<ListConversationsData, ThrowOnError>,
+): RequestResult<ListConversationsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListConversationsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: listConversationsResponseTransformer,
+    url: '/conversations/',
+    ...options,
+  })
+
+/**
+ * Detalha uma conversa com a janela de 24h calculada
+ */
+export const getConversation = <ThrowOnError extends boolean = false>(
+  options: Options<GetConversationData, ThrowOnError>,
+): RequestResult<GetConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: getConversationResponseTransformer,
+    url: '/conversations/{id}',
+    ...options,
+  })
+
+/**
+ * Zera o contador de mensagens não lidas da conversa
+ */
+export const markConversationRead = <ThrowOnError extends boolean = false>(
+  options: Options<MarkConversationReadData, ThrowOnError>,
+): RequestResult<MarkConversationReadResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    MarkConversationReadResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: markConversationReadResponseTransformer,
+    url: '/conversations/{id}/read',
+    ...options,
+  })
+
+/**
+ * Lista as mensagens de uma conversa (paginação por cursor)
+ */
+export const listMessages = <ThrowOnError extends boolean = false>(
+  options: Options<ListMessagesData, ThrowOnError>,
+): RequestResult<ListMessagesResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<ListMessagesResponses, unknown, ThrowOnError>({
+    responseTransformer: listMessagesResponseTransformer,
+    url: '/conversations/{id}/messages',
+    ...options,
+  })
+
+/**
+ * Envia uma mensagem de texto na conversa
+ */
+export const sendMessage = <ThrowOnError extends boolean = false>(
+  options: Options<SendMessageData, ThrowOnError>,
+): RequestResult<SendMessageResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<SendMessageResponses, unknown, ThrowOnError>({
+    responseTransformer: sendMessageResponseTransformer,
+    url: '/conversations/{id}/messages',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Envia uma mensagem de modelo (válida fora da janela de 24h)
+ */
+export const sendTemplateMessage = <ThrowOnError extends boolean = false>(
+  options: Options<SendTemplateMessageData, ThrowOnError>,
+): RequestResult<SendTemplateMessageResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    SendTemplateMessageResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: sendTemplateMessageResponseTransformer,
+    url: '/conversations/{id}/messages/template',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Inicia uma conversa com um número novo via modelo (template)
+ */
+export const startConversation = <ThrowOnError extends boolean = false>(
+  options: Options<StartConversationData, ThrowOnError>,
+): RequestResult<StartConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    StartConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: startConversationResponseTransformer,
+    url: '/conversations/start',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
 
 /**
  * List users
@@ -211,6 +432,61 @@ export const checkWhatsappHealth = <ThrowOnError extends boolean = false>(
     url: '/whatsapp/health',
     ...options,
   })
+
+/**
+ * Diagnóstico completo do setup (roda todas as verificações)
+ */
+export const getWhatsappReadiness = <ThrowOnError extends boolean = false>(
+  options?: Options<GetWhatsappReadinessData, ThrowOnError>,
+): RequestResult<GetWhatsappReadinessResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetWhatsappReadinessResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/readiness', ...options })
+
+/**
+ * Lista os números do WABA na Cloud API
+ */
+export const listWhatsappPhoneNumbers = <ThrowOnError extends boolean = false>(
+  options?: Options<ListWhatsappPhoneNumbersData, ThrowOnError>,
+): RequestResult<ListWhatsappPhoneNumbersResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListWhatsappPhoneNumbersResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/phone-numbers', ...options })
+
+/**
+ * Registra o número na Cloud API com o PIN de verificação
+ */
+export const registerWhatsappNumber = <ThrowOnError extends boolean = false>(
+  options: Options<RegisterWhatsappNumberData, ThrowOnError>,
+): RequestResult<RegisterWhatsappNumberResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    RegisterWhatsappNumberResponses,
+    unknown,
+    ThrowOnError
+  >({
+    url: '/whatsapp/register-number',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Inscreve o app no WABA para receber os webhooks
+ */
+export const subscribeWhatsappApp = <ThrowOnError extends boolean = false>(
+  options?: Options<SubscribeWhatsappAppData, ThrowOnError>,
+): RequestResult<SubscribeWhatsappAppResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<
+    SubscribeWhatsappAppResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/subscribe-app', ...options })
 
 /**
  * Envia uma mensagem de teste (texto livre ou template)

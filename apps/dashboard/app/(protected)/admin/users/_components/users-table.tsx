@@ -41,7 +41,7 @@ import {
 } from '@workspace/ui/components/table'
 
 import { authClient } from '@/lib/auth-client'
-import { ROLE_LABELS } from '@workspace/shared/roles'
+import { ROLE_LABELS, type RoleType } from '@workspace/shared/roles'
 import { BanUserDialog } from './ban-user-dialog'
 import { EditUserDialog } from './edit-user-dialog'
 import { RemoveUserAlert } from './remove-user-alert'
@@ -68,10 +68,32 @@ interface UsersTableProps {
   onRefresh: () => void
 }
 
-const roleBadgeVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-  admin: 'default',
-  user: 'outline',
+const roleBadge: Record<
+  RoleType,
+  { variant: 'default' | 'secondary' | 'outline'; className?: string }
+> = {
+  admin: { variant: 'default' },
+  manager: {
+    variant: 'outline',
+    className:
+      'border-violet-200 text-violet-700 dark:border-violet-800 dark:text-violet-400',
+  },
+  agent: {
+    variant: 'outline',
+    className:
+      'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400',
+  },
+  viewer: {
+    variant: 'outline',
+    className:
+      'border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400',
+  },
+  user: { variant: 'outline', className: 'text-muted-foreground' },
 }
+
+// Papéis fora de ROLES podem existir no banco (legado) — caem no visual neutro.
+const getRoleBadge = (role?: string) =>
+  roleBadge[role as RoleType] ?? roleBadge.user
 
 export const UsersTable = ({
   users,
@@ -156,6 +178,7 @@ export const UsersTable = ({
         <TableBody>
           {users.map(user => {
             const isCurrentUser = user.id === currentUserId
+            const badge = getRoleBadge(user.role)
 
             return (
               <TableRow key={user.id}>
@@ -202,9 +225,7 @@ export const UsersTable = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={roleBadgeVariant[user.role || 'user'] || 'outline'}
-                  >
+                  <Badge variant={badge.variant} className={badge.className}>
                     {ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] ||
                       user.role}
                   </Badge>

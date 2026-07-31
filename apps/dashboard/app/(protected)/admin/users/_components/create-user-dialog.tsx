@@ -1,13 +1,13 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Briefcase, ShieldCheck, User, Users, Wand2 } from 'lucide-react'
+import { Briefcase, Eye, ShieldCheck, User, Users, Wand2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { ROLE_OPTIONS } from '@workspace/shared/roles'
+import { ROLE_OPTIONS, ROLES } from '@workspace/shared/roles'
 import { Button } from '@workspace/ui/components/button'
 import { Checkbox } from '@workspace/ui/components/checkbox'
 import { Input } from '@workspace/ui/components/input'
@@ -90,6 +90,7 @@ const iconMap = {
   ShieldCheck,
   Users,
   Briefcase,
+  Eye,
   User,
 } as const
 
@@ -97,7 +98,7 @@ const createUserSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.email('Email inválido').trim(),
   password: z.string().trim().min(8, 'Senha deve ter pelo menos 8 caracteres'),
-  role: z.enum(['admin', 'user']),
+  role: z.enum(ROLES),
   phone: z.string().trim().optional(),
   emailVerified: z.boolean(),
 })

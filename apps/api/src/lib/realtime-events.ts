@@ -1,4 +1,5 @@
-export type RealtimeEntity = 'user' | 'whatsappConnection'
+export type RealtimeEntity =
+  'user' | 'whatsappConnection' | 'conversation' | 'message' | 'contact'
 
 export type RealtimeAction = 'created' | 'updated' | 'deleted'
 
@@ -7,6 +8,8 @@ export interface RealtimeEvent {
   action: RealtimeAction
   entityId: string
   invalidateTags?: string[]
+  /** Corpo da entidade, quando o consumidor precisa dele sem refetch. */
+  payload?: unknown
 }
 
 export const REALTIME_EVENT = 'entity:mutated' as const
@@ -14,4 +17,8 @@ export const REALTIME_EVENT = 'entity:mutated' as const
 export const ENTITY_INVALIDATION_TAGS: Record<RealtimeEntity, string[]> = {
   user: ['Users'],
   whatsappConnection: ['WhatsApp'],
+  conversation: ['Conversations'],
+  // toda mensagem muda o preview e a ordenação da lista de conversas
+  message: ['Messages', 'Conversations'],
+  contact: ['Contacts'],
 }

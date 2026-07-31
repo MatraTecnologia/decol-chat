@@ -19,9 +19,14 @@ import { isEncryptionConfigured } from '@/lib/whatsapp/crypto.js'
 import {
   GraphApiError,
   getPhoneNumberInfo,
+  listPhoneNumbers,
+  registerPhoneNumber,
   sendTemplateMessage,
   sendTextMessage,
+  subscribeApp,
 } from '@/lib/whatsapp/graph-client.js'
+
+import { runReadinessChecks } from '@/lib/whatsapp/readiness.js'
 
 import { listWebhookLogs, pushWebhookLog } from '@/lib/whatsapp/webhook-log.js'
 
@@ -37,6 +42,7 @@ const connectionSchema = z.object({
   appSecret: z.string(),
   phoneNumberId: z.string(),
   wabaId: z.string(),
+  appId: z.string().nullable(),
   verifyToken: z.string(),
   webhookBaseUrl: z.string().nullable(),
   displayPhoneNumber: z.string().nullable(),
@@ -58,6 +64,7 @@ const connectionBodySchema = z.object({
   appSecret: z.string().min(1),
   phoneNumberId: z.string().min(1),
   wabaId: z.string().min(1),
+  appId: z.string().optional(),
   verifyToken: z.string().min(1),
   webhookBaseUrl: z.string().optional(),
 })
@@ -69,6 +76,25 @@ const phoneNumberInfoSchema = z.object({
   qualityRating: z.string().nullable(),
   messagingLimitTier: z.string().nullable(),
   checkedAt: z.date(),
+})
+
+const readinessCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.enum(['ok', 'pending', 'error', 'skipped']),
+  detail: z.string(),
+  action: z
+    .enum(['register_number', 'subscribe_app', 'select_number'])
+    .nullable(),
+})
+
+const phoneNumberEntrySchema = z.object({
+  id: z.string(),
+  displayPhoneNumber: z.string().nullable(),
+  verifiedName: z.string().nullable(),
+  qualityRating: z.string().nullable(),
+  platformType: z.string().nullable(),
+  codeVerificationStatus: z.string().nullable(),
 })
 
 const webhookLogEntrySchema = z.object({
@@ -103,6 +129,7 @@ const toMaskedConnection = (connection: DecryptedConnection) => ({
   appSecret: maskSecret(connection.appSecret),
   phoneNumberId: connection.phoneNumberId,
   wabaId: connection.wabaId,
+  appId: connection.appId,
   verifyToken: connection.verifyToken,
   webhookBaseUrl: connection.webhookBaseUrl,
   displayPhoneNumber: connection.displayPhoneNumber,
@@ -195,6 +222,7 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
           appSecret: body.appSecret,
           phoneNumberId: body.phoneNumberId,
           wabaId: body.wabaId,
+          appId: body.appId,
           verifyToken: body.verifyToken,
           webhookBaseUrl: body.webhookBaseUrl,
         })
@@ -300,6 +328,180 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
           messagingLimitTier: info.messaging_limit_tier ?? null,
           checkedAt,
         }
+      } catch (error) {
+        const graphError = toGraphError(error)
+        if (!graphError) throw error
+
+        return graphError.isClient
+          ? reply.badRequest(graphError.message)
+          : reply.badGateway(graphError.message)
+      }
+    },
+  )
+
+  // GET /whatsapp/readiness
+  app.get(
+    '/readiness',
+    {
+      schema: {
+        operationId: 'getWhatsappReadiness',
+        tags: ['WhatsApp'],
+        summary: 'Diagnóstico completo do setup (roda todas as verificações)',
+        response: {
+          200: z.object({ checks: z.array(readinessCheckSchema) }),
+        },
+      },
+    },
+    async request => {
+      await requireRole(request, ['admin'])
+
+      // Sem guardas de criptografia ou conexão: o diagnóstico existe justamente
+      // para explicar o que falta quando nada está configurado.
+      return { checks: await runReadinessChecks() }
+    },
+  )
+
+  // GET /whatsapp/phone-numbers
+  app.get(
+    '/phone-numbers',
+    {
+      schema: {
+        operationId: 'listWhatsappPhoneNumbers',
+        tags: ['WhatsApp'],
+        summary: 'Lista os números do WABA na Cloud API',
+        response: { 200: z.object({ data: z.array(phoneNumberEntrySchema) }) },
+      },
+    },
+    async (request, reply) => {
+      await requireRole(request, ['admin'])
+
+      if (!isEncryptionConfigured()) {
+        return reply.serviceUnavailable(MISSING_ENCRYPTION_KEY)
+      }
+
+      const connection = await getConnection()
+      if (!connection) return reply.notFound(request.t('NOT_FOUND'))
+
+      try {
+        const result = await listPhoneNumbers(
+          connection.accessToken,
+          connection.wabaId,
+        )
+
+        return {
+          data: result.data.map(entry => ({
+            id: entry.id,
+            displayPhoneNumber: entry.display_phone_number ?? null,
+            verifiedName: entry.verified_name ?? null,
+            qualityRating: entry.quality_rating ?? null,
+            platformType: entry.platform_type ?? null,
+            codeVerificationStatus: entry.code_verification_status ?? null,
+          })),
+        }
+      } catch (error) {
+        const graphError = toGraphError(error)
+        if (!graphError) throw error
+
+        return graphError.isClient
+          ? reply.badRequest(graphError.message)
+          : reply.badGateway(graphError.message)
+      }
+    },
+  )
+
+  // POST /whatsapp/register-number
+  app.post(
+    '/register-number',
+    {
+      schema: {
+        operationId: 'registerWhatsappNumber',
+        tags: ['WhatsApp'],
+        summary: 'Registra o número na Cloud API com o PIN de verificação',
+        body: z.object({ pin: z.string().min(4).max(8) }),
+        response: { 200: z.object({ success: z.boolean() }) },
+      },
+    },
+    async (request, reply) => {
+      await requireRole(request, ['admin'])
+
+      if (!isEncryptionConfigured()) {
+        return reply.serviceUnavailable(MISSING_ENCRYPTION_KEY)
+      }
+
+      const connection = await getConnection()
+      if (!connection) return reply.notFound(request.t('NOT_FOUND'))
+
+      try {
+        const result = await registerPhoneNumber(
+          connection.accessToken,
+          connection.phoneNumberId,
+          request.body.pin,
+        )
+
+        await safePushWebhookLog(app, {
+          direction: 'outbound',
+          summary: `register phone_number_id=${connection.phoneNumberId} success=${result.success}`,
+          payload: result,
+        })
+
+        app.emitRealtimeEvent({
+          entity: 'whatsappConnection',
+          action: 'updated',
+          entityId: 'singleton',
+        })
+
+        return { success: result.success }
+      } catch (error) {
+        const graphError = toGraphError(error)
+        if (!graphError) throw error
+
+        return graphError.isClient
+          ? reply.badRequest(graphError.message)
+          : reply.badGateway(graphError.message)
+      }
+    },
+  )
+
+  // POST /whatsapp/subscribe-app
+  app.post(
+    '/subscribe-app',
+    {
+      schema: {
+        operationId: 'subscribeWhatsappApp',
+        tags: ['WhatsApp'],
+        summary: 'Inscreve o app no WABA para receber os webhooks',
+        response: { 200: z.object({ success: z.boolean() }) },
+      },
+    },
+    async (request, reply) => {
+      await requireRole(request, ['admin'])
+
+      if (!isEncryptionConfigured()) {
+        return reply.serviceUnavailable(MISSING_ENCRYPTION_KEY)
+      }
+
+      const connection = await getConnection()
+      if (!connection) return reply.notFound(request.t('NOT_FOUND'))
+
+      try {
+        const result = await subscribeApp(
+          connection.accessToken,
+          connection.wabaId,
+        )
+
+        await safePushWebhookLog(app, {
+          direction: 'outbound',
+          summary: `subscribe_app waba_id=${connection.wabaId} success=${result.success}`,
+          payload: result,
+        })
+
+        app.emitRealtimeEvent({
+          entity: 'whatsappConnection',
+          action: 'updated',
+          entityId: 'singleton',
+        })
+
+        return { success: result.success }
       } catch (error) {
         const graphError = toGraphError(error)
         if (!graphError) throw error

@@ -7,7 +7,14 @@ import {
   twoFactorClient,
 } from 'better-auth/client/plugins'
 
-import { ac, admin, user } from '@workspace/shared/permissions'
+import {
+  ac,
+  admin,
+  agent,
+  manager,
+  user,
+  viewer,
+} from '@workspace/shared/permissions'
 
 import { env } from '@/config/env'
 
@@ -19,7 +26,7 @@ export const authClient = createAuthClient({
   plugins: [
     adminClient({
       ac,
-      roles: { admin, user },
+      roles: { admin, manager, agent, viewer, user },
     }),
     twoFactorClient(),
     emailOTPClient(),

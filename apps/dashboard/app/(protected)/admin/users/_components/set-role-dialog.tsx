@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldCheck, User } from 'lucide-react'
+import { Briefcase, Eye, ShieldCheck, User, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -27,6 +27,9 @@ import { authClient } from '@/lib/auth-client'
 
 const iconMap = {
   ShieldCheck,
+  Users,
+  Briefcase,
+  Eye,
   User,
 } as const
 

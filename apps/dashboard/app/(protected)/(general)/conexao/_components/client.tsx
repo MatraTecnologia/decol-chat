@@ -5,6 +5,7 @@ import { Plug } from 'lucide-react'
 
 import { ConnectionStatus } from './connection-status'
 import { CredentialsForm } from './credentials-form'
+import { ReadinessPanel } from './readiness-panel'
 import { SetupGuide } from './setup-guide'
 import { TestMessageForm } from './test-message-form'
 import { WebhookConsole } from './webhook-console'
@@ -34,9 +35,13 @@ export const Client = () => {
         </div>
       </motion.div>
 
+      <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
+        <ReadinessPanel />
+      </motion.div>
+
       <motion.div
         {...fadeUp}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.2 }}
         className="grid gap-4 lg:grid-cols-2"
       >
         <CredentialsForm />
@@ -45,11 +50,11 @@ export const Client = () => {
         <TestMessageForm />
       </motion.div>
 
-      <motion.div {...fadeUp} transition={{ delay: 0.2 }}>
+      <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
         <WebhookConsole />
       </motion.div>
 
-      <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
+      <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
         <SetupGuide />
       </motion.div>
     </div>

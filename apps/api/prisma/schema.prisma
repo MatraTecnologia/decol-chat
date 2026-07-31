@@ -39,6 +39,18 @@ model User {
   accounts         Account[]
   twofactors       TwoFactor[]
 
+  // atendimento
+  isAvailable    Boolean   @default(true) // toggle manual "aceito novas conversas"
+  lastAssignedAt DateTime? // desempate do round-robin
+
+  conversations       Conversation[]                  @relation("ConversationAssignee")
+  closedConversations Conversation[]                  @relation("ConversationCloser")
+  messages            Message[]
+  teamMemberships     TeamMember[]
+  assignmentsFrom     ConversationAssignmentHistory[] @relation("AssignmentFrom")
+  assignmentsTo       ConversationAssignmentHistory[] @relation("AssignmentTo")
+  assignmentsActed    ConversationAssignmentHistory[] @relation("AssignmentActor")
+
   @@unique([email])
   @@map("user")
 }
@@ -143,6 +155,7 @@ model WhatsAppConnection {
   appSecret          String // AES-256-GCM — necessário para validar o HMAC
   phoneNumberId      String
   wabaId             String
+  appId              String? // não é segredo — usado para ler as assinaturas de webhook do app
   verifyToken        String
   webhookBaseUrl     String? // override do env
   displayPhoneNumber String? // preenchido pelo health check
@@ -151,4 +164,271 @@ model WhatsAppConnection {
   lastCheckedAt      DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// ATENDIMENTO — enums
+// ----------------------------------------------------------------------------
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  CLOSED
+}
+
+enum ConversationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ConversationChannel {
+  WHATSAPP
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  PENDING // aceita localmente, ainda não entregue à Graph API
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+  STICKER
+  LOCATION
+  CONTACTS
+  TEMPLATE
+  INTERACTIVE
+  REACTION
+  SYSTEM
+  UNSUPPORTED
+}
+
+enum AssignmentReason {
+  AUTO_ROUND_ROBIN
+  MANUAL
+  REASSIGNED
+  UNASSIGNED
+  RELEASED_ON_CLOSE
+}
+
+enum DistributionStrategy {
+  ROUND_ROBIN
+  LEAST_BUSY
+}
+
+// ----------------------------------------------------------------------------
+// ATENDIMENTO — modelos
+// ----------------------------------------------------------------------------
+
+model WhatsAppAccount {
+  id                 String    @id @default(cuid(2))
+  label              String // nome interno, ex.: "Comercial SP"
+  accessToken        String // AES-256-GCM
+  appSecret          String // AES-256-GCM — necessário para validar o HMAC
+  phoneNumberId      String    @unique
+  wabaId             String
+  appId              String?
+  verifyToken        String
+  webhookBaseUrl     String?
+  displayPhoneNumber String?
+  verifiedName       String?
+  qualityRating      String?
+  lastCheckedAt      DateTime?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  contacts         Contact[]
+  conversations    Conversation[]
+  distributionRule DistributionRule?
+
+  @@index([isActive])
+  @@map("whatsapp_account")
+}
+
+model Contact {
+  id                String   @id @default(cuid(2))
+  whatsAppAccountId String
+  waId              String // MSISDN que a Meta manda em `messages[].from`
+  phoneNumber       String // normalizado E.164
+  phoneKey          String? // canônica p/ dedupe — celular BR sem o nono dígito
+  name              String? // profile.name do payload
+  profileName       String?
+  email             String?
+  notes             String?
+  isBlocked         Boolean  @default(false)
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  whatsAppAccount WhatsAppAccount @relation(fields: [whatsAppAccountId], references: [id], onDelete: Cascade)
+  conversations   Conversation[]
+
+  @@unique([whatsAppAccountId, waId])
+  @@unique([whatsAppAccountId, phoneKey])
+  @@index([phoneNumber])
+  @@map("contact")
+}
+
+model Conversation {
+  id                String  @id @default(cuid(2))
+  whatsAppAccountId String
+  contactId         String
+  assignedToId      String?
+  teamId            String?
+
+  status   ConversationStatus   @default(OPEN)
+  priority ConversationPriority @default(MEDIUM)
+  channel  ConversationChannel  @default(WHATSAPP)
+
+  subject         String?
+  lastMessageAt   DateTime?
+  lastMessageText String? // preview desnormalizado para a lista
+  lastInboundAt   DateTime? // base da janela de 24h
+  unreadCount     Int       @default(0)
+  assignedAt      DateTime?
+  closedAt        DateTime?
+  closedById      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  whatsAppAccount   WhatsAppAccount                 @relation(fields: [whatsAppAccountId], references: [id], onDelete: Cascade)
+  contact           Contact                         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedTo        User?                           @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  closedBy          User?                           @relation("ConversationCloser", fields: [closedById], references: [id], onDelete: SetNull)
+  team              Team?                           @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  messages          Message[]
+  assignmentHistory ConversationAssignmentHistory[]
+
+  @@index([assignedToId, status, lastMessageAt(sort: Desc)])
+  @@index([status, lastMessageAt(sort: Desc)])
+  @@index([contactId])
+  @@index([whatsAppAccountId, status])
+  @@map("conversation")
+}
+
+model Message {
+  id             String  @id @default(cuid(2))
+  conversationId String
+  senderId       String? // null quando INBOUND (quem falou foi o contato)
+
+  direction MessageDirection
+  type      MessageType      @default(TEXT)
+  status    MessageStatus    @default(PENDING)
+
+  waMessageId String?   @unique // wamid — chave de idempotência
+  waTimestamp DateTime?
+
+  content       String? // texto puro / caption
+  mediaId       String? // media id da Meta
+  mediaUrl      String? // URL já rehospedada (R2)
+  mediaMimeType String?
+  templateName  String?
+
+  errorCode    String?
+  errorMessage String?
+
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedAt    DateTime?
+
+  payload   Json? // payload cru da Meta — indispensável para depurar
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("message")
+}
+
+model ConversationAssignmentHistory {
+  id             String           @id @default(cuid(2))
+  conversationId String
+  fromUserId     String? // null na primeira atribuição
+  toUserId       String? // null quando a conversa é liberada
+  actorId        String? // null quando foi o sistema (round-robin)
+  reason         AssignmentReason
+  note           String?
+  createdAt      DateTime         @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  fromUser     User?        @relation("AssignmentFrom", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUser       User?        @relation("AssignmentTo", fields: [toUserId], references: [id], onDelete: SetNull)
+  actor        User?        @relation("AssignmentActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([toUserId, createdAt(sort: Desc)])
+  @@map("conversation_assignment_history")
+}
+
+model Team {
+  id          String   @id @default(cuid(2))
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members           TeamMember[]
+  conversations     Conversation[]
+  distributionRules DistributionRule[]
+
+  @@map("team")
+}
+
+model TeamMember {
+  id       String   @id @default(cuid(2))
+  teamId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_member")
+}
+
+model DistributionRule {
+  id       String  @id @default(cuid(2))
+  name     String
+  isActive Boolean @default(true)
+
+  whatsAppAccountId String? @unique // uma regra por número; null = regra global
+  teamId            String? // pool restrito a uma equipe
+
+  strategy DistributionStrategy @default(ROUND_ROBIN)
+
+  requireOnline       Boolean @default(true) // exige presença ativa no Socket.io
+  maxOpenPerAgent     Int? // teto de conversas abertas por vendedor
+  fallbackToAnyActive Boolean @default(true) // ninguém online → distribui entre ativos
+  reassignOnReopen    Boolean @default(false) // conversa reaberta volta pro dono anterior?
+
+  businessHours Json? // { tz, days: [{ weekday, start, end }] } — fora disso, fica na fila
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  whatsAppAccount WhatsAppAccount? @relation(fields: [whatsAppAccountId], references: [id], onDelete: Cascade)
+  team            Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([isActive])
+  @@map("distribution_rule")
 }

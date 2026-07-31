@@ -16,6 +16,8 @@ import {
   listUsersOptions,
 } from '@workspace/api-client/react-query'
 
+import type { ListUsersData } from '@workspace/api-client/types'
+
 import {
   Card,
   CardContent,
@@ -32,6 +34,8 @@ import { UserSearch } from './user-search'
 import { type UserRow, UsersTable } from './users-table'
 
 const LIMIT = 20
+
+type RoleFilter = NonNullable<ListUsersData['query']>['role']
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -68,7 +72,7 @@ export const Client = () => {
     listUsersOptions({
       query: {
         search: debouncedSearch || undefined,
-        role: (role as 'admin' | 'user') || undefined,
+        role: (role || undefined) as RoleFilter,
         page,
         limit: LIMIT,
       },
