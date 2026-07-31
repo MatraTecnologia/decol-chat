@@ -1,4 +1,5 @@
 export { useConversationFilters } from './use-conversation-filters'
+export { useConversationActions } from './use-conversation-actions'
 export { useInboxPanels } from './use-inbox-panels'
 export { useMessageDrafts } from './use-message-drafts'
 export { useSelectedConversation } from './use-selected-conversation'

@@ -8,6 +8,7 @@ import { cn } from '@workspace/ui/lib/utils'
 
 import { formatListTime } from '../../lib/format-message-time'
 import type { ConversationListItem } from '../../types'
+import { ConversationContextMenu } from './conversation-context-menu'
 
 interface ConversationItemProps {
   conversation: ConversationListItem
@@ -37,7 +38,8 @@ export const ConversationItem = ({
   const isHighPriority = conversation.priority === 'HIGH'
 
   return (
-    <button
+    <ConversationContextMenu conversation={conversation}>
+      <button
       type="button"
       onClick={onSelect}
       aria-current={isActive}
@@ -111,6 +113,7 @@ export const ConversationItem = ({
           )}
         </div>
       </div>
-    </button>
+      </button>
+    </ConversationContextMenu>
   )
 }
