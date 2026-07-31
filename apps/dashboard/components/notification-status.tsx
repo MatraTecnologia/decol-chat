@@ -67,6 +67,8 @@ export const NotificationStatus = () => {
 
     try {
       await Notification.requestPermission()
+    } catch {
+      // O navegador pode recusar a solicitação sem alterar a permissão.
     } finally {
       window.dispatchEvent(new Event(PERMISSION_CHANGE_EVENT))
     }

@@ -17,6 +17,8 @@ export const canChangePriority = canAssignConversation
 export const canChangeStatus = (role: string) =>
   STATUS_MANAGERS.includes(role as ConversationRole)
 
+export const canMarkConversationRead = canChangeStatus
+
 export const isEligibleAssignee = (
   { id, role, banned }: AssignmentTarget,
   actorUserId: string,

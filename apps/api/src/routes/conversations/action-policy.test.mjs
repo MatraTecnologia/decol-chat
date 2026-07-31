@@ -6,6 +6,7 @@ import {
   canAssignConversation,
   canChangePriority,
   canChangeStatus,
+  canMarkConversationRead,
   isEligibleAssignee,
 } from './action-policy.ts'
 
@@ -28,6 +29,13 @@ test('allows agents but not viewers to change conversation status', () => {
   assert.equal(canChangeStatus('manager'), true)
   assert.equal(canChangeStatus('agent'), true)
   assert.equal(canChangeStatus('viewer'), false)
+})
+
+test('allows agents but not viewers to mark conversations as read', () => {
+  assert.equal(canMarkConversationRead('admin'), true)
+  assert.equal(canMarkConversationRead('manager'), true)
+  assert.equal(canMarkConversationRead('agent'), true)
+  assert.equal(canMarkConversationRead('viewer'), false)
 })
 
 test('accepts only active agents as assignment targets', () => {

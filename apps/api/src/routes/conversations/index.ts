@@ -27,6 +27,7 @@ import {
 } from './guards.js'
 
 import actionsRoutes from './actions.js'
+import { canMarkConversationRead } from './action-policy.js'
 import { isWithinWindow, windowExpiresAt } from './messaging-window.js'
 import messagesRoutes from './messages.js'
 import { conversationSchema } from './schemas.js'
@@ -177,12 +178,15 @@ const conversationsRoutes: FastifyPluginAsyncZod = async app => {
       },
     },
     async (request, reply) => {
-      const { conversation } = await findScopedConversation(
+      const { conversation, role } = await findScopedConversation(
         request,
         request.params.id,
       )
 
       if (!conversation) return reply.notFound(request.t('NOT_FOUND'))
+      if (!canMarkConversationRead(role)) {
+        return reply.forbidden(request.t('FORBIDDEN'))
+      }
 
       const updated = await prisma.conversation.update({
         where: { id: conversation.id },
