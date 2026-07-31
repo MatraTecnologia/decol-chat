@@ -33,9 +33,9 @@ nova tentativa após a atualização dos dados.
 
 | Ação | Admin | Manager | Agent | Viewer |
 |---|---:|---:|---:|---:|
-| Assumir | sim | não | não | não |
-| Atribuir a outro | sim | não | não | não |
-| Remover atribuição | sim | não | não | não |
+| Assumir | sim | sim | não | não |
+| Atribuir a outro | sim | sim | não | não |
+| Remover atribuição | sim | sim | não | não |
 | Alterar prioridade | sim | sim | não | não |
 | Marcar como lida | sim | sim | própria | não |
 | Encerrar/reabrir | sim | sim | própria | não |
@@ -57,7 +57,7 @@ As rotas seguem os padrões já documentados para o módulo de atendimento:
 - `POST /conversations/:id/close` encerra a conversa;
 - `POST /conversations/:id/reopen` reabre a conversa.
 
-As três operações de atribuição são autorizadas apenas para `admin`. A API
+As três ações de atribuição são autorizadas para `admin` e `manager`. A API
 aceita como destino somente um usuário ativo com role `agent`. O campo
 `expectedAssigneeId` fornece controle de concorrência: se o responsável atual
 for diferente, a API responde `409 Conflict` sem sobrescrever a alteração feita
@@ -77,7 +77,7 @@ Um componente focado no menu recebe a conversa e a role atual. As mutações fic
 em um hook próprio, que usa o cliente gerado e centraliza estados pendentes,
 mensagens de erro e invalidação das tags `Conversations`.
 
-“Atribuir a outro” usa `GET /members`, disponível apenas para administradores.
+“Atribuir a outro” usa `GET /members`, disponível para administradores e gestores.
 Essa resposta será estendida com o campo `banned`; o dashboard mostra somente
 usuários com role `agent` e `banned !== true`, identificando claramente o
 responsável atual. A API repete essa validação no momento da atribuição.
