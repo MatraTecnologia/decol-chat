@@ -284,6 +284,58 @@ export const zGetConversationResponse = z.object({
   windowExpiresAt: z.iso.datetime().nullable(),
 })
 
+export const zUpdateConversationBody = z.object({
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+})
+
+export const zUpdateConversationPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zUpdateConversationResponse = z.object({
+  id: z.string(),
+  whatsAppAccountId: z.string(),
+  contactId: z.string(),
+  assignedToId: z.string().nullable(),
+  teamId: z.string().nullable(),
+  status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  channel: z.enum(['WHATSAPP']),
+  subject: z.string().nullable(),
+  lastMessageAt: z.iso.datetime().nullable(),
+  lastMessageText: z.string().nullable(),
+  lastInboundAt: z.iso.datetime().nullable(),
+  unreadCount: z.number(),
+  assignedAt: z.iso.datetime().nullable(),
+  closedAt: z.iso.datetime().nullable(),
+  closedById: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  contact: z.object({
+    id: z.string(),
+    waId: z.string(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    profileName: z.string().nullable(),
+    isBlocked: z.boolean(),
+  }),
+  assignedTo: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z
+        .email()
+        .regex(
+          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      image: z.string().nullable(),
+    })
+    .nullable(),
+})
+
 export const zMarkConversationReadPath = z.object({
   id: z.string(),
 })
@@ -292,6 +344,207 @@ export const zMarkConversationReadPath = z.object({
  * Default Response
  */
 export const zMarkConversationReadResponse = z.object({
+  id: z.string(),
+  whatsAppAccountId: z.string(),
+  contactId: z.string(),
+  assignedToId: z.string().nullable(),
+  teamId: z.string().nullable(),
+  status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  channel: z.enum(['WHATSAPP']),
+  subject: z.string().nullable(),
+  lastMessageAt: z.iso.datetime().nullable(),
+  lastMessageText: z.string().nullable(),
+  lastInboundAt: z.iso.datetime().nullable(),
+  unreadCount: z.number(),
+  assignedAt: z.iso.datetime().nullable(),
+  closedAt: z.iso.datetime().nullable(),
+  closedById: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  contact: z.object({
+    id: z.string(),
+    waId: z.string(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    profileName: z.string().nullable(),
+    isBlocked: z.boolean(),
+  }),
+  assignedTo: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z
+        .email()
+        .regex(
+          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      image: z.string().nullable(),
+    })
+    .nullable(),
+})
+
+export const zAssignConversationBody = z.object({
+  userId: z.string(),
+  expectedAssigneeId: z.string().nullable(),
+})
+
+export const zAssignConversationPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zAssignConversationResponse = z.object({
+  id: z.string(),
+  whatsAppAccountId: z.string(),
+  contactId: z.string(),
+  assignedToId: z.string().nullable(),
+  teamId: z.string().nullable(),
+  status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  channel: z.enum(['WHATSAPP']),
+  subject: z.string().nullable(),
+  lastMessageAt: z.iso.datetime().nullable(),
+  lastMessageText: z.string().nullable(),
+  lastInboundAt: z.iso.datetime().nullable(),
+  unreadCount: z.number(),
+  assignedAt: z.iso.datetime().nullable(),
+  closedAt: z.iso.datetime().nullable(),
+  closedById: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  contact: z.object({
+    id: z.string(),
+    waId: z.string(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    profileName: z.string().nullable(),
+    isBlocked: z.boolean(),
+  }),
+  assignedTo: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z
+        .email()
+        .regex(
+          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      image: z.string().nullable(),
+    })
+    .nullable(),
+})
+
+export const zUnassignConversationBody = z.object({
+  expectedAssigneeId: z.string().nullable(),
+})
+
+export const zUnassignConversationPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zUnassignConversationResponse = z.object({
+  id: z.string(),
+  whatsAppAccountId: z.string(),
+  contactId: z.string(),
+  assignedToId: z.string().nullable(),
+  teamId: z.string().nullable(),
+  status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  channel: z.enum(['WHATSAPP']),
+  subject: z.string().nullable(),
+  lastMessageAt: z.iso.datetime().nullable(),
+  lastMessageText: z.string().nullable(),
+  lastInboundAt: z.iso.datetime().nullable(),
+  unreadCount: z.number(),
+  assignedAt: z.iso.datetime().nullable(),
+  closedAt: z.iso.datetime().nullable(),
+  closedById: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  contact: z.object({
+    id: z.string(),
+    waId: z.string(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    profileName: z.string().nullable(),
+    isBlocked: z.boolean(),
+  }),
+  assignedTo: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z
+        .email()
+        .regex(
+          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      image: z.string().nullable(),
+    })
+    .nullable(),
+})
+
+export const zCloseConversationPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zCloseConversationResponse = z.object({
+  id: z.string(),
+  whatsAppAccountId: z.string(),
+  contactId: z.string(),
+  assignedToId: z.string().nullable(),
+  teamId: z.string().nullable(),
+  status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  channel: z.enum(['WHATSAPP']),
+  subject: z.string().nullable(),
+  lastMessageAt: z.iso.datetime().nullable(),
+  lastMessageText: z.string().nullable(),
+  lastInboundAt: z.iso.datetime().nullable(),
+  unreadCount: z.number(),
+  assignedAt: z.iso.datetime().nullable(),
+  closedAt: z.iso.datetime().nullable(),
+  closedById: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  contact: z.object({
+    id: z.string(),
+    waId: z.string(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    profileName: z.string().nullable(),
+    isBlocked: z.boolean(),
+  }),
+  assignedTo: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      email: z
+        .email()
+        .regex(
+          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        ),
+      image: z.string().nullable(),
+    })
+    .nullable(),
+})
+
+export const zReopenConversationPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zReopenConversationResponse = z.object({
   id: z.string(),
   whatsAppAccountId: z.string(),
   contactId: z.string(),
@@ -599,6 +852,7 @@ export const zListMembersResponse = z.array(
       ),
     image: z.string().nullable(),
     role: z.string().nullable(),
+    banned: z.boolean().nullable(),
     createdAt: z.iso.datetime(),
   }),
 )

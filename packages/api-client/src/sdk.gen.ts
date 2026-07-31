@@ -9,8 +9,10 @@ import type {
 } from './client'
 import { client } from './client.gen'
 import {
+  assignConversationResponseTransformer,
   blockContactResponseTransformer,
   checkWhatsappHealthResponseTransformer,
+  closeConversationResponseTransformer,
   getContactResponseTransformer,
   getConversationResponseTransformer,
   getWhatsappConnectionResponseTransformer,
@@ -20,17 +22,24 @@ import {
   listMessagesResponseTransformer,
   listUsersResponseTransformer,
   markConversationReadResponseTransformer,
+  reopenConversationResponseTransformer,
   sendMessageResponseTransformer,
   sendTemplateMessageResponseTransformer,
   startConversationResponseTransformer,
+  unassignConversationResponseTransformer,
   updateContactResponseTransformer,
+  updateConversationResponseTransformer,
   updateWhatsappConnectionResponseTransformer,
 } from './transformers.gen'
 import type {
+  AssignConversationData,
+  AssignConversationResponses,
   BlockContactData,
   BlockContactResponses,
   CheckWhatsappHealthData,
   CheckWhatsappHealthResponses,
+  CloseConversationData,
+  CloseConversationResponses,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponses,
   GetContactData,
@@ -69,6 +78,8 @@ import type {
   ReceiveWhatsappWebhookResponses,
   RegisterWhatsappNumberData,
   RegisterWhatsappNumberResponses,
+  ReopenConversationData,
+  ReopenConversationResponses,
   SendMessageData,
   SendMessageResponses,
   SendTemplateMessageData,
@@ -79,8 +90,12 @@ import type {
   StartConversationResponses,
   SubscribeWhatsappAppData,
   SubscribeWhatsappAppResponses,
+  UnassignConversationData,
+  UnassignConversationResponses,
   UpdateContactData,
   UpdateContactResponses,
+  UpdateConversationData,
+  UpdateConversationResponses,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponses,
   VerifyWhatsappWebhookData,
@@ -238,6 +253,26 @@ export const getConversation = <ThrowOnError extends boolean = false>(
   })
 
 /**
+ * Altera a prioridade da conversa
+ */
+export const updateConversation = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateConversationData, ThrowOnError>,
+): RequestResult<UpdateConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).patch<
+    UpdateConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: updateConversationResponseTransformer,
+    url: '/conversations/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
  * Zera o contador de mensagens não lidas da conversa
  */
 export const markConversationRead = <ThrowOnError extends boolean = false>(
@@ -250,6 +285,78 @@ export const markConversationRead = <ThrowOnError extends boolean = false>(
   >({
     responseTransformer: markConversationReadResponseTransformer,
     url: '/conversations/{id}/read',
+    ...options,
+  })
+
+/**
+ * Atribui a conversa a um atendente
+ */
+export const assignConversation = <ThrowOnError extends boolean = false>(
+  options: Options<AssignConversationData, ThrowOnError>,
+): RequestResult<AssignConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    AssignConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: assignConversationResponseTransformer,
+    url: '/conversations/{id}/assign',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Remove o responsável da conversa
+ */
+export const unassignConversation = <ThrowOnError extends boolean = false>(
+  options: Options<UnassignConversationData, ThrowOnError>,
+): RequestResult<UnassignConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    UnassignConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: unassignConversationResponseTransformer,
+    url: '/conversations/{id}/unassign',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Encerra uma conversa
+ */
+export const closeConversation = <ThrowOnError extends boolean = false>(
+  options: Options<CloseConversationData, ThrowOnError>,
+): RequestResult<CloseConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    CloseConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: closeConversationResponseTransformer,
+    url: '/conversations/{id}/close',
+    ...options,
+  })
+
+/**
+ * Reabre uma conversa encerrada
+ */
+export const reopenConversation = <ThrowOnError extends boolean = false>(
+  options: Options<ReopenConversationData, ThrowOnError>,
+): RequestResult<ReopenConversationResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    ReopenConversationResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: reopenConversationResponseTransformer,
+    url: '/conversations/{id}/reopen',
     ...options,
   })
 

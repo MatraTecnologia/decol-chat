@@ -10,8 +10,10 @@ import {
 
 import { client } from '../client.gen'
 import {
+  assignConversation,
   blockContact,
   checkWhatsappHealth,
+  closeConversation,
   deleteWhatsappConnection,
   getContact,
   getConversation,
@@ -31,20 +33,27 @@ import {
   readinessProbe,
   receiveWhatsappWebhook,
   registerWhatsappNumber,
+  reopenConversation,
   sendMessage,
   sendTemplateMessage,
   sendWhatsappTestMessage,
   startConversation,
   subscribeWhatsappApp,
+  unassignConversation,
   updateContact,
+  updateConversation,
   updateWhatsappConnection,
   verifyWhatsappWebhook,
 } from '../sdk.gen'
 import type {
+  AssignConversationData,
+  AssignConversationResponse,
   BlockContactData,
   BlockContactResponse,
   CheckWhatsappHealthData,
   CheckWhatsappHealthResponse,
+  CloseConversationData,
+  CloseConversationResponse,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponse,
   GetContactData,
@@ -83,6 +92,8 @@ import type {
   ReceiveWhatsappWebhookResponse,
   RegisterWhatsappNumberData,
   RegisterWhatsappNumberResponse,
+  ReopenConversationData,
+  ReopenConversationResponse,
   SendMessageData,
   SendMessageResponse,
   SendTemplateMessageData,
@@ -93,8 +104,12 @@ import type {
   StartConversationResponse,
   SubscribeWhatsappAppData,
   SubscribeWhatsappAppResponse,
+  UnassignConversationData,
+  UnassignConversationResponse,
   UpdateContactData,
   UpdateContactResponse,
+  UpdateConversationData,
+  UpdateConversationResponse,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponse,
   VerifyWhatsappWebhookData,
@@ -513,6 +528,33 @@ export const getConversationOptions = (options: Options<GetConversationData>) =>
   })
 
 /**
+ * Altera a prioridade da conversa
+ */
+export const updateConversationMutation = (
+  options?: Partial<Options<UpdateConversationData>>,
+): UseMutationOptions<
+  UpdateConversationResponse,
+  DefaultError,
+  Options<UpdateConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateConversationResponse,
+    DefaultError,
+    Options<UpdateConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await updateConversation({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
  * Zera o contador de mensagens não lidas da conversa
  */
 export const markConversationReadMutation = (
@@ -529,6 +571,114 @@ export const markConversationReadMutation = (
   > = {
     mutationFn: async fnOptions => {
       const { data } = await markConversationRead({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Atribui a conversa a um atendente
+ */
+export const assignConversationMutation = (
+  options?: Partial<Options<AssignConversationData>>,
+): UseMutationOptions<
+  AssignConversationResponse,
+  DefaultError,
+  Options<AssignConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    AssignConversationResponse,
+    DefaultError,
+    Options<AssignConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await assignConversation({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Remove o responsável da conversa
+ */
+export const unassignConversationMutation = (
+  options?: Partial<Options<UnassignConversationData>>,
+): UseMutationOptions<
+  UnassignConversationResponse,
+  DefaultError,
+  Options<UnassignConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UnassignConversationResponse,
+    DefaultError,
+    Options<UnassignConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await unassignConversation({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Encerra uma conversa
+ */
+export const closeConversationMutation = (
+  options?: Partial<Options<CloseConversationData>>,
+): UseMutationOptions<
+  CloseConversationResponse,
+  DefaultError,
+  Options<CloseConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CloseConversationResponse,
+    DefaultError,
+    Options<CloseConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await closeConversation({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Reabre uma conversa encerrada
+ */
+export const reopenConversationMutation = (
+  options?: Partial<Options<ReopenConversationData>>,
+): UseMutationOptions<
+  ReopenConversationResponse,
+  DefaultError,
+  Options<ReopenConversationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ReopenConversationResponse,
+    DefaultError,
+    Options<ReopenConversationData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await reopenConversation({
         ...options,
         ...fnOptions,
         throwOnError: true,

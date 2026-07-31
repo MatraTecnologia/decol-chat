@@ -379,6 +379,60 @@ export type GetConversationResponses = {
 export type GetConversationResponse =
   GetConversationResponses[keyof GetConversationResponses]
 
+export type UpdateConversationData = {
+  body: {
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}'
+}
+
+export type UpdateConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type UpdateConversationResponse =
+  UpdateConversationResponses[keyof UpdateConversationResponses]
+
 export type MarkConversationReadData = {
   body?: never
   path: {
@@ -430,6 +484,219 @@ export type MarkConversationReadResponses = {
 
 export type MarkConversationReadResponse =
   MarkConversationReadResponses[keyof MarkConversationReadResponses]
+
+export type AssignConversationData = {
+  body: {
+    userId: string
+    expectedAssigneeId: string | null
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/assign'
+}
+
+export type AssignConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type AssignConversationResponse =
+  AssignConversationResponses[keyof AssignConversationResponses]
+
+export type UnassignConversationData = {
+  body: {
+    expectedAssigneeId: string | null
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/unassign'
+}
+
+export type UnassignConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type UnassignConversationResponse =
+  UnassignConversationResponses[keyof UnassignConversationResponses]
+
+export type CloseConversationData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/close'
+}
+
+export type CloseConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type CloseConversationResponse =
+  CloseConversationResponses[keyof CloseConversationResponses]
+
+export type ReopenConversationData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/conversations/{id}/reopen'
+}
+
+export type ReopenConversationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    whatsAppAccountId: string
+    contactId: string
+    assignedToId: string | null
+    teamId: string | null
+    status: 'OPEN' | 'PENDING' | 'CLOSED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH'
+    channel: 'WHATSAPP'
+    subject: string | null
+    lastMessageAt: Date | null
+    lastMessageText: string | null
+    lastInboundAt: Date | null
+    unreadCount: number
+    assignedAt: Date | null
+    closedAt: Date | null
+    closedById: string | null
+    createdAt: Date
+    updatedAt: Date
+    contact: {
+      id: string
+      waId: string
+      phoneNumber: string
+      name: string | null
+      profileName: string | null
+      isBlocked: boolean
+    }
+    assignedTo: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+    } | null
+  }
+}
+
+export type ReopenConversationResponse =
+  ReopenConversationResponses[keyof ReopenConversationResponses]
 
 export type ListMessagesData = {
   body?: never
@@ -700,6 +967,7 @@ export type ListMembersResponses = {
     email: string
     image: string | null
     role: string | null
+    banned: boolean | null
     createdAt: Date
   }>
 }
