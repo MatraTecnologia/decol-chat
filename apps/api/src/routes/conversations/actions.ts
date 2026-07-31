@@ -86,16 +86,18 @@ const actionsRoutes: FastifyPluginAsyncZod = async app => {
       },
     },
     async (request, reply) => {
-      const { role } = await requireRole(request, [...ASSIGNMENT_ROLES])
+      const { role, session } = await requireRole(request, [
+        ...ASSIGNMENT_ROLES,
+      ])
       if (!canAssignConversation(role)) {
         return reply.forbidden(request.t('FORBIDDEN'))
       }
 
       const target = await prisma.user.findUnique({
         where: { id: request.body.userId },
-        select: { role: true, banned: true },
+        select: { id: true, role: true, banned: true },
       })
-      if (!target || !isEligibleAssignee(target)) {
+      if (!target || !isEligibleAssignee(target, session.user.id)) {
         return reply.badRequest(INVALID_ASSIGNEE)
       }
 

@@ -1,6 +1,7 @@
 type ConversationRole = 'admin' | 'manager' | 'agent' | 'viewer' | 'user'
 
 interface AssignmentTarget {
+  id: string
   role: string | null
   banned: boolean | null
 }
@@ -16,8 +17,13 @@ export const canChangePriority = canAssignConversation
 export const canChangeStatus = (role: string) =>
   STATUS_MANAGERS.includes(role as ConversationRole)
 
-export const isEligibleAssignee = ({ role, banned }: AssignmentTarget) =>
-  role === 'agent' && banned !== true
+export const isEligibleAssignee = (
+  { id, role, banned }: AssignmentTarget,
+  actorUserId: string,
+) =>
+  banned !== true &&
+  (role === 'agent' ||
+    (id === actorUserId && (role === 'admin' || role === 'manager')))
 
 export const assigneeMatches = (
   currentId: string | null,

@@ -57,8 +57,10 @@ As rotas seguem os padrões já documentados para o módulo de atendimento:
 - `POST /conversations/:id/close` encerra a conversa;
 - `POST /conversations/:id/reopen` reabre a conversa.
 
-As três ações de atribuição são autorizadas para `admin` e `manager`. A API
-aceita como destino somente um usuário ativo com role `agent`. O campo
+As três ações de atribuição são autorizadas para `admin` e `manager`. Ao usar
+“Assumir”, admin ou manager pode atribuir a conversa a si próprio; em
+“Atribuir a outro”, a API aceita como destino somente um usuário ativo com role
+`agent`. O campo
 `expectedAssigneeId` fornece controle de concorrência: se o responsável atual
 for diferente, a API responde `409 Conflict` sem sobrescrever a alteração feita
 por outro administrador.

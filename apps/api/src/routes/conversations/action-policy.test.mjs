@@ -31,10 +31,33 @@ test('allows agents but not viewers to change conversation status', () => {
 })
 
 test('accepts only active agents as assignment targets', () => {
-  assert.equal(isEligibleAssignee({ role: 'agent', banned: false }), true)
-  assert.equal(isEligibleAssignee({ role: 'agent', banned: null }), true)
-  assert.equal(isEligibleAssignee({ role: 'agent', banned: true }), false)
-  assert.equal(isEligibleAssignee({ role: 'manager', banned: false }), false)
+  assert.equal(
+    isEligibleAssignee({ id: 'agent-1', role: 'agent', banned: false }, 'manager-1'),
+    true,
+  )
+  assert.equal(
+    isEligibleAssignee({ id: 'agent-1', role: 'agent', banned: null }, 'manager-1'),
+    true,
+  )
+  assert.equal(
+    isEligibleAssignee({ id: 'agent-1', role: 'agent', banned: true }, 'manager-1'),
+    false,
+  )
+  assert.equal(
+    isEligibleAssignee({ id: 'manager-2', role: 'manager', banned: false }, 'manager-1'),
+    false,
+  )
+})
+
+test('allows an admin or manager to assume a conversation personally', () => {
+  assert.equal(
+    isEligibleAssignee({ id: 'manager-1', role: 'manager', banned: false }, 'manager-1'),
+    true,
+  )
+  assert.equal(
+    isEligibleAssignee({ id: 'admin-1', role: 'admin', banned: null }, 'admin-1'),
+    true,
+  )
 })
 
 test('matches nullable assignee ids exactly for concurrency control', () => {
