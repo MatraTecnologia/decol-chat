@@ -10,6 +10,7 @@ const userResponseSchema = z.object({
   email: z.email(),
   image: z.string().nullable(),
   role: z.string().nullable(),
+  banned: z.boolean().nullable(),
   createdAt: z.date(),
 })
 
@@ -28,7 +29,7 @@ const members: FastifyPluginAsyncZod = async app => {
       },
     },
     async request => {
-      await requireRole(request, ['admin'])
+      await requireRole(request, ['admin', 'manager'])
 
       const data = await prisma.user.findMany({
         where: { role: { not: 'user' } },
@@ -38,6 +39,7 @@ const members: FastifyPluginAsyncZod = async app => {
           email: true,
           image: true,
           role: true,
+          banned: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' },

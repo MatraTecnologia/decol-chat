@@ -26,6 +26,7 @@ import {
   scopeConversations,
 } from './guards.js'
 
+import actionsRoutes from './actions.js'
 import { isWithinWindow, windowExpiresAt } from './messaging-window.js'
 import messagesRoutes from './messages.js'
 import { conversationSchema } from './schemas.js'
@@ -199,7 +200,8 @@ const conversationsRoutes: FastifyPluginAsyncZod = async app => {
     },
   )
 
-  // Sub-recursos: /conversations/:id/messages, /conversations/start
+  // Sub-recursos: ações, mensagens e início de conversa.
+  await app.register(actionsRoutes)
   await app.register(messagesRoutes)
   await app.register(sendRoutes)
   await app.register(startRoutes)
