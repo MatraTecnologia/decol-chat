@@ -73,7 +73,9 @@ export const ConversationContextMenu = ({
           {actions.canAssign && userId !== conversation.assignedToId && userId && (
             <ContextMenuItem
               disabled={mutations.isPending}
-              onSelect={() => mutations.assign(userId)}
+              onSelect={() => {
+                mutations.assign(userId).catch(() => undefined)
+              }}
             >
               <UserCheck />
               Assumir conversa

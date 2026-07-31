@@ -38,8 +38,12 @@ export const AssignConversationDialog = ({
     []
 
   const handleAssign = async (userId: string) => {
-    await onAssign(userId)
-    onOpenChange(false)
+    try {
+      await onAssign(userId)
+      onOpenChange(false)
+    } catch {
+      // O hook já apresenta o erro; o diálogo fica aberto para nova tentativa.
+    }
   }
 
   return (

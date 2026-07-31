@@ -75,15 +75,15 @@ export const useConversationActions = (
         },
       }),
     unassign: () =>
-      unassignMutation.mutateAsync({
+      unassignMutation.mutate({
         path,
         body: { expectedAssigneeId: conversation.assignedToId },
       }),
-    markRead: () => markReadMutation.mutateAsync({ path }),
+    markRead: () => markReadMutation.mutate({ path }),
     changePriority: (priority: ConversationPriority) =>
-      priorityMutation.mutateAsync({ path, body: { priority } }),
-    close: () => closeMutation.mutateAsync({ path }),
-    reopen: () => reopenMutation.mutateAsync({ path }),
+      priorityMutation.mutate({ path, body: { priority } }),
+    close: () => closeMutation.mutate({ path }),
+    reopen: () => reopenMutation.mutate({ path }),
     isPending:
       assignMutation.isPending ||
       unassignMutation.isPending ||
