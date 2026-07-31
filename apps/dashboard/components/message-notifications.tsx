@@ -9,11 +9,10 @@ import { useMessageNotifications } from '@/hooks'
  * Componente renderless que monta o hook de notificações de mensagens.
  * Deve ser filho do SocketProvider e do QueryProvider.
  *
- * `activeConversationId` não está disponível neste nível (vive dentro da
- * InboxShell via URL), então passamos `null` — o hook verifica
- * `document.visibilityState` para suprimir notificações na aba ativa.
+ * O hook verifica `document.visibilityState` e só notifica quando esta guia
+ * permanece aberta em segundo plano.
  */
-export function MessageNotifications() {
+export const MessageNotifications = () => {
   const router = useRouter()
 
   const handleNavigate = useCallback(
@@ -25,7 +24,6 @@ export function MessageNotifications() {
 
   useMessageNotifications({
     onNavigate: handleNavigate,
-    activeConversationId: null,
   })
 
   return null

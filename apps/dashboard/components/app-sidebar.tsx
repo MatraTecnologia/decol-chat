@@ -27,6 +27,7 @@ import {
 } from '@workspace/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
+import { NotificationStatus } from '@/components/notification-status'
 import { SidebarThemeToggle } from '@/components/sidebar-theme-toggle'
 import { SidebarUserButton } from '@/components/sidebar-user-button'
 import { SidebarSocketStatus } from '@/components/socket-status'
@@ -131,6 +132,10 @@ export const AppSidebar = () => {
 
         <SidebarFooter>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <NotificationStatus />
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarSocketStatus />
             </SidebarMenuItem>
