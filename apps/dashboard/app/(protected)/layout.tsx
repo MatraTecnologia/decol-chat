@@ -8,6 +8,7 @@ import { TooltipProvider } from '@workspace/ui/components/tooltip'
 import { AppSidebar } from '@/components/app-sidebar'
 import { Header } from '@/components/header'
 import { ImpersonationBanner } from '@/components/impersonation-banner'
+import { MessageNotifications } from '@/components/message-notifications'
 import { RealtimeInvalidation } from '@/components/realtime-invalidation'
 import { SessionUnavailable } from '@/components/session-unavailable'
 import { getServerSession } from '@/lib/auth-server'
@@ -40,6 +41,7 @@ export default async function ProtectedLayout({
     <QueryProvider>
       <SocketProvider>
         <RealtimeInvalidation />
+        <MessageNotifications />
         <TooltipProvider>
           <ModalProvider />
           <NuqsAdapter>

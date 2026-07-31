@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 
+import { Wifi, WifiOff, WifiZero } from 'lucide-react'
+
+import { SidebarMenuButton } from '@workspace/ui/components/sidebar'
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +38,7 @@ const statusConfig = {
   },
 } as const
 
-const useSocketStatus = (socket: ReturnType<typeof useSocket>) => {
+export const useSocketStatus = (socket: ReturnType<typeof useSocket>) => {
   // Track when reconnection has given up (reconnect_failed fires after all attempts exhausted)
   const gaveUpRef = useRef(false)
 
@@ -94,6 +97,7 @@ const useSocketStatus = (socket: ReturnType<typeof useSocket>) => {
   )
 }
 
+/** Bolinha de status usada no header */
 export const SocketStatus = () => {
   const socket = useSocket()
   const status = useSocketStatus(socket)
@@ -130,6 +134,72 @@ export const SocketStatus = () => {
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">{config.label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+const wifiIconConfig = {
+  connected: {
+    Icon: Wifi,
+    colorClass: 'text-emerald-500',
+    animate: false,
+  },
+  connecting: {
+    Icon: WifiZero,
+    colorClass: 'text-yellow-500',
+    animate: true,
+  },
+  disconnected: {
+    Icon: WifiOff,
+    colorClass: 'text-red-500',
+    animate: false,
+  },
+} as const
+
+/** Ícone WiFi de status usado na sidebar */
+export const SidebarSocketStatus = () => {
+  const socket = useSocket()
+  const status = useSocketStatus(socket)
+
+  const config = statusConfig[status]
+  const { Icon, colorClass, animate } = wifiIconConfig[status]
+
+  const handleClick = () => {
+    if (config.clickable && socket) {
+      socket.connect()
+    }
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SidebarMenuButton
+            onClick={handleClick}
+            tooltip={config.label}
+            className={cn(
+              'transition-colors',
+              config.clickable ? 'cursor-pointer' : 'cursor-default',
+            )}
+          >
+            <Icon
+              className={cn(
+                'size-4 transition-colors',
+                colorClass,
+                animate && 'animate-pulse',
+              )}
+            />
+            <span className={cn('text-sm font-medium', colorClass)}>
+              {status === 'connected'
+                ? 'Tempo real'
+                : status === 'connecting'
+                  ? 'Reconectando…'
+                  : 'Desconectado'}
+            </span>
+          </SidebarMenuButton>
+        </TooltipTrigger>
+        <TooltipContent side="right">{config.label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

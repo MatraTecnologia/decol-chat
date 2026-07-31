@@ -29,6 +29,7 @@ import {
 import { Logo } from '@/components/logo'
 import { SidebarThemeToggle } from '@/components/sidebar-theme-toggle'
 import { SidebarUserButton } from '@/components/sidebar-user-button'
+import { SidebarSocketStatus } from '@/components/socket-status'
 import { ProfileManagementDialog } from '@/features/auth'
 import { useUserRole } from '@/hooks'
 
@@ -130,6 +131,10 @@ export const AppSidebar = () => {
 
         <SidebarFooter>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarSocketStatus />
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarThemeToggle />
             </SidebarMenuItem>
