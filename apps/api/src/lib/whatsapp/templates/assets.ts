@@ -102,7 +102,8 @@ export const prepareAssetUpload = async (
     revisionId: revision.id,
     assetId,
   })
-  if (!objectKey) return invalid('Não foi possível montar o destino do arquivo.')
+  if (!objectKey)
+    return invalid('Não foi possível montar o destino do arquivo.')
 
   await prisma.whatsAppTemplateAsset.create({
     data: {
@@ -200,17 +201,17 @@ export const ensureMetaUploadHandle = async (
   try {
     const file = await getFile(R2_PRIVATE_BUCKET, asset.objectKey)
 
-    const session = await createUploadSession(account.accessToken, account.appId, {
-      fileName: asset.originalName,
-      fileLength: file.byteLength,
-      fileType: asset.mimeType,
-    })
-
-    const { h } = await uploadSessionFile(
+    const session = await createUploadSession(
       account.accessToken,
-      session.id,
-      file,
+      account.appId,
+      {
+        fileName: asset.originalName,
+        fileLength: file.byteLength,
+        fileType: asset.mimeType,
+      },
     )
+
+    const { h } = await uploadSessionFile(account.accessToken, session.id, file)
 
     await prisma.whatsAppTemplateAsset.update({
       where: { id: asset.id },

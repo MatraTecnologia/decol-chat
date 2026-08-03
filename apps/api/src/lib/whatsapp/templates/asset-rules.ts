@@ -34,7 +34,8 @@ export const TEMPLATE_ASSET_RULES: TemplateAssetRule[] = [
   },
 ]
 
-export type AssetCheck<T> = { ok: true; data: T } | { ok: false; message: string }
+export type AssetCheck<T> =
+  { ok: true; data: T } | { ok: false; message: string }
 
 const rejected = (message: string) => ({ ok: false as const, message })
 

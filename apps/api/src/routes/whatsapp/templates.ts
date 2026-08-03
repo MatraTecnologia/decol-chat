@@ -7,7 +7,10 @@ import type { Prisma } from '@/generated/prisma/client.js'
 import { prisma } from '@/lib/prisma.js'
 import { requireRole } from '@/lib/auth-guard.js'
 
-import { findTemplate, templateInclude } from '@/lib/whatsapp/templates/repository.js'
+import {
+  findTemplate,
+  templateInclude,
+} from '@/lib/whatsapp/templates/repository.js'
 import type { TemplateWithRevisions } from '@/lib/whatsapp/templates/repository.js'
 
 import {
@@ -143,10 +146,7 @@ const templatesRoutes: FastifyPluginAsyncZod = async app => {
       const context = await requireTemplateAccount(request, reply, 'read')
       if (!context) return reply
 
-      const template = await findTemplate(
-        context.account.id,
-        request.params.id,
-      )
+      const template = await findTemplate(context.account.id, request.params.id)
       if (!template) return reply.notFound(request.t('NOT_FOUND'))
 
       return toTemplateDetail(template)
@@ -169,10 +169,7 @@ const templatesRoutes: FastifyPluginAsyncZod = async app => {
       const context = await requireTemplateAccount(request, reply, 'read')
       if (!context) return reply
 
-      const template = await findTemplate(
-        context.account.id,
-        request.params.id,
-      )
+      const template = await findTemplate(context.account.id, request.params.id)
       if (!template) return reply.notFound(request.t('NOT_FOUND'))
 
       return { data: template.revisions.map(toRevisionDetail) }
