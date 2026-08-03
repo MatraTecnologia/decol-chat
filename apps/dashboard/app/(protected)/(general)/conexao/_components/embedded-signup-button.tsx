@@ -137,7 +137,13 @@ export const EmbeddedSignupButton = () => {
         config_id: configId,
         response_type: 'code',
         override_default_response_type: true,
-        extras: { setup: {}, featureType: 'whatsapp_business_app_onboarding' },
+        extras: {
+          setup: {},
+          featureType: 'whatsapp_business_app_onboarding',
+          // Sem isto a Meta não emite o postMessage no formato que o handler
+          // acima espera — o popup conclui e os ids nunca chegam.
+          sessionInfoVersion: '3',
+        },
       },
     )
   }
