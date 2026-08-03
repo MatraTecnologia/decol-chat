@@ -13,23 +13,31 @@ import {
   blockContactResponseTransformer,
   checkWhatsappHealthResponseTransformer,
   closeConversationResponseTransformer,
+  createWhatsappTemplateDraftResponseTransformer,
+  deleteWhatsappTemplateRemoteResponseTransformer,
+  duplicateWhatsappTemplateResponseTransformer,
   getContactResponseTransformer,
   getConversationResponseTransformer,
   getWhatsappConnectionResponseTransformer,
+  getWhatsappTemplateResponseTransformer,
   listContactsResponseTransformer,
   listConversationsResponseTransformer,
   listMembersResponseTransformer,
   listMessagesResponseTransformer,
   listUsersResponseTransformer,
+  listWhatsappTemplateRevisionsResponseTransformer,
+  listWhatsappTemplatesResponseTransformer,
   markConversationReadResponseTransformer,
   reopenConversationResponseTransformer,
   sendMessageResponseTransformer,
   sendTemplateMessageResponseTransformer,
   startConversationResponseTransformer,
+  submitWhatsappTemplateResponseTransformer,
   unassignConversationResponseTransformer,
   updateContactResponseTransformer,
   updateConversationResponseTransformer,
   updateWhatsappConnectionResponseTransformer,
+  updateWhatsappTemplateDraftResponseTransformer,
 } from './transformers.gen'
 import type {
   AssignConversationData,
@@ -40,8 +48,18 @@ import type {
   CheckWhatsappHealthResponses,
   CloseConversationData,
   CloseConversationResponses,
+  ConfirmWhatsappTemplateAssetUploadData,
+  ConfirmWhatsappTemplateAssetUploadResponses,
+  CreateWhatsappTemplateDraftData,
+  CreateWhatsappTemplateDraftResponses,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponses,
+  DeleteWhatsappTemplateDraftData,
+  DeleteWhatsappTemplateDraftResponses,
+  DeleteWhatsappTemplateRemoteData,
+  DeleteWhatsappTemplateRemoteResponses,
+  DuplicateWhatsappTemplateData,
+  DuplicateWhatsappTemplateResponses,
   GetContactData,
   GetContactResponses,
   GetConversationData,
@@ -50,6 +68,10 @@ import type {
   GetWhatsappConnectionResponses,
   GetWhatsappReadinessData,
   GetWhatsappReadinessResponses,
+  GetWhatsappTemplateAssetPreviewData,
+  GetWhatsappTemplateAssetPreviewResponses,
+  GetWhatsappTemplateData,
+  GetWhatsappTemplateResponses,
   HealthCheckData,
   HealthCheckErrors,
   HealthCheckResponses,
@@ -67,10 +89,16 @@ import type {
   ListWhatsappLogsResponses,
   ListWhatsappPhoneNumbersData,
   ListWhatsappPhoneNumbersResponses,
+  ListWhatsappTemplateRevisionsData,
+  ListWhatsappTemplateRevisionsResponses,
+  ListWhatsappTemplatesData,
+  ListWhatsappTemplatesResponses,
   LivenessProbeData,
   LivenessProbeResponses,
   MarkConversationReadData,
   MarkConversationReadResponses,
+  PrepareWhatsappTemplateAssetUploadData,
+  PrepareWhatsappTemplateAssetUploadResponses,
   ReadinessProbeData,
   ReadinessProbeErrors,
   ReadinessProbeResponses,
@@ -88,8 +116,12 @@ import type {
   SendWhatsappTestMessageResponses,
   StartConversationData,
   StartConversationResponses,
+  SubmitWhatsappTemplateData,
+  SubmitWhatsappTemplateResponses,
   SubscribeWhatsappAppData,
   SubscribeWhatsappAppResponses,
+  SyncWhatsappTemplatesData,
+  SyncWhatsappTemplatesResponses,
   UnassignConversationData,
   UnassignConversationResponses,
   UpdateContactData,
@@ -98,6 +130,10 @@ import type {
   UpdateConversationResponses,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponses,
+  UpdateWhatsappTemplateDraftData,
+  UpdateWhatsappTemplateDraftResponses,
+  ValidateWhatsappTemplateRevisionData,
+  ValidateWhatsappTemplateRevisionResponses,
   VerifyWhatsappWebhookData,
   VerifyWhatsappWebhookResponses,
 } from './types.gen'
@@ -625,3 +661,275 @@ export const listWhatsappLogs = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({ url: '/whatsapp/logs', ...options })
+
+/**
+ * Lista os modelos da conta ativa com filtros e paginação
+ */
+export const listWhatsappTemplates = <ThrowOnError extends boolean = false>(
+  options?: Options<ListWhatsappTemplatesData, ThrowOnError>,
+): RequestResult<ListWhatsappTemplatesResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListWhatsappTemplatesResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: listWhatsappTemplatesResponseTransformer,
+    url: '/whatsapp/templates/',
+    ...options,
+  })
+
+/**
+ * Cria um modelo com a primeira revisão em rascunho
+ */
+export const createWhatsappTemplateDraft = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<CreateWhatsappTemplateDraftData, ThrowOnError>,
+): RequestResult<CreateWhatsappTemplateDraftResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    CreateWhatsappTemplateDraftResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: createWhatsappTemplateDraftResponseTransformer,
+    url: '/whatsapp/templates/',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Apaga o rascunho (e o modelo, quando nunca foi enviado)
+ */
+export const deleteWhatsappTemplateDraft = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<DeleteWhatsappTemplateDraftData, ThrowOnError>,
+): RequestResult<DeleteWhatsappTemplateDraftResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).delete<
+    DeleteWhatsappTemplateDraftResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/templates/{id}', ...options })
+
+/**
+ * Detalha um modelo com a definição mais recente
+ */
+export const getWhatsappTemplate = <ThrowOnError extends boolean = false>(
+  options: Options<GetWhatsappTemplateData, ThrowOnError>,
+): RequestResult<GetWhatsappTemplateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetWhatsappTemplateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: getWhatsappTemplateResponseTransformer,
+    url: '/whatsapp/templates/{id}',
+    ...options,
+  })
+
+/**
+ * Edita o rascunho com trava otimista de versão
+ */
+export const updateWhatsappTemplateDraft = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<UpdateWhatsappTemplateDraftData, ThrowOnError>,
+): RequestResult<UpdateWhatsappTemplateDraftResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).put<
+    UpdateWhatsappTemplateDraftResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: updateWhatsappTemplateDraftResponseTransformer,
+    url: '/whatsapp/templates/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Histórico de revisões do modelo, da mais nova para a antiga
+ */
+export const listWhatsappTemplateRevisions = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ListWhatsappTemplateRevisionsData, ThrowOnError>,
+): RequestResult<
+  ListWhatsappTemplateRevisionsResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    ListWhatsappTemplateRevisionsResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: listWhatsappTemplateRevisionsResponseTransformer,
+    url: '/whatsapp/templates/{id}/revisions',
+    ...options,
+  })
+
+/**
+ * Duplica o modelo em um novo rascunho com outro nome
+ */
+export const duplicateWhatsappTemplate = <ThrowOnError extends boolean = false>(
+  options: Options<DuplicateWhatsappTemplateData, ThrowOnError>,
+): RequestResult<DuplicateWhatsappTemplateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    DuplicateWhatsappTemplateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: duplicateWhatsappTemplateResponseTransformer,
+    url: '/whatsapp/templates/{id}/duplicate',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Valida uma definição sem gravar nada
+ */
+export const validateWhatsappTemplateRevision = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ValidateWhatsappTemplateRevisionData, ThrowOnError>,
+): RequestResult<
+  ValidateWhatsappTemplateRevisionResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ValidateWhatsappTemplateRevisionResponses,
+    unknown,
+    ThrowOnError
+  >({
+    url: '/whatsapp/templates/validate',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Envia o rascunho para aprovação da Meta
+ */
+export const submitWhatsappTemplate = <ThrowOnError extends boolean = false>(
+  options: Options<SubmitWhatsappTemplateData, ThrowOnError>,
+): RequestResult<SubmitWhatsappTemplateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    SubmitWhatsappTemplateResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: submitWhatsappTemplateResponseTransformer,
+    url: '/whatsapp/templates/{id}/submit',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Espelha o catálogo da Meta sem tocar nos rascunhos locais
+ */
+export const syncWhatsappTemplates = <ThrowOnError extends boolean = false>(
+  options?: Options<SyncWhatsappTemplatesData, ThrowOnError>,
+): RequestResult<SyncWhatsappTemplatesResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<
+    SyncWhatsappTemplatesResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/templates/sync', ...options })
+
+/**
+ * Apaga o modelo na Meta e zera o espelho remoto local
+ */
+export const deleteWhatsappTemplateRemote = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<DeleteWhatsappTemplateRemoteData, ThrowOnError>,
+): RequestResult<
+  DeleteWhatsappTemplateRemoteResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    DeleteWhatsappTemplateRemoteResponses,
+    unknown,
+    ThrowOnError
+  >({
+    responseTransformer: deleteWhatsappTemplateRemoteResponseTransformer,
+    url: '/whatsapp/templates/{id}/remote',
+    ...options,
+  })
+
+/**
+ * Abre um upload assinado no bucket privado para a mídia
+ */
+export const prepareWhatsappTemplateAssetUpload = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<PrepareWhatsappTemplateAssetUploadData, ThrowOnError>,
+): RequestResult<
+  PrepareWhatsappTemplateAssetUploadResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PrepareWhatsappTemplateAssetUploadResponses,
+    unknown,
+    ThrowOnError
+  >({
+    url: '/whatsapp/templates/assets/prepare',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+/**
+ * Confere o arquivo enviado e gera o handle de upload da Meta
+ */
+export const confirmWhatsappTemplateAssetUpload = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ConfirmWhatsappTemplateAssetUploadData, ThrowOnError>,
+): RequestResult<
+  ConfirmWhatsappTemplateAssetUploadResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ConfirmWhatsappTemplateAssetUploadResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/templates/assets/{assetId}/confirm', ...options })
+
+/**
+ * Devolve uma URL assinada curta para pré-visualizar a mídia
+ */
+export const getWhatsappTemplateAssetPreview = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<GetWhatsappTemplateAssetPreviewData, ThrowOnError>,
+): RequestResult<
+  GetWhatsappTemplateAssetPreviewResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetWhatsappTemplateAssetPreviewResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/templates/assets/{assetId}/preview', ...options })

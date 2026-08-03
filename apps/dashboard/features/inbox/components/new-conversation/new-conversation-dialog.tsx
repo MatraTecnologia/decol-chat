@@ -38,8 +38,14 @@ import {
 } from '@workspace/ui/components/form'
 
 import { Input } from '@workspace/ui/components/input'
+import { Label } from '@workspace/ui/components/label'
 import { Spinner } from '@workspace/ui/components/spinner'
 
+import { ApprovedTemplatePicker } from '@/features/templates/components/approved-template-picker'
+import {
+  TemplateParameterForm,
+  useTemplateParameters,
+} from '@/features/templates/components/template-parameter-form'
 import { useUserRole } from '@/hooks'
 import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
@@ -48,8 +54,6 @@ import { errorText } from '../../lib/api-error'
 
 const DEFAULT_VALUES = {
   phone: '',
-  templateName: '',
-  languageCode: 'pt_BR',
   name: '',
 }
 
@@ -85,8 +89,6 @@ const newConversationSchema = z.object({
         })
       }
     }),
-  templateName: z.string().trim().min(1, 'Informe o nome do template'),
-  languageCode: z.string().trim().min(1, 'Informe o código de idioma'),
   name: z.string(),
 })
 
@@ -114,6 +116,11 @@ export const NewConversationDialog = ({
     null,
   )
 
+  // O modelo e seus parâmetros ficam fora do react-hook-form: o formulário só
+  // valida telefone e nome, e os parâmetros vêm da definição aprovada.
+  const [templateId, setTemplateId] = useState<string | null>(null)
+  const parameters = useTemplateParameters(templateId)
+
   const form = useForm<NewConversationValues>({
     resolver: zodResolver(newConversationSchema),
     defaultValues: DEFAULT_VALUES,
@@ -124,6 +131,7 @@ export const NewConversationDialog = ({
   const closeDialog = () => {
     onOpenChange(false)
     form.reset(DEFAULT_VALUES)
+    setTemplateId(null)
     setConflict(null)
   }
 
@@ -163,13 +171,18 @@ export const NewConversationDialog = ({
   })
 
   const onSubmit = (values: NewConversationValues) => {
+    if (!templateId) return
+
+    const result = parameters.build()
+    if (!result?.success) return
+
     const name = values.name.trim()
 
     start.mutate({
       body: {
         phone: values.phone.trim(),
-        templateName: values.templateName.trim(),
-        languageCode: values.languageCode.trim(),
+        templateId,
+        parameters: result.data,
         ...(name ? { name } : {}),
       },
     })
@@ -187,7 +200,7 @@ export const NewConversationDialog = ({
         closeDialog()
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Nova conversa</DialogTitle>
           <DialogDescription>
@@ -258,50 +271,21 @@ export const NewConversationDialog = ({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="templateName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do template</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="primeiro_contato"
-                          autoComplete="off"
-                          disabled={start.isPending}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Precisa estar aprovado no WhatsApp Manager.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-1.5">
+                  <Label>Modelo aprovado</Label>
+                  <ApprovedTemplatePicker
+                    value={templateId}
+                    onChange={template => setTemplateId(template.id)}
+                    disabled={start.isPending}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="languageCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código de idioma</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="pt_BR"
-                          autoComplete="off"
-                          disabled={start.isPending}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Exatamente o idioma cadastrado no template (ex.: pt_BR,
-                        en_US).
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {templateId && (
+                  <TemplateParameterForm
+                    state={parameters}
+                    disabled={start.isPending}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -323,7 +307,12 @@ export const NewConversationDialog = ({
                 />
 
                 <DialogFooter>
-                  <Button type="submit" disabled={start.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={
+                      start.isPending || !templateId || !parameters.canSubmit
+                    }
+                  >
                     {start.isPending && <Spinner />}
                     Iniciar conversa
                   </Button>

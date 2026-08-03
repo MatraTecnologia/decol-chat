@@ -1,6 +1,9 @@
+import { templateSendParametersSchema } from '@workspace/shared/whatsapp-templates'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+
+import type { Prisma } from '@/generated/prisma/client.js'
 
 import { prisma } from '@/lib/prisma.js'
 import { getAccountById } from '@/lib/whatsapp/connection.js'
@@ -11,9 +14,12 @@ import {
   sendTextMessage,
 } from '@/lib/whatsapp/graph-client.js'
 
+import { getApprovedTemplateForSend } from '@/lib/whatsapp/templates/service.js'
+
 import { canSendMessages, findScopedConversation } from './guards.js'
 import { isWithinWindow } from './messaging-window.js'
 import { messageSchema, messageSelect } from './messages.js'
+import { createApprovedTemplateResolver } from './template-send-policy.js'
 
 // ── Schemas ────────────────────────────────────────────
 
@@ -23,10 +29,16 @@ const sendTextBodySchema = z.object({
   text: z.string().min(1).max(4096),
 })
 
+// O modelo vem do catálogo: nome e idioma digitados à mão permitiriam enviar
+// template de outra conta ou ainda não aprovado.
 const sendTemplateBodySchema = z.object({
-  templateName: z.string().min(1),
-  languageCode: z.string().default('pt_BR'),
+  templateId: z.string().min(1),
+  parameters: templateSendParametersSchema.default({}),
 })
+
+const resolveApprovedTemplate = createApprovedTemplateResolver(
+  getApprovedTemplateForSend,
+)
 
 const WINDOW_CLOSED =
   'A janela de 24 horas desta conversa expirou. Fora dela o WhatsApp só aceita mensagens de modelo (template).'
@@ -207,7 +219,21 @@ const sendRoutes: FastifyPluginAsyncZod = async app => {
       const account = await getAccountById(conversation.whatsAppAccountId)
       if (!account) return reply.serviceUnavailable(NO_ACCOUNT)
 
-      const { templateName, languageCode } = request.body
+      const { templateId, parameters } = request.body
+
+      const resolved = await resolveApprovedTemplate(
+        conversation.whatsAppAccountId,
+        templateId,
+        parameters,
+      )
+
+      if (resolved.status !== 'ok') {
+        return resolved.status === 'not_found'
+          ? reply.notFound(request.t('NOT_FOUND'))
+          : reply.unprocessableEntity(resolved.message)
+      }
+
+      const template = resolved.data
 
       const pending = await prisma.message.create({
         data: {
@@ -216,7 +242,10 @@ const sendRoutes: FastifyPluginAsyncZod = async app => {
           direction: 'OUTBOUND',
           type: 'TEMPLATE',
           status: 'PENDING',
-          templateName,
+          templateName: template.name,
+          templateId: template.templateId,
+          templateRevisionId: template.revisionId,
+          payload: template.snapshot as unknown as Prisma.InputJsonValue,
         },
         select: { id: true },
       })
@@ -226,12 +255,13 @@ const sendRoutes: FastifyPluginAsyncZod = async app => {
           account.accessToken,
           account.phoneNumberId,
           conversation.contact.waId,
-          templateName,
-          languageCode,
+          template.name,
+          template.languageCode,
+          template.components,
         ),
       )
 
-      await publish(app, conversation.id, message, `Modelo: ${templateName}`)
+      await publish(app, conversation.id, message, template.preview)
 
       return message
     },

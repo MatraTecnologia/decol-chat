@@ -755,13 +755,61 @@ git add apps/dashboard/features/templates apps/dashboard/features/inbox
 git commit -m "feat: select approved templates when messaging"
 ```
 
-### Task 14: Complete verification and manual acceptance
+### Task 14: Slash command template picker in the composer
+
+**Files:**
+- Create: `apps/dashboard/features/inbox/lib/slash-command.ts`
+- Create: `apps/dashboard/features/inbox/lib/slash-command.test.mjs`
+- Create: `apps/dashboard/features/inbox/components/thread/template-slash-menu.tsx`
+- Modify: `apps/dashboard/features/inbox/components/thread/composer.tsx`
+
+**Interfaces:**
+- Produces `parseSlashCommand(text)` returning `{ active, query }` and a composer dropdown listing approved templates.
+- Consumes `ApprovedTemplatePicker` parameter flow from Task 13 to complete the send.
+
+- [ ] **Step 1: Write failing slash parsing tests**
+
+Assert that `/template:` at the start activates the menu, `/template:hel` yields query `hel`, text before the command does not activate it, a trailing space or newline closes it, and an empty draft stays inactive.
+
+```js
+assert.deepEqual(parseSlashCommand('/template:hel'), { active: true, query: 'hel' })
+assert.deepEqual(parseSlashCommand('oi /template:hel'), { active: false, query: '' })
+```
+
+- [ ] **Step 2: Run and verify RED**
+
+Run: `node --test apps/dashboard/features/inbox/lib/slash-command.test.mjs`
+Expected: FAIL because the parser does not exist.
+
+- [ ] **Step 3: Build the composer dropdown**
+
+Filter approved templates by name while typing, navigate with arrow keys, confirm with Enter or Tab, and dismiss with Escape. The menu must intercept Enter only while open so normal sending stays unchanged, and it must not fight the persisted draft state in `use-message-drafts`.
+
+- [ ] **Step 4: Complete the send through the parameter form**
+
+Selecting a template clears the slash text from the draft and opens the Task 13 parameter form pre-bound to that template. Sending uses the same `templateId` plus parameters contract, so the 24h window does not block delivery. Agents can send; viewers keep the read-only composer.
+
+- [ ] **Step 5: Run and verify GREEN**
+
+Run: `node --test apps/dashboard/features/inbox/lib/slash-command.test.mjs`
+Run: `pnpm --filter dashboard typecheck`
+Run: `pnpm --filter dashboard lint`
+Expected: all checks PASS.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/dashboard/features/inbox
+git commit -m "feat: pick templates with a composer slash command"
+```
+
+### Task 15: Complete verification and manual acceptance
 
 **Files:**
 - No source files unless a failing gate exposes a defect.
 
 **Interfaces:**
-- Verifies the complete spec and all contracts produced by Tasks 1–13.
+- Verifies the complete spec and all contracts produced by Tasks 1–14.
 
 - [ ] **Step 1: Run focused tests**
 

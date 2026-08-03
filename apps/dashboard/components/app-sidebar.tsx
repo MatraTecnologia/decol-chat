@@ -7,10 +7,15 @@ import { useSyncExternalStore } from 'react'
 import {
   Contact,
   LayoutDashboard,
+  LayoutTemplate,
   MessagesSquare,
   Plug,
   Users,
 } from 'lucide-react'
+
+import { TEMPLATE_READERS } from '@workspace/shared/whatsapp-templates'
+
+import type { RoleType } from '@workspace/shared/roles'
 
 import {
   Sidebar,
@@ -39,14 +44,21 @@ interface SidebarItem {
   label: string
   icon: React.ComponentType
   disabled?: boolean
-  adminOnly?: boolean
+  /** Sem `roles` o item aparece para qualquer papel com acesso ao painel. */
+  roles?: RoleType[]
 }
 
 const generalItems: SidebarItem[] = [
   { href: '/conversations', label: 'Conversas', icon: MessagesSquare },
   { href: '/contacts', label: 'Contatos', icon: Contact },
+  {
+    href: '/templates',
+    label: 'Modelos',
+    icon: LayoutTemplate,
+    roles: TEMPLATE_READERS,
+  },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/conexao', label: 'Conexão', icon: Plug, adminOnly: true },
+  { href: '/conexao', label: 'Conexão', icon: Plug, roles: ['admin'] },
 ]
 
 const adminItems: SidebarItem[] = [
@@ -99,7 +111,9 @@ export const AppSidebar = () => {
   }
 
   const renderGroup = (label: string, items: SidebarItem[]) => {
-    const visibleItems = items.filter(item => !item.adminOnly || isAdmin)
+    const visibleItems = items.filter(
+      item => !item.roles || (mounted && hasRole(...item.roles)),
+    )
 
     return (
       <SidebarGroup>

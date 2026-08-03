@@ -826,8 +826,31 @@ export type SendMessageResponse =
 
 export type SendTemplateMessageData = {
   body: {
-    templateName: string
-    languageCode?: string
+    templateId: string
+    parameters?: {
+      header?:
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      body?:
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      buttons?: Array<
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      >
+      cards?: Array<
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      >
+    }
   }
   path: {
     id: string
@@ -889,8 +912,31 @@ export type SendTemplateMessageResponse =
 export type StartConversationData = {
   body: {
     phone: string
-    templateName: string
-    languageCode?: string
+    templateId: string
+    parameters?: {
+      header?:
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      body?:
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      buttons?: Array<
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      >
+      cards?: Array<
+        | Array<string>
+        | {
+            [key: string]: string
+          }
+      >
+    }
     name?: string
   }
   path?: never
@@ -1324,3 +1370,2032 @@ export type ListWhatsappLogsResponses = {
 
 export type ListWhatsappLogsResponse =
   ListWhatsappLogsResponses[keyof ListWhatsappLogsResponses]
+
+export type ListWhatsappTemplatesData = {
+  body?: never
+  path?: never
+  query?: {
+    q?: string
+    category?: string
+    status?: string
+    language?: string
+    page?: number
+    limit?: number
+  }
+  url: '/whatsapp/templates/'
+}
+
+export type ListWhatsappTemplatesResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      name: string
+      language: string
+      category: string
+      metaTemplateId: string | null
+      remoteStatus: string | null
+      remoteQuality: string | null
+      rejectionReason: string | null
+      remoteUpdatedAt: Date | null
+      lastSyncAttemptAt: Date | null
+      lastSyncError: string | null
+      createdById: string
+      updatedById: string
+      createdAt: Date
+      updatedAt: Date
+      latestRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+      draftRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+      submittedRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+    }>
+    meta: {
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+      hasNext: boolean
+    }
+  }
+}
+
+export type ListWhatsappTemplatesResponse =
+  ListWhatsappTemplatesResponses[keyof ListWhatsappTemplatesResponses]
+
+export type CreateWhatsappTemplateDraftData = {
+  body: {
+    name: string
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    }
+  }
+  path?: never
+  query?: never
+  url: '/whatsapp/templates/'
+}
+
+export type CreateWhatsappTemplateDraftResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    id: string
+    name: string
+    language: string
+    category: string
+    metaTemplateId: string | null
+    remoteStatus: string | null
+    remoteQuality: string | null
+    rejectionReason: string | null
+    remoteUpdatedAt: Date | null
+    lastSyncAttemptAt: Date | null
+    lastSyncError: string | null
+    createdById: string
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    latestRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    draftRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    submittedRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    } | null
+  }
+}
+
+export type CreateWhatsappTemplateDraftResponse =
+  CreateWhatsappTemplateDraftResponses[keyof CreateWhatsappTemplateDraftResponses]
+
+export type DeleteWhatsappTemplateDraftData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}'
+}
+
+export type DeleteWhatsappTemplateDraftResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    removedTemplate: boolean
+  }
+}
+
+export type DeleteWhatsappTemplateDraftResponse =
+  DeleteWhatsappTemplateDraftResponses[keyof DeleteWhatsappTemplateDraftResponses]
+
+export type GetWhatsappTemplateData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}'
+}
+
+export type GetWhatsappTemplateResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    name: string
+    language: string
+    category: string
+    metaTemplateId: string | null
+    remoteStatus: string | null
+    remoteQuality: string | null
+    rejectionReason: string | null
+    remoteUpdatedAt: Date | null
+    lastSyncAttemptAt: Date | null
+    lastSyncError: string | null
+    createdById: string
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    latestRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    draftRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    submittedRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    } | null
+  }
+}
+
+export type GetWhatsappTemplateResponse =
+  GetWhatsappTemplateResponses[keyof GetWhatsappTemplateResponses]
+
+export type UpdateWhatsappTemplateDraftData = {
+  body: {
+    expectedLockVersion: number
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    }
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}'
+}
+
+export type UpdateWhatsappTemplateDraftResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    name: string
+    language: string
+    category: string
+    metaTemplateId: string | null
+    remoteStatus: string | null
+    remoteQuality: string | null
+    rejectionReason: string | null
+    remoteUpdatedAt: Date | null
+    lastSyncAttemptAt: Date | null
+    lastSyncError: string | null
+    createdById: string
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    latestRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    draftRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    submittedRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    } | null
+  }
+}
+
+export type UpdateWhatsappTemplateDraftResponse =
+  UpdateWhatsappTemplateDraftResponses[keyof UpdateWhatsappTemplateDraftResponses]
+
+export type ListWhatsappTemplateRevisionsData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}/revisions'
+}
+
+export type ListWhatsappTemplateRevisionsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+      definition: {
+        category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+        language: string
+        parameterFormat: 'POSITIONAL' | 'NAMED'
+        components: Array<
+          | {
+              type: 'HEADER'
+              format: 'TEXT'
+              text: string
+              examples?: Array<string>
+            }
+          | {
+              type: 'HEADER'
+              format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+              assetId?: string
+              example?: string
+            }
+          | {
+              type: 'HEADER'
+              format: 'LOCATION'
+            }
+          | {
+              type: 'BODY'
+              text: string
+              examples?: Array<string>
+            }
+          | {
+              type: 'FOOTER'
+              text: string
+            }
+          | {
+              type: 'BUTTONS'
+              buttons: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }
+          | {
+              type: 'CAROUSEL'
+              cards: Array<{
+                header: {
+                  format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                  assetId?: string
+                  example?: string
+                }
+                body: {
+                  text: string
+                  examples?: Array<string>
+                }
+                buttons?: Array<
+                  | {
+                      kind: 'QUICK_REPLY'
+                      text: string
+                    }
+                  | {
+                      kind: 'URL'
+                      text: string
+                      url: string
+                      examples?: Array<string>
+                    }
+                  | {
+                      kind: 'PHONE_NUMBER'
+                      text: string
+                      phoneNumber: string
+                    }
+                  | {
+                      kind: 'COPY_CODE'
+                      text: string
+                      example?: string
+                    }
+                  | {
+                      kind: 'OTP'
+                      otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                      text: string
+                      autofillText?: string
+                      packageName?: string
+                      signatureHash?: string
+                    }
+                  | {
+                      kind: 'CATALOG'
+                      text: string
+                      thumbnailProductRetailerId?: string
+                    }
+                  | {
+                      kind: 'FLOW'
+                      text: string
+                      flowId: string
+                      flowAction?: 'navigate' | 'data_exchange'
+                      navigateScreen?: string
+                      flowData?: {
+                        [key: string]: unknown
+                      }
+                    }
+                >
+              }>
+            }
+          | {
+              type: 'LIMITED_TIME_OFFER'
+              text: string
+              hasExpiration?: boolean
+            }
+          | {
+              type: 'CUSTOM'
+              raw: {
+                [key: string]: unknown
+              }
+            }
+        >
+      } | null
+      submission: {
+        status: string | null
+        code: string | null
+        message: string | null
+      } | null
+    }>
+  }
+}
+
+export type ListWhatsappTemplateRevisionsResponse =
+  ListWhatsappTemplateRevisionsResponses[keyof ListWhatsappTemplateRevisionsResponses]
+
+export type DuplicateWhatsappTemplateData = {
+  body: {
+    name: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}/duplicate'
+}
+
+export type DuplicateWhatsappTemplateResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    id: string
+    name: string
+    language: string
+    category: string
+    metaTemplateId: string | null
+    remoteStatus: string | null
+    remoteQuality: string | null
+    rejectionReason: string | null
+    remoteUpdatedAt: Date | null
+    lastSyncAttemptAt: Date | null
+    lastSyncError: string | null
+    createdById: string
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    latestRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    draftRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    submittedRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    } | null
+  }
+}
+
+export type DuplicateWhatsappTemplateResponse =
+  DuplicateWhatsappTemplateResponses[keyof DuplicateWhatsappTemplateResponses]
+
+export type ValidateWhatsappTemplateRevisionData = {
+  body: {
+    definition: unknown
+  }
+  path?: never
+  query?: never
+  url: '/whatsapp/templates/validate'
+}
+
+export type ValidateWhatsappTemplateRevisionResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    valid: boolean
+    issues: Array<{
+      path: string
+      message: string
+    }>
+  }
+}
+
+export type ValidateWhatsappTemplateRevisionResponse =
+  ValidateWhatsappTemplateRevisionResponses[keyof ValidateWhatsappTemplateRevisionResponses]
+
+export type SubmitWhatsappTemplateData = {
+  body: {
+    idempotencyKey?: string
+  }
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}/submit'
+}
+
+export type SubmitWhatsappTemplateResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    template: {
+      id: string
+      name: string
+      language: string
+      category: string
+      metaTemplateId: string | null
+      remoteStatus: string | null
+      remoteQuality: string | null
+      rejectionReason: string | null
+      remoteUpdatedAt: Date | null
+      lastSyncAttemptAt: Date | null
+      lastSyncError: string | null
+      createdById: string
+      updatedById: string
+      createdAt: Date
+      updatedAt: Date
+      latestRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+      draftRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+      submittedRevision: {
+        id: string
+        version: number
+        state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+        lockVersion: number
+        parameterFormat: string
+        submittedAt: Date | null
+        submittedById: string | null
+        createdAt: Date
+        updatedAt: Date
+      } | null
+      definition: {
+        category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+        language: string
+        parameterFormat: 'POSITIONAL' | 'NAMED'
+        components: Array<
+          | {
+              type: 'HEADER'
+              format: 'TEXT'
+              text: string
+              examples?: Array<string>
+            }
+          | {
+              type: 'HEADER'
+              format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+              assetId?: string
+              example?: string
+            }
+          | {
+              type: 'HEADER'
+              format: 'LOCATION'
+            }
+          | {
+              type: 'BODY'
+              text: string
+              examples?: Array<string>
+            }
+          | {
+              type: 'FOOTER'
+              text: string
+            }
+          | {
+              type: 'BUTTONS'
+              buttons: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }
+          | {
+              type: 'CAROUSEL'
+              cards: Array<{
+                header: {
+                  format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                  assetId?: string
+                  example?: string
+                }
+                body: {
+                  text: string
+                  examples?: Array<string>
+                }
+                buttons?: Array<
+                  | {
+                      kind: 'QUICK_REPLY'
+                      text: string
+                    }
+                  | {
+                      kind: 'URL'
+                      text: string
+                      url: string
+                      examples?: Array<string>
+                    }
+                  | {
+                      kind: 'PHONE_NUMBER'
+                      text: string
+                      phoneNumber: string
+                    }
+                  | {
+                      kind: 'COPY_CODE'
+                      text: string
+                      example?: string
+                    }
+                  | {
+                      kind: 'OTP'
+                      otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                      text: string
+                      autofillText?: string
+                      packageName?: string
+                      signatureHash?: string
+                    }
+                  | {
+                      kind: 'CATALOG'
+                      text: string
+                      thumbnailProductRetailerId?: string
+                    }
+                  | {
+                      kind: 'FLOW'
+                      text: string
+                      flowId: string
+                      flowAction?: 'navigate' | 'data_exchange'
+                      navigateScreen?: string
+                      flowData?: {
+                        [key: string]: unknown
+                      }
+                    }
+                >
+              }>
+            }
+          | {
+              type: 'LIMITED_TIME_OFFER'
+              text: string
+              hasExpiration?: boolean
+            }
+          | {
+              type: 'CUSTOM'
+              raw: {
+                [key: string]: unknown
+              }
+            }
+        >
+      } | null
+    }
+    revisionId: string
+    replayed: boolean
+  }
+}
+
+export type SubmitWhatsappTemplateResponse =
+  SubmitWhatsappTemplateResponses[keyof SubmitWhatsappTemplateResponses]
+
+export type SyncWhatsappTemplatesData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/templates/sync'
+}
+
+export type SyncWhatsappTemplatesResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    imported: number
+    updated: number
+    failed: number
+    nextCursor: null
+  }
+}
+
+export type SyncWhatsappTemplatesResponse =
+  SyncWhatsappTemplatesResponses[keyof SyncWhatsappTemplatesResponses]
+
+export type DeleteWhatsappTemplateRemoteData = {
+  body?: never
+  path: {
+    id: string
+  }
+  query?: never
+  url: '/whatsapp/templates/{id}/remote'
+}
+
+export type DeleteWhatsappTemplateRemoteResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string
+    name: string
+    language: string
+    category: string
+    metaTemplateId: string | null
+    remoteStatus: string | null
+    remoteQuality: string | null
+    rejectionReason: string | null
+    remoteUpdatedAt: Date | null
+    lastSyncAttemptAt: Date | null
+    lastSyncError: string | null
+    createdById: string
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    latestRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    draftRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    submittedRevision: {
+      id: string
+      version: number
+      state: 'DRAFT' | 'SUBMITTED' | 'SUPERSEDED'
+      lockVersion: number
+      parameterFormat: string
+      submittedAt: Date | null
+      submittedById: string | null
+      createdAt: Date
+      updatedAt: Date
+    } | null
+    definition: {
+      category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION'
+      language: string
+      parameterFormat: 'POSITIONAL' | 'NAMED'
+      components: Array<
+        | {
+            type: 'HEADER'
+            format: 'TEXT'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'HEADER'
+            format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+            assetId?: string
+            example?: string
+          }
+        | {
+            type: 'HEADER'
+            format: 'LOCATION'
+          }
+        | {
+            type: 'BODY'
+            text: string
+            examples?: Array<string>
+          }
+        | {
+            type: 'FOOTER'
+            text: string
+          }
+        | {
+            type: 'BUTTONS'
+            buttons: Array<
+              | {
+                  kind: 'QUICK_REPLY'
+                  text: string
+                }
+              | {
+                  kind: 'URL'
+                  text: string
+                  url: string
+                  examples?: Array<string>
+                }
+              | {
+                  kind: 'PHONE_NUMBER'
+                  text: string
+                  phoneNumber: string
+                }
+              | {
+                  kind: 'COPY_CODE'
+                  text: string
+                  example?: string
+                }
+              | {
+                  kind: 'OTP'
+                  otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                  text: string
+                  autofillText?: string
+                  packageName?: string
+                  signatureHash?: string
+                }
+              | {
+                  kind: 'CATALOG'
+                  text: string
+                  thumbnailProductRetailerId?: string
+                }
+              | {
+                  kind: 'FLOW'
+                  text: string
+                  flowId: string
+                  flowAction?: 'navigate' | 'data_exchange'
+                  navigateScreen?: string
+                  flowData?: {
+                    [key: string]: unknown
+                  }
+                }
+            >
+          }
+        | {
+            type: 'CAROUSEL'
+            cards: Array<{
+              header: {
+                format: 'IMAGE' | 'VIDEO' | 'DOCUMENT'
+                assetId?: string
+                example?: string
+              }
+              body: {
+                text: string
+                examples?: Array<string>
+              }
+              buttons?: Array<
+                | {
+                    kind: 'QUICK_REPLY'
+                    text: string
+                  }
+                | {
+                    kind: 'URL'
+                    text: string
+                    url: string
+                    examples?: Array<string>
+                  }
+                | {
+                    kind: 'PHONE_NUMBER'
+                    text: string
+                    phoneNumber: string
+                  }
+                | {
+                    kind: 'COPY_CODE'
+                    text: string
+                    example?: string
+                  }
+                | {
+                    kind: 'OTP'
+                    otpType: 'COPY_CODE' | 'ONE_TAP' | 'ZERO_TAP'
+                    text: string
+                    autofillText?: string
+                    packageName?: string
+                    signatureHash?: string
+                  }
+                | {
+                    kind: 'CATALOG'
+                    text: string
+                    thumbnailProductRetailerId?: string
+                  }
+                | {
+                    kind: 'FLOW'
+                    text: string
+                    flowId: string
+                    flowAction?: 'navigate' | 'data_exchange'
+                    navigateScreen?: string
+                    flowData?: {
+                      [key: string]: unknown
+                    }
+                  }
+              >
+            }>
+          }
+        | {
+            type: 'LIMITED_TIME_OFFER'
+            text: string
+            hasExpiration?: boolean
+          }
+        | {
+            type: 'CUSTOM'
+            raw: {
+              [key: string]: unknown
+            }
+          }
+      >
+    } | null
+  }
+}
+
+export type DeleteWhatsappTemplateRemoteResponse =
+  DeleteWhatsappTemplateRemoteResponses[keyof DeleteWhatsappTemplateRemoteResponses]
+
+export type PrepareWhatsappTemplateAssetUploadData = {
+  body: {
+    revisionId: string
+    fileName: string
+    mimeType: string
+    byteSize: number
+  }
+  path?: never
+  query?: never
+  url: '/whatsapp/templates/assets/prepare'
+}
+
+export type PrepareWhatsappTemplateAssetUploadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    assetId: string
+    kind: string
+    uploadUrl: string
+    expiresIn: number
+  }
+}
+
+export type PrepareWhatsappTemplateAssetUploadResponse =
+  PrepareWhatsappTemplateAssetUploadResponses[keyof PrepareWhatsappTemplateAssetUploadResponses]
+
+export type ConfirmWhatsappTemplateAssetUploadData = {
+  body?: never
+  path: {
+    assetId: string
+  }
+  query?: never
+  url: '/whatsapp/templates/assets/{assetId}/confirm'
+}
+
+export type ConfirmWhatsappTemplateAssetUploadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    assetId: string
+    kind: string
+    mimeType: string
+    byteSize: number
+    metaHandle: string
+    reusedMetaHandle: boolean
+  }
+}
+
+export type ConfirmWhatsappTemplateAssetUploadResponse =
+  ConfirmWhatsappTemplateAssetUploadResponses[keyof ConfirmWhatsappTemplateAssetUploadResponses]
+
+export type GetWhatsappTemplateAssetPreviewData = {
+  body?: never
+  path: {
+    assetId: string
+  }
+  query?: never
+  url: '/whatsapp/templates/assets/{assetId}/preview'
+}
+
+export type GetWhatsappTemplateAssetPreviewResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    url: string
+    expiresIn: number
+  }
+}
+
+export type GetWhatsappTemplateAssetPreviewResponse =
+  GetWhatsappTemplateAssetPreviewResponses[keyof GetWhatsappTemplateAssetPreviewResponses]

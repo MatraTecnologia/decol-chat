@@ -1,3 +1,5 @@
+import type { MetaRecord, MetaTemplatePage } from './template-payload.js'
+
 export const GRAPH_API_VERSION = 'v25.0'
 
 const GRAPH_BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`
@@ -168,12 +170,16 @@ export const sendTextMessage = (
 
 // Texto livre só é aceito dentro da janela de 24h aberta pelo destinatário.
 // Fora dela a Meta responde 131047 — template é o único caminho.
+//
+// `components` é opcional: template sem variável não manda a chave, e
+// `JSON.stringify` a omite quando vem `undefined`.
 export const sendTemplateMessage = (
   token: string,
   phoneNumberId: string,
   to: string,
   templateName: string,
   languageCode: string,
+  components?: MetaRecord[],
 ) =>
   request<SendMessageResult>(`/${phoneNumberId}/messages`, {
     method: 'POST',
@@ -186,6 +192,146 @@ export const sendTemplateMessage = (
       recipient_type: 'individual',
       to,
       type: 'template',
-      template: { name: templateName, language: { code: languageCode } },
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        ...(components?.length ? { components } : {}),
+      },
     }),
   })
+
+// ── Templates ──────────────────────────────────────────
+//
+// O token viaja só no header `Authorization`: nada aqui pode cair na query
+// string, senão vaza no log do proxy e na mensagem de erro da Meta.
+
+const TEMPLATE_FIELDS = [
+  'id',
+  'name',
+  'language',
+  'status',
+  'category',
+  'quality_score',
+  'rejected_reason',
+  'components',
+  'parameter_format',
+  'last_updated_time',
+].join(',')
+
+/** Uma página por chamada — quem sincroniza segue o `paging.cursors.after`
+ * até ele sumir. */
+export const listMessageTemplates = (
+  token: string,
+  wabaId: string,
+  after?: string,
+) => {
+  const query = new URLSearchParams({
+    fields: TEMPLATE_FIELDS,
+    limit: '100',
+    ...(after ? { after } : {}),
+  })
+
+  return request<MetaTemplatePage>(`/${wabaId}/message_templates?${query}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export interface MessageTemplateMutationResult {
+  id?: string
+  status?: string
+  category?: string
+  success?: boolean
+}
+
+export const createMessageTemplate = (
+  token: string,
+  wabaId: string,
+  payload: MetaRecord,
+) =>
+  request<MessageTemplateMutationResult>(`/${wabaId}/message_templates`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+/** A Meta só aceita editar `components` e `category` — nome e idioma são
+ * imutáveis depois de criado. */
+export const updateMessageTemplate = (
+  token: string,
+  metaTemplateId: string,
+  payload: MetaRecord,
+) =>
+  request<MessageTemplateMutationResult>(`/${metaTemplateId}`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+// ── Upload resumable (mídia de exemplo do template) ────
+//
+// Dois passos: a sessão é aberta no app (`appId`), e só então o binário sobe.
+// O envio do binário usa o esquema `OAuth`, não `Bearer` — com `Bearer` a Meta
+// responde 401 mesmo com o token certo.
+
+export interface UploadSession {
+  id: string
+}
+
+export const createUploadSession = (
+  token: string,
+  appId: string,
+  file: { fileName: string; fileLength: number; fileType: string },
+) => {
+  const query = new URLSearchParams({
+    file_name: file.fileName,
+    file_length: String(file.fileLength),
+    file_type: file.fileType,
+  })
+
+  return request<UploadSession>(`/${appId}/uploads?${query}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
+/** `h` é o handle que vai no `header_handle` do componente da mídia. */
+export const uploadSessionFile = (
+  token: string,
+  uploadSessionId: string,
+  body: Buffer,
+  offset = 0,
+) =>
+  request<{ h: string }>(`/${uploadSessionId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `OAuth ${token}`,
+      file_offset: String(offset),
+      'Content-Type': 'application/octet-stream',
+    },
+    body: new Uint8Array(body),
+  })
+
+/** Sem `hsm_id` a Meta apaga o template em todos os idiomas — sempre passe o
+ * id do template quando ele for conhecido. */
+export const deleteMessageTemplate = (
+  token: string,
+  wabaId: string,
+  name: string,
+  metaTemplateId?: string | null,
+) => {
+  const query = new URLSearchParams({
+    name,
+    ...(metaTemplateId ? { hsm_id: metaTemplateId } : {}),
+  })
+
+  return request<{ success: boolean }>(
+    `/${wabaId}/message_templates?${query}`,
+    { method: 'DELETE', headers: authHeaders(token) },
+  )
+}

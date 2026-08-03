@@ -5,23 +5,31 @@ import type {
   BlockContactResponse,
   CheckWhatsappHealthResponse,
   CloseConversationResponse,
+  CreateWhatsappTemplateDraftResponse,
+  DeleteWhatsappTemplateRemoteResponse,
+  DuplicateWhatsappTemplateResponse,
   GetContactResponse,
   GetConversationResponse,
   GetWhatsappConnectionResponse,
+  GetWhatsappTemplateResponse,
   ListContactsResponse,
   ListConversationsResponse,
   ListMembersResponse,
   ListMessagesResponse,
   ListUsersResponse,
+  ListWhatsappTemplateRevisionsResponse,
+  ListWhatsappTemplatesResponse,
   MarkConversationReadResponse,
   ReopenConversationResponse,
   SendMessageResponse,
   SendTemplateMessageResponse,
   StartConversationResponse,
+  SubmitWhatsappTemplateResponse,
   UnassignConversationResponse,
   UpdateContactResponse,
   UpdateConversationResponse,
   UpdateWhatsappConnectionResponse,
+  UpdateWhatsappTemplateDraftResponse,
 } from './types.gen'
 
 export const listContactsResponseTransformer = async (
@@ -372,5 +380,335 @@ export const checkWhatsappHealthResponseTransformer = async (
   data: any,
 ): Promise<CheckWhatsappHealthResponse> => {
   data.checkedAt = new Date(data.checkedAt)
+  return data
+}
+
+export const listWhatsappTemplatesResponseTransformer = async (
+  data: any,
+): Promise<ListWhatsappTemplatesResponse> => {
+  data.data = data.data.map((item: any) => {
+    if (item.remoteUpdatedAt) {
+      item.remoteUpdatedAt = new Date(item.remoteUpdatedAt)
+    }
+    if (item.lastSyncAttemptAt) {
+      item.lastSyncAttemptAt = new Date(item.lastSyncAttemptAt)
+    }
+    item.createdAt = new Date(item.createdAt)
+    item.updatedAt = new Date(item.updatedAt)
+    if (item.latestRevision) {
+      if (item.latestRevision.submittedAt) {
+        item.latestRevision.submittedAt = new Date(
+          item.latestRevision.submittedAt,
+        )
+      }
+      item.latestRevision.createdAt = new Date(item.latestRevision.createdAt)
+      item.latestRevision.updatedAt = new Date(item.latestRevision.updatedAt)
+    }
+    if (item.draftRevision) {
+      if (item.draftRevision.submittedAt) {
+        item.draftRevision.submittedAt = new Date(
+          item.draftRevision.submittedAt,
+        )
+      }
+      item.draftRevision.createdAt = new Date(item.draftRevision.createdAt)
+      item.draftRevision.updatedAt = new Date(item.draftRevision.updatedAt)
+    }
+    if (item.submittedRevision) {
+      if (item.submittedRevision.submittedAt) {
+        item.submittedRevision.submittedAt = new Date(
+          item.submittedRevision.submittedAt,
+        )
+      }
+      item.submittedRevision.createdAt = new Date(
+        item.submittedRevision.createdAt,
+      )
+      item.submittedRevision.updatedAt = new Date(
+        item.submittedRevision.updatedAt,
+      )
+    }
+    return item
+  })
+  return data
+}
+
+export const createWhatsappTemplateDraftResponseTransformer = async (
+  data: any,
+): Promise<CreateWhatsappTemplateDraftResponse> => {
+  if (data.remoteUpdatedAt) {
+    data.remoteUpdatedAt = new Date(data.remoteUpdatedAt)
+  }
+  if (data.lastSyncAttemptAt) {
+    data.lastSyncAttemptAt = new Date(data.lastSyncAttemptAt)
+  }
+  data.createdAt = new Date(data.createdAt)
+  data.updatedAt = new Date(data.updatedAt)
+  if (data.latestRevision) {
+    if (data.latestRevision.submittedAt) {
+      data.latestRevision.submittedAt = new Date(
+        data.latestRevision.submittedAt,
+      )
+    }
+    data.latestRevision.createdAt = new Date(data.latestRevision.createdAt)
+    data.latestRevision.updatedAt = new Date(data.latestRevision.updatedAt)
+  }
+  if (data.draftRevision) {
+    if (data.draftRevision.submittedAt) {
+      data.draftRevision.submittedAt = new Date(data.draftRevision.submittedAt)
+    }
+    data.draftRevision.createdAt = new Date(data.draftRevision.createdAt)
+    data.draftRevision.updatedAt = new Date(data.draftRevision.updatedAt)
+  }
+  if (data.submittedRevision) {
+    if (data.submittedRevision.submittedAt) {
+      data.submittedRevision.submittedAt = new Date(
+        data.submittedRevision.submittedAt,
+      )
+    }
+    data.submittedRevision.createdAt = new Date(
+      data.submittedRevision.createdAt,
+    )
+    data.submittedRevision.updatedAt = new Date(
+      data.submittedRevision.updatedAt,
+    )
+  }
+  return data
+}
+
+export const getWhatsappTemplateResponseTransformer = async (
+  data: any,
+): Promise<GetWhatsappTemplateResponse> => {
+  if (data.remoteUpdatedAt) {
+    data.remoteUpdatedAt = new Date(data.remoteUpdatedAt)
+  }
+  if (data.lastSyncAttemptAt) {
+    data.lastSyncAttemptAt = new Date(data.lastSyncAttemptAt)
+  }
+  data.createdAt = new Date(data.createdAt)
+  data.updatedAt = new Date(data.updatedAt)
+  if (data.latestRevision) {
+    if (data.latestRevision.submittedAt) {
+      data.latestRevision.submittedAt = new Date(
+        data.latestRevision.submittedAt,
+      )
+    }
+    data.latestRevision.createdAt = new Date(data.latestRevision.createdAt)
+    data.latestRevision.updatedAt = new Date(data.latestRevision.updatedAt)
+  }
+  if (data.draftRevision) {
+    if (data.draftRevision.submittedAt) {
+      data.draftRevision.submittedAt = new Date(data.draftRevision.submittedAt)
+    }
+    data.draftRevision.createdAt = new Date(data.draftRevision.createdAt)
+    data.draftRevision.updatedAt = new Date(data.draftRevision.updatedAt)
+  }
+  if (data.submittedRevision) {
+    if (data.submittedRevision.submittedAt) {
+      data.submittedRevision.submittedAt = new Date(
+        data.submittedRevision.submittedAt,
+      )
+    }
+    data.submittedRevision.createdAt = new Date(
+      data.submittedRevision.createdAt,
+    )
+    data.submittedRevision.updatedAt = new Date(
+      data.submittedRevision.updatedAt,
+    )
+  }
+  return data
+}
+
+export const updateWhatsappTemplateDraftResponseTransformer = async (
+  data: any,
+): Promise<UpdateWhatsappTemplateDraftResponse> => {
+  if (data.remoteUpdatedAt) {
+    data.remoteUpdatedAt = new Date(data.remoteUpdatedAt)
+  }
+  if (data.lastSyncAttemptAt) {
+    data.lastSyncAttemptAt = new Date(data.lastSyncAttemptAt)
+  }
+  data.createdAt = new Date(data.createdAt)
+  data.updatedAt = new Date(data.updatedAt)
+  if (data.latestRevision) {
+    if (data.latestRevision.submittedAt) {
+      data.latestRevision.submittedAt = new Date(
+        data.latestRevision.submittedAt,
+      )
+    }
+    data.latestRevision.createdAt = new Date(data.latestRevision.createdAt)
+    data.latestRevision.updatedAt = new Date(data.latestRevision.updatedAt)
+  }
+  if (data.draftRevision) {
+    if (data.draftRevision.submittedAt) {
+      data.draftRevision.submittedAt = new Date(data.draftRevision.submittedAt)
+    }
+    data.draftRevision.createdAt = new Date(data.draftRevision.createdAt)
+    data.draftRevision.updatedAt = new Date(data.draftRevision.updatedAt)
+  }
+  if (data.submittedRevision) {
+    if (data.submittedRevision.submittedAt) {
+      data.submittedRevision.submittedAt = new Date(
+        data.submittedRevision.submittedAt,
+      )
+    }
+    data.submittedRevision.createdAt = new Date(
+      data.submittedRevision.createdAt,
+    )
+    data.submittedRevision.updatedAt = new Date(
+      data.submittedRevision.updatedAt,
+    )
+  }
+  return data
+}
+
+export const listWhatsappTemplateRevisionsResponseTransformer = async (
+  data: any,
+): Promise<ListWhatsappTemplateRevisionsResponse> => {
+  data.data = data.data.map((item: any) => {
+    if (item.submittedAt) {
+      item.submittedAt = new Date(item.submittedAt)
+    }
+    item.createdAt = new Date(item.createdAt)
+    item.updatedAt = new Date(item.updatedAt)
+    return item
+  })
+  return data
+}
+
+export const duplicateWhatsappTemplateResponseTransformer = async (
+  data: any,
+): Promise<DuplicateWhatsappTemplateResponse> => {
+  if (data.remoteUpdatedAt) {
+    data.remoteUpdatedAt = new Date(data.remoteUpdatedAt)
+  }
+  if (data.lastSyncAttemptAt) {
+    data.lastSyncAttemptAt = new Date(data.lastSyncAttemptAt)
+  }
+  data.createdAt = new Date(data.createdAt)
+  data.updatedAt = new Date(data.updatedAt)
+  if (data.latestRevision) {
+    if (data.latestRevision.submittedAt) {
+      data.latestRevision.submittedAt = new Date(
+        data.latestRevision.submittedAt,
+      )
+    }
+    data.latestRevision.createdAt = new Date(data.latestRevision.createdAt)
+    data.latestRevision.updatedAt = new Date(data.latestRevision.updatedAt)
+  }
+  if (data.draftRevision) {
+    if (data.draftRevision.submittedAt) {
+      data.draftRevision.submittedAt = new Date(data.draftRevision.submittedAt)
+    }
+    data.draftRevision.createdAt = new Date(data.draftRevision.createdAt)
+    data.draftRevision.updatedAt = new Date(data.draftRevision.updatedAt)
+  }
+  if (data.submittedRevision) {
+    if (data.submittedRevision.submittedAt) {
+      data.submittedRevision.submittedAt = new Date(
+        data.submittedRevision.submittedAt,
+      )
+    }
+    data.submittedRevision.createdAt = new Date(
+      data.submittedRevision.createdAt,
+    )
+    data.submittedRevision.updatedAt = new Date(
+      data.submittedRevision.updatedAt,
+    )
+  }
+  return data
+}
+
+export const submitWhatsappTemplateResponseTransformer = async (
+  data: any,
+): Promise<SubmitWhatsappTemplateResponse> => {
+  if (data.template.remoteUpdatedAt) {
+    data.template.remoteUpdatedAt = new Date(data.template.remoteUpdatedAt)
+  }
+  if (data.template.lastSyncAttemptAt) {
+    data.template.lastSyncAttemptAt = new Date(data.template.lastSyncAttemptAt)
+  }
+  data.template.createdAt = new Date(data.template.createdAt)
+  data.template.updatedAt = new Date(data.template.updatedAt)
+  if (data.template.latestRevision) {
+    if (data.template.latestRevision.submittedAt) {
+      data.template.latestRevision.submittedAt = new Date(
+        data.template.latestRevision.submittedAt,
+      )
+    }
+    data.template.latestRevision.createdAt = new Date(
+      data.template.latestRevision.createdAt,
+    )
+    data.template.latestRevision.updatedAt = new Date(
+      data.template.latestRevision.updatedAt,
+    )
+  }
+  if (data.template.draftRevision) {
+    if (data.template.draftRevision.submittedAt) {
+      data.template.draftRevision.submittedAt = new Date(
+        data.template.draftRevision.submittedAt,
+      )
+    }
+    data.template.draftRevision.createdAt = new Date(
+      data.template.draftRevision.createdAt,
+    )
+    data.template.draftRevision.updatedAt = new Date(
+      data.template.draftRevision.updatedAt,
+    )
+  }
+  if (data.template.submittedRevision) {
+    if (data.template.submittedRevision.submittedAt) {
+      data.template.submittedRevision.submittedAt = new Date(
+        data.template.submittedRevision.submittedAt,
+      )
+    }
+    data.template.submittedRevision.createdAt = new Date(
+      data.template.submittedRevision.createdAt,
+    )
+    data.template.submittedRevision.updatedAt = new Date(
+      data.template.submittedRevision.updatedAt,
+    )
+  }
+  return data
+}
+
+export const deleteWhatsappTemplateRemoteResponseTransformer = async (
+  data: any,
+): Promise<DeleteWhatsappTemplateRemoteResponse> => {
+  if (data.remoteUpdatedAt) {
+    data.remoteUpdatedAt = new Date(data.remoteUpdatedAt)
+  }
+  if (data.lastSyncAttemptAt) {
+    data.lastSyncAttemptAt = new Date(data.lastSyncAttemptAt)
+  }
+  data.createdAt = new Date(data.createdAt)
+  data.updatedAt = new Date(data.updatedAt)
+  if (data.latestRevision) {
+    if (data.latestRevision.submittedAt) {
+      data.latestRevision.submittedAt = new Date(
+        data.latestRevision.submittedAt,
+      )
+    }
+    data.latestRevision.createdAt = new Date(data.latestRevision.createdAt)
+    data.latestRevision.updatedAt = new Date(data.latestRevision.updatedAt)
+  }
+  if (data.draftRevision) {
+    if (data.draftRevision.submittedAt) {
+      data.draftRevision.submittedAt = new Date(data.draftRevision.submittedAt)
+    }
+    data.draftRevision.createdAt = new Date(data.draftRevision.createdAt)
+    data.draftRevision.updatedAt = new Date(data.draftRevision.updatedAt)
+  }
+  if (data.submittedRevision) {
+    if (data.submittedRevision.submittedAt) {
+      data.submittedRevision.submittedAt = new Date(
+        data.submittedRevision.submittedAt,
+      )
+    }
+    data.submittedRevision.createdAt = new Date(
+      data.submittedRevision.createdAt,
+    )
+    data.submittedRevision.updatedAt = new Date(
+      data.submittedRevision.updatedAt,
+    )
+  }
   return data
 }

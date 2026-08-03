@@ -228,6 +228,12 @@ enum DistributionStrategy {
   LEAST_BUSY
 }
 
+enum WhatsAppTemplateRevisionState {
+  DRAFT // rascunho editável, ainda não enviado à Meta
+  SUBMITTED // snapshot enviado para aprovação
+  SUPERSEDED // substituído por uma revisão mais nova
+}
+
 // ----------------------------------------------------------------------------
 // ATENDIMENTO — modelos
 // ----------------------------------------------------------------------------
@@ -253,6 +259,8 @@ model WhatsAppAccount {
   contacts         Contact[]
   conversations    Conversation[]
   distributionRule DistributionRule?
+  templates        WhatsAppTemplate[]
+  templateAssets   WhatsAppTemplateAsset[]
 
   @@index([isActive])
   @@map("whatsapp_account")
@@ -337,6 +345,10 @@ model Message {
   mediaUrl      String? // URL já rehospedada (R2)
   mediaMimeType String?
   templateName  String?
+
+  // snapshot auditável do envio por template — sem relação, o template pode ser removido
+  templateId         String?
+  templateRevisionId String?
 
   errorCode    String?
   errorMessage String?
@@ -431,4 +443,80 @@ model DistributionRule {
 
   @@index([isActive])
   @@map("distribution_rule")
+}
+
+// ----------------------------------------------------------------------------
+// TEMPLATES DE WHATSAPP — modelos
+// ----------------------------------------------------------------------------
+
+model WhatsAppTemplate {
+  id                String    @id @default(cuid(2))
+  whatsAppAccountId String
+  metaTemplateId    String? // null enquanto o template não foi criado na Meta
+  name              String
+  language          String
+  category          String
+  remoteStatus      String? // APPROVED / PENDING / REJECTED — espelho da Meta
+  remoteQuality     String?
+  rejectionReason   String?
+  remotePayload     Json? // payload cru da Meta — indispensável para depurar
+  remoteUpdatedAt   DateTime?
+  lastSyncAttemptAt DateTime?
+  lastSyncError     String?
+  createdById       String
+  updatedById       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  revisions       WhatsAppTemplateRevision[]
+  whatsAppAccount WhatsAppAccount            @relation(fields: [whatsAppAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([whatsAppAccountId, name, language])
+  @@unique([whatsAppAccountId, metaTemplateId])
+  @@index([whatsAppAccountId, remoteStatus, updatedAt(sort: Desc)])
+  @@map("whatsapp_template")
+}
+
+model WhatsAppTemplateRevision {
+  id                 String                        @id @default(cuid(2))
+  templateId         String
+  version            Int
+  definition         Json // TemplateDefinition normalizado
+  parameterFormat    String // POSITIONAL / NAMED
+  state              WhatsAppTemplateRevisionState @default(DRAFT)
+  lockVersion        Int                           @default(1) // trava otimista na edição do rascunho
+  submittedAt        DateTime?
+  submittedById      String?
+  submissionResponse Json? // resposta da Meta no envio
+  idempotencyKey     String                        @unique
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+
+  template WhatsAppTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  assets   WhatsAppTemplateAsset[]
+
+  @@unique([templateId, version])
+  @@index([templateId, state, version(sort: Desc)])
+  @@map("whatsapp_template_revision")
+}
+
+model WhatsAppTemplateAsset {
+  id                String   @id @default(cuid(2))
+  revisionId        String
+  whatsAppAccountId String
+  objectKey         String // chave no bucket privado (R2)
+  originalName      String
+  mimeType          String
+  byteSize          Int
+  kind              String // IMAGE / VIDEO / DOCUMENT
+  metaHandle        String? // handle do upload resumable da Meta, reaproveitado
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  revision        WhatsAppTemplateRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  whatsAppAccount WhatsAppAccount          @relation(fields: [whatsAppAccountId], references: [id], onDelete: Cascade)
+
+  @@index([revisionId])
+  @@index([whatsAppAccountId, createdAt(sort: Desc)])
+  @@map("whatsapp_template_asset")
 }

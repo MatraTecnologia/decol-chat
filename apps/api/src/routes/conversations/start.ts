@@ -1,5 +1,8 @@
+import { templateSendParametersSchema } from '@workspace/shared/whatsapp-templates'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+
+import type { Prisma } from '@/generated/prisma/client.js'
 
 import { requireRole } from '@/lib/auth-guard.js'
 import { prisma } from '@/lib/prisma.js'
@@ -11,6 +14,7 @@ import {
 } from '@/lib/whatsapp/graph-client.js'
 
 import { isValidPhone, phoneKey, toSendFormat } from '@/lib/whatsapp/phone.js'
+import { getApprovedTemplateForSend } from '@/lib/whatsapp/templates/service.js'
 
 import {
   CONVERSATION_READERS,
@@ -20,15 +24,20 @@ import {
 
 import { messageSelect } from './messages.js'
 import { assigneeSummarySchema, conversationSchema } from './schemas.js'
+import { createApprovedTemplateResolver } from './template-send-policy.js'
 
 // ── Schemas ────────────────────────────────────────────
 
 const startBodySchema = z.object({
   phone: z.string().min(1),
-  templateName: z.string().min(1),
-  languageCode: z.string().default('pt_BR'),
+  templateId: z.string().min(1),
+  parameters: templateSendParametersSchema.default({}),
   name: z.string().min(1).optional(),
 })
+
+const resolveApprovedTemplate = createApprovedTemplateResolver(
+  getApprovedTemplateForSend,
+)
 
 const startResponseSchema = z.object({
   conversation: conversationSchema,
@@ -97,12 +106,28 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
 
       if (!canSendMessages(role)) return reply.forbidden(request.t('FORBIDDEN'))
 
-      const { phone, templateName, languageCode, name } = request.body
+      const { phone, templateId, parameters, name } = request.body
 
       if (!isValidPhone(phone)) return reply.badRequest(INVALID_PHONE)
 
       const account = await getConnection()
       if (!account) return reply.serviceUnavailable(NO_ACCOUNT)
+
+      // Modelo resolvido junto da validação de entrada: só é enviável se for
+      // aprovado, da conta ativa e com todos os parâmetros no lugar.
+      const resolved = await resolveApprovedTemplate(
+        account.id,
+        templateId,
+        parameters,
+      )
+
+      if (resolved.status !== 'ok') {
+        return resolved.status === 'not_found'
+          ? reply.notFound(request.t('NOT_FOUND'))
+          : reply.unprocessableEntity(resolved.message)
+      }
+
+      const template = resolved.data
 
       const key = phoneKey(phone)
       const to = toSendFormat(phone)
@@ -148,17 +173,18 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
 
       const previousAssignee = previous?.assignedTo ?? null
 
-      // ENVIA PRIMEIRO. Número inexistente no WhatsApp, template não aprovado
-      // ou destinatário fora da allowed list falham aqui — e nada foi gravado,
-      // então não sobra contato órfão nem conversa vazia.
+      // ENVIA PRIMEIRO. Número inexistente no WhatsApp ou destinatário fora da
+      // allowed list falham aqui — e nada foi gravado, então não sobra contato
+      // órfão nem conversa vazia.
       let result
       try {
         result = await sendTemplateMessage(
           account.accessToken,
           account.phoneNumberId,
           to,
-          templateName,
-          languageCode,
+          template.name,
+          template.languageCode,
+          template.components,
         )
       } catch (error) {
         const graphError = toGraphError(error)
@@ -173,7 +199,6 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
       // gravar o número digitado no lugar dele quebraria o casamento.
       const waId = result.contacts?.[0]?.wa_id ?? to
       const waMessageId = result.messages[0]?.id ?? null
-      const preview = `Modelo: ${templateName}`
 
       // Só a transação entra no try: um erro na emissão do evento não pode
       // virar "o registro falhou" depois de o commit ter passado.
@@ -240,7 +265,10 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
               type: 'TEMPLATE',
               status: 'SENT',
               waMessageId,
-              templateName,
+              templateName: template.name,
+              templateId: template.templateId,
+              templateRevisionId: template.revisionId,
+              payload: template.snapshot as unknown as Prisma.InputJsonValue,
             },
             select: messageSelect,
           })
@@ -251,7 +279,7 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
             where: { id: created.id },
             data: {
               lastMessageAt: message.createdAt,
-              lastMessageText: preview,
+              lastMessageText: template.preview,
             },
             include: conversationRelationsInclude,
           })

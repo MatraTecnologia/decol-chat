@@ -2,7 +2,8 @@
 
 import type { KeyboardEvent } from 'react'
 
-import { Clock, Lock, SendHorizontal } from 'lucide-react'
+import { Clock, LayoutTemplate, Lock, SendHorizontal } from 'lucide-react'
+import { useState } from 'react'
 
 import { Button } from '@workspace/ui/components/button'
 import { Spinner } from '@workspace/ui/components/spinner'
@@ -10,6 +11,7 @@ import { Textarea } from '@workspace/ui/components/textarea'
 
 import { useMessageDrafts } from '../../hooks'
 import { SendTemplateDialog } from './send-template-dialog'
+import { TemplateSlashMenu, useTemplateSlashMenu } from './template-slash-menu'
 import { useSendMessage } from './use-send-message'
 
 interface ComposerProps {
@@ -38,6 +40,21 @@ export const Composer = ({
 
   const { send, isPending } = useSendMessage(conversationId)
 
+  const [templateDialog, setTemplateDialog] = useState(false)
+  const [slashTemplateId, setSlashTemplateId] = useState<string | null>(null)
+
+  const slashMenu = useTemplateSlashMenu({
+    text: draft,
+    enabled: !disabled && canSendFreeText,
+    onSelect: template => {
+      // O rascunho inteiro é o comando (o parser exige `/template:` no início
+      // e sem espaços), então limpar tudo já tira o texto do atalho.
+      clearDraft(conversationId)
+      setSlashTemplateId(template.id)
+      setTemplateDialog(true)
+    },
+  })
+
   const text = draft.trim()
   const canSubmit = Boolean(text) && !isPending
 
@@ -49,6 +66,8 @@ export const Composer = ({
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashMenu.handleKeyDown(event)) return
+
     if (event.key !== 'Enter' || event.shiftKey) return
     // Acentuação em teclados pt-BR passa por composição — Enter aqui confirma
     // o caractere, não envia a mensagem.
@@ -72,6 +91,18 @@ export const Composer = ({
     )
   }
 
+  const templateDialogNode = (
+    <SendTemplateDialog
+      conversationId={conversationId}
+      open={templateDialog}
+      onOpenChange={next => {
+        setTemplateDialog(next)
+        if (!next) setSlashTemplateId(null)
+      }}
+      initialTemplateId={slashTemplateId}
+    />
+  )
+
   if (!canSendFreeText) {
     return (
       <div className="shrink-0 border-t px-4 py-3">
@@ -83,34 +114,49 @@ export const Composer = ({
               enviado.
             </span>
           </div>
-          <SendTemplateDialog conversationId={conversationId} />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setTemplateDialog(true)}
+          >
+            <LayoutTemplate className="size-4" />
+            Enviar template
+          </Button>
         </div>
+
+        {templateDialogNode}
       </div>
     )
   }
 
   return (
-    <div className="flex shrink-0 items-end gap-2 border-t px-4 py-3">
-      <Textarea
-        value={draft}
-        onChange={event => setDraft(conversationId, event.target.value)}
-        onKeyDown={handleKeyDown}
-        rows={1}
-        maxLength={MAX_LENGTH}
-        placeholder="Escreva uma mensagem — Enter envia, Shift+Enter quebra linha"
-        aria-label="Mensagem"
-        className="max-h-32 min-h-9 resize-none py-2"
-      />
+    <div className="relative shrink-0 border-t px-4 py-3">
+      <TemplateSlashMenu state={slashMenu} />
 
-      <Button
-        type="button"
-        size="icon"
-        onClick={handleSend}
-        disabled={!canSubmit}
-        aria-label="Enviar mensagem"
-      >
-        {isPending ? <Spinner /> : <SendHorizontal className="size-4" />}
-      </Button>
+      <div className="flex items-end gap-2">
+        <Textarea
+          value={draft}
+          onChange={event => setDraft(conversationId, event.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={1}
+          maxLength={MAX_LENGTH}
+          placeholder="Escreva uma mensagem — Enter envia, /template: abre os modelos"
+          aria-label="Mensagem"
+          className="max-h-32 min-h-9 resize-none py-2"
+        />
+
+        <Button
+          type="button"
+          size="icon"
+          onClick={handleSend}
+          disabled={!canSubmit}
+          aria-label="Enviar mensagem"
+        >
+          {isPending ? <Spinner /> : <SendHorizontal className="size-4" />}
+        </Button>
+      </div>
+
+      {templateDialogNode}
     </div>
   )
 }

@@ -1,11 +1,7 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { LayoutTemplate } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { z } from 'zod'
 
 import { Button } from '@workspace/ui/components/button'
 import {
@@ -15,61 +11,64 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@workspace/ui/components/dialog'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@workspace/ui/components/form'
-import { Input } from '@workspace/ui/components/input'
+import { Label } from '@workspace/ui/components/label'
 import { Spinner } from '@workspace/ui/components/spinner'
+
+import { ApprovedTemplatePicker } from '@/features/templates/components/approved-template-picker'
+import {
+  TemplateParameterForm,
+  useTemplateParameters,
+} from '@/features/templates/components/template-parameter-form'
 
 import { errorText } from '../../lib/api-error'
 import { useSendTemplateMessage } from './use-send-message'
 
 interface SendTemplateDialogProps {
   conversationId: string
-  disabled?: boolean
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** Modelo já escolhido fora do diálogo (comando `/template:` do composer). */
+  initialTemplateId?: string | null
 }
-
-const templateSchema = z.object({
-  templateName: z.string().trim().min(1, 'Informe o nome do template'),
-  languageCode: z.string().trim().min(1, 'Informe o código de idioma'),
-})
-
-type TemplateFormValues = z.infer<typeof templateSchema>
 
 export const SendTemplateDialog = ({
   conversationId,
-  disabled,
+  open,
+  onOpenChange,
+  initialTemplateId = null,
 }: SendTemplateDialogProps) => {
-  const [open, setOpen] = useState(false)
+  const [templateId, setTemplateId] = useState<string | null>(initialTemplateId)
   const sendTemplate = useSendTemplateMessage(conversationId)
+  const parameters = useTemplateParameters(templateId)
 
-  const form = useForm<TemplateFormValues>({
-    resolver: zodResolver(templateSchema),
-    defaultValues: { templateName: '', languageCode: 'pt_BR' },
-  })
+  // O composer troca o modelo com o diálogo já montado; seguir a prop mantém a
+  // escolha do comando sem um efeito que dispara render em cascata.
+  const [lastInitial, setLastInitial] = useState(initialTemplateId)
 
-  const onSubmit = (values: TemplateFormValues) => {
+  if (initialTemplateId !== lastInitial) {
+    setLastInitial(initialTemplateId)
+    setTemplateId(initialTemplateId)
+  }
+
+  const closeDialog = () => {
+    onOpenChange(false)
+    setTemplateId(null)
+  }
+
+  const handleSubmit = () => {
+    if (!templateId) return
+
+    const result = parameters.build()
+    if (!result?.success) return
+
     sendTemplate.mutate(
       {
         path: { id: conversationId },
-        body: {
-          templateName: values.templateName,
-          languageCode: values.languageCode,
-        },
+        body: { templateId, parameters: result.data },
       },
       {
-        onSuccess: () => {
-          setOpen(false)
-          form.reset({ templateName: '', languageCode: values.languageCode })
-        },
+        onSuccess: closeDialog,
         onError: error => {
           toast.error(errorText(error, 'Não foi possível enviar o template'))
         },
@@ -77,16 +76,20 @@ export const SendTemplateDialog = ({
     )
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" disabled={disabled}>
-          <LayoutTemplate className="size-4" />
-          Enviar template
-        </Button>
-      </DialogTrigger>
+  const canSend =
+    Boolean(templateId) && parameters.canSubmit && !sendTemplate.isPending
 
-      <DialogContent className="sm:max-w-md">
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (next) return onOpenChange(true)
+        if (sendTemplate.isPending) return
+
+        closeDialog()
+      }}
+    >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Enviar template</DialogTitle>
           <DialogDescription>
@@ -94,61 +97,30 @@ export const SendTemplateDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="templateName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do template</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="retomada_atendimento"
-                      autoComplete="off"
-                      disabled={sendTemplate.isPending}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Precisa estar aprovado no WhatsApp Manager.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Modelo aprovado</Label>
+            <ApprovedTemplatePicker
+              value={templateId}
+              onChange={template => setTemplateId(template.id)}
+              disabled={sendTemplate.isPending}
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="languageCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Código de idioma</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="pt_BR"
-                      autoComplete="off"
-                      disabled={sendTemplate.isPending}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Exatamente o idioma cadastrado no template (ex.: pt_BR,
-                    en_US).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+          {templateId && (
+            <TemplateParameterForm
+              state={parameters}
+              disabled={sendTemplate.isPending}
             />
+          )}
+        </div>
 
-            <DialogFooter>
-              <Button type="submit" disabled={sendTemplate.isPending}>
-                {sendTemplate.isPending && <Spinner />}
-                Enviar
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <DialogFooter>
+          <Button type="button" onClick={handleSubmit} disabled={!canSend}>
+            {sendTemplate.isPending && <Spinner />}
+            Enviar
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

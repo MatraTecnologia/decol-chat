@@ -19,6 +19,10 @@
     "./permissions": {
       "types": "./src/permissions.ts",
       "default": "./dist/permissions.js"
+    },
+    "./whatsapp-templates": {
+      "types": "./src/whatsapp-templates.ts",
+      "default": "./dist/whatsapp-templates.js"
     }
   },
   "scripts": {
@@ -28,7 +32,8 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
-    "better-auth": "^1.6.23"
+    "better-auth": "^1.6.23",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
