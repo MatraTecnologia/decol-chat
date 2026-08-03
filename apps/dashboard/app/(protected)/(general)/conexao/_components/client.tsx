@@ -4,7 +4,7 @@ import { motion } from 'motion/react'
 import { Plug } from 'lucide-react'
 
 import { ConnectionStatus } from './connection-status'
-import { CredentialsForm } from './credentials-form'
+import { EmbeddedSignupButton } from './embedded-signup-button'
 import { ReadinessPanel } from './readiness-panel'
 import { SetupGuide } from './setup-guide'
 import { TestMessageForm } from './test-message-form'
@@ -44,7 +44,7 @@ export const Client = () => {
         transition={{ delay: 0.2 }}
         className="grid gap-4 lg:grid-cols-2"
       >
-        <CredentialsForm />
+        <EmbeddedSignupButton />
         <ConnectionStatus />
         <WebhookPanel />
         <TestMessageForm />
