@@ -1231,11 +1231,9 @@ export type GetWhatsappConnectionResponses = {
     configured: boolean
     connection: {
       accessToken: string
-      appSecret: string
       phoneNumberId: string
       wabaId: string
       appId: string | null
-      verifyToken: string
       webhookBaseUrl: string | null
       displayPhoneNumber: string | null
       verifiedName: string | null
@@ -1254,11 +1252,9 @@ export type GetWhatsappConnectionResponse =
 export type UpdateWhatsappConnectionData = {
   body: {
     accessToken: string
-    appSecret: string
     phoneNumberId: string
     wabaId: string
     appId?: string
-    verifyToken: string
     webhookBaseUrl?: string
   }
   path?: never
@@ -1274,11 +1270,9 @@ export type UpdateWhatsappConnectionResponses = {
     configured: boolean
     connection: {
       accessToken: string
-      appSecret: string
       phoneNumberId: string
       wabaId: string
       appId: string | null
-      verifyToken: string
       webhookBaseUrl: string | null
       displayPhoneNumber: string | null
       verifiedName: string | null
@@ -1335,7 +1329,7 @@ export type GetWhatsappReadinessResponses = {
       label: string
       status: 'ok' | 'pending' | 'error' | 'skipped'
       detail: string
-      action: 'register_number' | 'subscribe_app' | 'select_number'
+      action: 'subscribe_app' | 'select_number'
     }>
   }
 }
@@ -1368,27 +1362,6 @@ export type ListWhatsappPhoneNumbersResponses = {
 
 export type ListWhatsappPhoneNumbersResponse =
   ListWhatsappPhoneNumbersResponses[keyof ListWhatsappPhoneNumbersResponses]
-
-export type RegisterWhatsappNumberData = {
-  body: {
-    pin: string
-  }
-  path?: never
-  query?: never
-  url: '/whatsapp/register-number'
-}
-
-export type RegisterWhatsappNumberResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    success: boolean
-  }
-}
-
-export type RegisterWhatsappNumberResponse =
-  RegisterWhatsappNumberResponses[keyof RegisterWhatsappNumberResponses]
 
 export type SubscribeWhatsappAppData = {
   body?: never
@@ -3493,3 +3466,29 @@ export type GetWhatsappTemplateAssetPreviewResponses = {
 
 export type GetWhatsappTemplateAssetPreviewResponse =
   GetWhatsappTemplateAssetPreviewResponses[keyof GetWhatsappTemplateAssetPreviewResponses]
+
+export type ConnectWhatsappEmbeddedSignupData = {
+  body: {
+    code: string
+    phoneNumberId: string
+    wabaId: string
+  }
+  path?: never
+  query?: never
+  url: '/whatsapp/connection/embedded-signup'
+}
+
+export type ConnectWhatsappEmbeddedSignupResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    phoneNumberId: string
+    wabaId: string
+    displayPhoneNumber: string | null
+    verifiedName: string | null
+  }
+}
+
+export type ConnectWhatsappEmbeddedSignupResponse =
+  ConnectWhatsappEmbeddedSignupResponses[keyof ConnectWhatsappEmbeddedSignupResponses]

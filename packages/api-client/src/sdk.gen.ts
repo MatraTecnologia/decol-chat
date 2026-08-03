@@ -50,6 +50,8 @@ import type {
   CloseConversationResponses,
   ConfirmWhatsappTemplateAssetUploadData,
   ConfirmWhatsappTemplateAssetUploadResponses,
+  ConnectWhatsappEmbeddedSignupData,
+  ConnectWhatsappEmbeddedSignupResponses,
   CreateWhatsappTemplateDraftData,
   CreateWhatsappTemplateDraftResponses,
   DeleteWhatsappConnectionData,
@@ -108,8 +110,6 @@ import type {
   ReadinessProbeResponses,
   ReceiveWhatsappWebhookData,
   ReceiveWhatsappWebhookResponses,
-  RegisterWhatsappNumberData,
-  RegisterWhatsappNumberResponses,
   ReopenConversationData,
   ReopenConversationResponses,
   SendMessageData,
@@ -633,25 +633,6 @@ export const listWhatsappPhoneNumbers = <ThrowOnError extends boolean = false>(
   >({ url: '/whatsapp/phone-numbers', ...options })
 
 /**
- * Registra o número na Cloud API com o PIN de verificação
- */
-export const registerWhatsappNumber = <ThrowOnError extends boolean = false>(
-  options: Options<RegisterWhatsappNumberData, ThrowOnError>,
-): RequestResult<RegisterWhatsappNumberResponses, unknown, ThrowOnError> =>
-  (options.client ?? client).post<
-    RegisterWhatsappNumberResponses,
-    unknown,
-    ThrowOnError
-  >({
-    url: '/whatsapp/register-number',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  })
-
-/**
  * Inscreve o app no WABA para receber os webhooks
  */
 export const subscribeWhatsappApp = <ThrowOnError extends boolean = false>(
@@ -965,3 +946,28 @@ export const getWhatsappTemplateAssetPreview = <
     unknown,
     ThrowOnError
   >({ url: '/whatsapp/templates/assets/{assetId}/preview', ...options })
+
+/**
+ * Conclui o Embedded Signup e grava a conexão (coexistence)
+ */
+export const connectWhatsappEmbeddedSignup = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ConnectWhatsappEmbeddedSignupData, ThrowOnError>,
+): RequestResult<
+  ConnectWhatsappEmbeddedSignupResponses,
+  unknown,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ConnectWhatsappEmbeddedSignupResponses,
+    unknown,
+    ThrowOnError
+  >({
+    url: '/whatsapp/connection/embedded-signup',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
