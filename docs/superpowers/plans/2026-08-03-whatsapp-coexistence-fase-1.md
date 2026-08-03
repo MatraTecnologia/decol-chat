@@ -41,6 +41,7 @@ Ao fim deste plano: o número funciona conectado no celular e na API, mensagens 
 | `apps/api/src/lib/whatsapp/inbound/messages.ts` | Handler do field `messages` — código atual, sem mudança de comportamento |
 | `apps/api/src/lib/whatsapp/inbound/index.ts` | Router por `field` + reexport de `processInboundPayload` |
 | `apps/api/src/lib/whatsapp/oauth.ts` | `exchangeCodeForToken` |
+| `apps/api/src/jobs/whatsapp-smb-sync.ts` | Dispara o pedido dos dados do app do celular (janela de 24h) |
 | `apps/api/src/routes/whatsapp/embedded-signup.ts` | `POST /whatsapp/connection/embedded-signup` |
 | `apps/dashboard/.../conexao/_components/embedded-signup-button.tsx` | Carrega o FB SDK e dispara o fluxo |
 
@@ -552,18 +553,24 @@ export const processInboundPayload = async (
 }
 ```
 
-- [ ] **Step 6: Apagar o arquivo antigo**
+- [ ] **Step 6: Apagar o arquivo antigo e corrigir o import do job**
 
 ```bash
 git rm apps/api/src/lib/whatsapp/inbound.ts
 ```
 
-O import em `apps/api/src/jobs/whatsapp-inbound.ts:11` (`from '@/lib/whatsapp/inbound.js'`) continua válido — resolve para `inbound/index.ts`. **Não altere esse arquivo.**
+ESM com resolução NodeNext **não** tem fallback de índice de diretório — isso é comportamento de CJS. O import atual em `apps/api/src/jobs/whatsapp-inbound.ts:11` deixa de resolver e precisa nomear o arquivo:
+
+```typescript
+import { processInboundPayload } from '@/lib/whatsapp/inbound/index.js'
+```
+
+Atualize também o comentário do topo do job (linha 6), que aponta para `lib/whatsapp/inbound.ts`, para `lib/whatsapp/inbound/`.
 
 - [ ] **Step 7: Conferir que nada mais importava do arquivo antigo**
 
 Run: `grep -rn "whatsapp/inbound" apps/api/src --include=*.ts`
-Expected: só `jobs/whatsapp-inbound.ts` e os arquivos dentro de `inbound/`. Qualquer outro consumidor precisa ser conferido antes de seguir.
+Expected: só `jobs/whatsapp-inbound.ts` (já apontando para `inbound/index.js`) e os arquivos dentro de `inbound/`. Qualquer specifier terminando em `inbound.js` sem o `/index` ainda é resolução quebrada.
 
 - [ ] **Step 8: Rodar testes e typecheck**
 
@@ -581,7 +588,7 @@ Expected: a mensagem aparece no inbox como hoje, e o console de `/conexao` mostr
 - [ ] **Step 10: Commit**
 
 ```bash
-git add apps/api/src/lib/whatsapp/inbound/ apps/api/src/lib/whatsapp/inbound.ts
+git add apps/api/src/lib/whatsapp/inbound/ apps/api/src/lib/whatsapp/inbound.ts apps/api/src/jobs/whatsapp-inbound.ts
 git commit -m "refactor(whatsapp): router de webhook por field + log verbatim dos fields sem handler"
 ```
 
@@ -704,8 +711,10 @@ Em `apps/api/prisma/schema.prisma`, no model `WhatsAppAccount`, apague as linhas
 
 - [ ] **Step 3: Sincronizar o banco**
 
-Run: `pnpm --filter @workspace/api db:push`
-Expected: prompt de confirmação sobre perda de dados nas duas colunas → confirmar. Os valores são substituídos pelo env; nada mais depende deles.
+Derrubar coluna faz o `prisma db push` pedir confirmação interativa, e o shell aqui é não-interativo — o comando erra em vez de perguntar. A flag é obrigatória:
+
+Run: `pnpm --filter @workspace/api exec prisma db push --accept-data-loss`
+Expected: aviso de que as colunas `appSecret` e `verifyToken` serão removidas, seguido de `Your database is now in sync with your Prisma schema.` A perda é intencional — os valores passaram para o env na Task 5.
 
 - [ ] **Step 4: Ajustar `connection.ts`**
 
@@ -739,13 +748,27 @@ Para cada arquivo da lista do Step 1: remova o campo do formulário, da exibiç�
 - [ ] **Step 7: Verificar**
 
 Run: `pnpm --filter @workspace/api typecheck`
-Run: `pnpm --filter @workspace/dashboard typecheck`
-Expected: sem erros nos dois. Erros aqui são o mapa do que ficou pendente.
+Expected: sem erros. Erros aqui são o mapa do que ficou pendente.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Regenerar o client antes de checar o dashboard**
+
+`connectionSchema`, `connectionBodySchema` e `toMaskedConnection` perderam campos — mudaram o body **e** a resposta. Sem regenerar, o dashboard typechecka verde contra um client velho e só quebra em runtime:
 
 ```bash
-git add apps/api/prisma/schema.prisma apps/api/src/lib/whatsapp/connection.ts apps/api/src/routes/whatsapp/index.ts apps/dashboard/app/
+curl -s http://localhost:3333/health
+pnpm generate:api
+```
+Expected: `health` = `ok`; `packages/api-client/src/types.gen.ts` sem `appSecret` e sem `verifyToken`.
+
+- [ ] **Step 9: Verificar o dashboard contra o client novo**
+
+Run: `pnpm --filter @workspace/dashboard typecheck`
+Expected: sem erros. Se acusar campo inexistente, é consumidor que escapou do grep do Step 1.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add apps/api/prisma/schema.prisma apps/api/src/lib/whatsapp/connection.ts apps/api/src/routes/whatsapp/index.ts apps/dashboard/app/ packages/api-client/src/
 git commit -m "refactor(whatsapp): app secret e verify token saem da conta e passam a vir do env"
 ```
 
@@ -913,14 +936,153 @@ git commit -m "feat(whatsapp): troca do authorization code do Embedded Signup po
 
 ---
 
-### Task 8: Rota `POST /whatsapp/connection/embedded-signup`
+### Task 8: Job de disparo do sync SMB
+
+A chamada à SMB App Data API é **one-shot com prazo de 24h a partir do onboarding**. Se ela não for disparada na Fase 1, a janela expira sem uso e `smb_app_state_sync`/`history` só voltam a ser obteníveis desconectando e reconectando o número pelo celular.
+
+O job desta task não faz parsing nenhum — ele apenas pede os dados. Os eventos resultantes caem no `pushWebhookLog` e no log `Evento do WhatsApp sem handler` da Task 4, que é exatamente o insumo da Task 12. É o mínimo que torna a captura possível sem antecipar a Fase 2.
+
+**Files:**
+- Create: `apps/api/src/jobs/whatsapp-smb-sync.ts`
+- Modify: `apps/api/src/lib/whatsapp/graph-client.ts` (adicionar `requestSmbAppData`)
+- Modify: `apps/api/src/plugins/queue.ts` (registrar o job)
+
+**Interfaces:**
+- Consumes: `getAccountById` de `connection.js`; `createQueue`/`createWorker` de `lib/queue.js`.
+- Produces:
+  - `requestSmbAppData(token: string, phoneNumberId: string, syncType: 'smb_app_state_sync' | 'history'): Promise<{ success: boolean }>`
+  - `whatsappSmbSyncQueue` e `registerWhatsappSmbSyncJob(app: FastifyInstance): void`
+  - Job data: `{ accountId: string }`
+
+- [ ] **Step 1: Adicionar a chamada da Graph API**
+
+Em `apps/api/src/lib/whatsapp/graph-client.ts`, depois de `subscribeApp`:
+
+```typescript
+export type SmbSyncType = 'smb_app_state_sync' | 'history'
+
+/**
+ * Pede à Meta o envio dos dados do app do celular (contatos e histórico). A
+ * resposta é só o aceite — os dados chegam depois, pelos webhooks `history` e
+ * `smb_app_state_sync`.
+ */
+export const requestSmbAppData = (
+  token: string,
+  phoneNumberId: string,
+  syncType: SmbSyncType,
+) =>
+  request<{ success: boolean }>(`/${phoneNumberId}/smb_app_data`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ messaging_product: 'whatsapp', sync_type: syncType }),
+  })
+```
+
+- [ ] **Step 2: Criar o job**
+
+Crie `apps/api/src/jobs/whatsapp-smb-sync.ts`:
+
+```typescript
+/**
+ * Dispara o sync inicial dos dados do app do celular (coexistence).
+ *
+ * Vive numa fila e não inline na rota de onboarding porque a janela para pedir
+ * esses dados é de 24h e só existe uma vez: uma instabilidade momentânea da
+ * Meta não pode queimá-la sem retentativa.
+ */
+import type { FastifyInstance } from 'fastify'
+
+import { createQueue, createWorker } from '@/lib/queue.js'
+import { getAccountById } from '@/lib/whatsapp/connection.js'
+import { requestSmbAppData } from '@/lib/whatsapp/graph-client.js'
+
+export interface WhatsappSmbSyncJobData {
+  accountId: string
+}
+
+export const whatsappSmbSyncQueue =
+  createQueue<WhatsappSmbSyncJobData>('whatsapp-smb-sync')
+
+export const registerWhatsappSmbSyncJob = (app: FastifyInstance) => {
+  const worker = createWorker<WhatsappSmbSyncJobData>(
+    'whatsapp-smb-sync',
+    async job => {
+      const account = await getAccountById(job.data.accountId)
+
+      // Conta desativada entre o enfileiramento e a execução: nada a pedir.
+      if (!account) return
+
+      // Contatos antes do histórico: as mensagens referenciam gente que os
+      // contatos nomeiam, e a ordem inversa deixaria tudo sem nome até o fim.
+      await requestSmbAppData(
+        account.accessToken,
+        account.phoneNumberId,
+        'smb_app_state_sync',
+      )
+
+      await requestSmbAppData(
+        account.accessToken,
+        account.phoneNumberId,
+        'history',
+      )
+    },
+  )
+
+  worker.on('failed', (job, err) => {
+    app.log.error({ jobId: job?.id, err }, 'Job whatsapp-smb-sync falhou')
+  })
+
+  app.addHook('onClose', async () => {
+    await worker.close()
+    await whatsappSmbSyncQueue.close()
+  })
+}
+```
+
+- [ ] **Step 3: Registrar o job**
+
+Em `apps/api/src/plugins/queue.ts`, siga o padrão já usado por `registerWhatsappInboundJob` — mesmo import style, mesma posição (jobs comuns, não a seção de scheduled):
+
+```typescript
+import { registerWhatsappSmbSyncJob } from '@/jobs/whatsapp-smb-sync.js'
+```
+
+```typescript
+  registerWhatsappSmbSyncJob(app)
+```
+
+- [ ] **Step 4: Verificar**
+
+Run: `pnpm --filter @workspace/api typecheck`
+Expected: sem erros.
+
+- [ ] **Step 5: Confirmar que a fila aparece no Bull Board**
+
+Com a API rodando, abra `http://localhost:3333/admin/queues`.
+Expected: a fila `whatsapp-smb-sync` listada (vazia). O Bull Board descobre filas via `getRegisteredQueues()`, então a ausência significa que o Step 3 não pegou.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/api/src/jobs/whatsapp-smb-sync.ts apps/api/src/lib/whatsapp/graph-client.ts apps/api/src/plugins/queue.ts
+git commit -m "feat(whatsapp): job de disparo do sync inicial dos dados do app"
+```
+
+> **Verificar durante a execução:** o path `/{phone_number_id}/smb_app_data` e o nome do campo `sync_type` vêm da documentação da Meta e não foram observados em resposta real. Se a chamada devolver erro de path inválido, confira o endpoint atual no App Dashboard antes de reescrever a lógica — o desenho do job não muda, só a URL.
+
+---
+
+### Task 9: Rota `POST /whatsapp/connection/embedded-signup`
 
 **Files:**
 - Create: `apps/api/src/routes/whatsapp/embedded-signup.ts`
 - Modify: `apps/api/src/routes/whatsapp/index.ts` (registro do plugin)
 
 **Interfaces:**
-- Consumes: `exchangeCodeForToken` (Task 7); `upsertConnection`, `updateConnectionMeta` (Task 6); `getPhoneNumberInfo`, `subscribeApp`, `GraphApiError` de `graph-client.js`.
+- Consumes: `exchangeCodeForToken` (Task 7); `upsertConnection`, `updateConnectionMeta` (Task 6); `whatsappSmbSyncQueue` (Task 8); `getPhoneNumberInfo`, `subscribeApp`, `GraphApiError` de `graph-client.js`.
 - Produces: rota com `operationId: 'connectWhatsappEmbeddedSignup'`, body `{ code, phoneNumberId, wabaId }`, resposta `{ phoneNumberId, wabaId, displayPhoneNumber, verifiedName }`.
 
 - [ ] **Step 1: Escrever a rota**
@@ -931,6 +1093,7 @@ Crie `apps/api/src/routes/whatsapp/embedded-signup.ts`:
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
+import { whatsappSmbSyncQueue } from '@/jobs/whatsapp-smb-sync.js'
 import { requireRole } from '@/lib/auth-guard.js'
 import {
   updateConnectionMeta,
@@ -985,7 +1148,11 @@ const embeddedSignupRoutes: FastifyPluginAsyncZod = async app => {
 
         // Coexistence NÃO chama /register: o número já está registrado pelo app
         // do celular e registrar aqui o tiraria de lá.
-        await upsertConnection({ accessToken, phoneNumberId, wabaId })
+        const account = await upsertConnection({
+          accessToken,
+          phoneNumberId,
+          wabaId,
+        })
 
         // Idempotência defensiva — o Embedded Signup já assina o app na WABA, e
         // a assinatura dos fields é configuração de app no App Dashboard.
@@ -1001,6 +1168,10 @@ const embeddedSignupRoutes: FastifyPluginAsyncZod = async app => {
           qualityRating: info.quality_rating ?? null,
           lastCheckedAt: new Date(),
         })
+
+        // A janela para pedir os dados do app é de 24h e não se repete — o
+        // enfileiramento vem logo após a conta existir, não no fim do handler.
+        await whatsappSmbSyncQueue.add('smb-sync', { accountId: account.id })
 
         app.emitRealtimeEvent({
           entity: 'whatsappConnection',
@@ -1075,7 +1246,7 @@ git commit -m "feat(whatsapp): rota de conclusao do Embedded Signup"
 
 ---
 
-### Task 9: Botão de Embedded Signup no dashboard
+### Task 10: Botão de Embedded Signup no dashboard
 
 **Files:**
 - Create: `apps/dashboard/app/(protected)/(general)/conexao/_components/embedded-signup-button.tsx`
@@ -1083,7 +1254,7 @@ git commit -m "feat(whatsapp): rota de conclusao do Embedded Signup"
 - Modify: `apps/dashboard/app/(protected)/(general)/conexao/_components/client.tsx:7,47`
 
 **Interfaces:**
-- Consumes: `connectWhatsappEmbeddedSignup` do SDK gerado (Task 8); `env.NEXT_PUBLIC_META_APP_ID`, `env.NEXT_PUBLIC_META_ES_CONFIG_ID` (Task 1).
+- Consumes: `connectWhatsappEmbeddedSignup` do SDK gerado (Task 9); `env.NEXT_PUBLIC_META_APP_ID`, `env.NEXT_PUBLIC_META_ES_CONFIG_ID` (Task 1).
 - Produces: `<EmbeddedSignupButton />`.
 
 - [ ] **Step 1: Criar o componente**
@@ -1312,7 +1483,7 @@ git commit -m "feat(whatsapp): Embedded Signup no dashboard substitui o form de 
 
 ---
 
-### Task 10: Remover o registro de número e atualizar o guia
+### Task 11: Remover o registro de número e atualizar o guia
 
 Sob coexistence, `POST /{phone_number_id}/register` é ativamente danoso: tira o número do app do celular, que é exatamente o que a feature existe para evitar.
 
@@ -1392,7 +1563,7 @@ git commit -m "refactor(whatsapp): remove registro de numero, incompativel com c
 
 ---
 
-### Task 11: Verificação final e captura dos payloads
+### Task 12: Verificação final e captura dos payloads
 
 Esta task não escreve código: ela produz o insumo do plano da Fase 2.
 
@@ -1416,7 +1587,9 @@ No App Dashboard da Meta → WhatsApp → Configuration → Webhook fields, marq
 - [ ] **Step 3: Provocar cada evento**
 
 - `smb_message_echoes`: mande uma mensagem **pelo celular** para um contato qualquer.
-- `smb_app_state_sync` e `history`: chegam após a chamada da SMB App Data API, que ainda não foi implementada (é Fase 3). Se não aparecerem espontaneamente após o onboarding, registre isso — a ausência é informação: significa que a Fase 3 precisa disparar o sync explicitamente dentro das 24h.
+- `smb_app_state_sync` e `history`: disparados pelo job da Task 8 no momento do onboarding. Confirme no Bull Board que o job `whatsapp-smb-sync` concluiu; os eventos chegam em seguida, o `history` possivelmente em vários chunks ao longo de minutos.
+
+Se o job falhou nas 3 tentativas, os dados **não** podem ser pedidos de novo sem desconectar e reconectar o número pelo celular — a janela é única. Nesse caso, corrija a causa (o erro está no log do worker) e refaça o onboarding antes de seguir.
 
 - [ ] **Step 4: Capturar os payloads**
 
@@ -1441,4 +1614,4 @@ git commit -m "docs(whatsapp): payloads reais dos webhooks de coexistence"
 
 Com os payloads capturados, escrever o plano da Fase 2 (`echoes.ts`, `contacts.ts`, campo `origin`, badge no front) e depois o da Fase 3 (SMB App Data API, fila `whatsapp-history`, backfill). Ambos seguem a mesma spec.
 
-> Criado em 2026-08-03 11:24 (-03) · Última modificação: 2026-08-03 11:24 (-03)
+> Criado em 2026-08-03 11:24 (-03) · Última modificação: 2026-08-03 11:39 (-03)
