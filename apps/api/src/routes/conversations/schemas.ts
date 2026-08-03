@@ -48,3 +48,16 @@ export const conversationSchema = z.object({
   contact: contactSummarySchema,
   assignedTo: assigneeSummarySchema.nullable(),
 })
+
+/** Onde o termo de busca casou — o front só destaca, quem recorta é o backend. */
+export const conversationMatchSchema = z.object({
+  field: z.enum(['contact', 'message']),
+  snippet: z.string(),
+  messageId: z.string().nullable(),
+  messageAt: z.date().nullable(),
+  count: z.number(),
+})
+
+export const conversationListItemSchema = conversationSchema.extend({
+  match: conversationMatchSchema.nullable(),
+})

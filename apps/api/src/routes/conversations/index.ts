@@ -28,9 +28,21 @@ import {
 
 import actionsRoutes from './actions.js'
 import { canMarkConversationRead } from './action-policy.js'
+import { findMessageMatches } from './message-search.js'
 import { isWithinWindow, windowExpiresAt } from './messaging-window.js'
 import messagesRoutes from './messages.js'
-import { conversationSchema } from './schemas.js'
+import {
+  conversationListItemSchema,
+  conversationSchema,
+} from './schemas.js'
+import {
+  activityRangeFilter,
+  buildConversationMatch,
+  canSearchMessages,
+  isInvertedRange,
+  type MessageMatch,
+  normalizeSearchTerm,
+} from './search.js'
 import sendRoutes from './send.js'
 import startRoutes from './start.js'
 
@@ -41,6 +53,12 @@ const conversationDetailSchema = conversationSchema.extend({
   windowExpiresAt: z.date().nullable(),
 })
 
+/** Data ISO vinda da querystring — `z.coerce.date()` sairia sem tipo no OpenAPI. */
+const dateQueryParam = z
+  .string()
+  .transform(value => new Date(value))
+  .refine(value => !Number.isNaN(value.getTime()), 'Data inválida')
+
 const listQuerySchema = z
   .object({
     status: ConversationStatusSchema.optional(),
@@ -48,6 +66,8 @@ const listQuerySchema = z
     assignedToId: z.string().optional(),
     teamId: z.string().optional(),
     q: z.string().optional(),
+    from: dateQueryParam.optional(),
+    to: dateQueryParam.optional(),
     scope: z.enum(['mine', 'unassigned', 'all']).default('mine'),
   })
   .extend(paginationQuerySchema.shape)
@@ -65,6 +85,12 @@ const scopeFilter = (
   if (scope === 'mine') return { assignedToId: userId }
   return {}
 }
+
+/** Filtro do parâmetro `assignedToId` — `unassigned` significa "sem responsável". */
+const assigneeFilter = (
+  assignedToId: string,
+): Prisma.ConversationWhereInput =>
+  assignedToId === 'unassigned' ? { assignedToId: null } : { assignedToId }
 
 /** Busca textual por nome ou telefone do contato. */
 const contactSearchFilter = (q: string): Prisma.ConversationWhereInput => {
@@ -86,6 +112,25 @@ const contactSearchFilter = (q: string): Prisma.ConversationWhereInput => {
   }
 }
 
+/**
+ * Contato **ou** conteúdo das mensagens. O ramo das mensagens vira um `EXISTS`
+ * com `ILIKE '%termo%'`, servido pelo índice GIN de trigramas de `message.content`.
+ */
+const searchFilter = (term: string): Prisma.ConversationWhereInput => ({
+  OR: [
+    contactSearchFilter(term),
+    ...(canSearchMessages(term)
+      ? [
+          {
+            messages: {
+              some: { content: { contains: term, mode: 'insensitive' as const } },
+            },
+          },
+        ]
+      : []),
+  ],
+})
+
 const conversationsRoutes: FastifyPluginAsyncZod = async app => {
   // GET /conversations
   app.get(
@@ -96,17 +141,27 @@ const conversationsRoutes: FastifyPluginAsyncZod = async app => {
         tags: ['Conversations'],
         summary: 'Lista conversas visíveis para o solicitante',
         querystring: listQuerySchema,
-        response: { 200: paginatedResponseSchema(conversationSchema) },
+        response: { 200: paginatedResponseSchema(conversationListItemSchema) },
       },
     },
-    async request => {
+    async (request, reply) => {
       const { session, role } = await requireRole(request, [
         ...CONVERSATION_READERS,
       ])
 
-      const { status, priority, assignedToId, teamId, q, scope } = request.query
+      const { status, priority, assignedToId, teamId, q, from, to, scope } =
+        request.query
+
+      if (isInvertedRange(from, to)) {
+        return reply.badRequest(
+          'Intervalo inválido: `from` deve ser anterior a `to`.',
+        )
+      }
+
       const userId = session.user.id
       const globalReader = isGlobalReader(role)
+      const term = normalizeSearchTerm(q)
+      const activityRange = activityRangeFilter(from, to)
 
       // Vendedor/somente-leitura não escolhe escopo nem responsável: o
       // fragmento de RBAC é a única fonte de verdade para eles.
@@ -114,15 +169,18 @@ const conversationsRoutes: FastifyPluginAsyncZod = async app => {
         AND: [
           scopeConversations(role, userId),
           ...(globalReader ? [scopeFilter(scope, userId)] : []),
-          ...(globalReader && assignedToId ? [{ assignedToId }] : []),
+          ...(globalReader && assignedToId
+            ? [assigneeFilter(assignedToId)]
+            : []),
           ...(status ? [{ status }] : []),
           ...(priority ? [{ priority }] : []),
           ...(teamId ? [{ teamId }] : []),
-          ...(q ? [contactSearchFilter(q)] : []),
+          ...(term ? [searchFilter(term)] : []),
+          ...(activityRange ? [activityRange] : []),
         ],
       }
 
-      return paginate<z.infer<typeof conversationSchema>>(
+      const result = await paginate<z.infer<typeof conversationSchema>>(
         prisma.conversation,
         request.query as PaginationParams,
         {
@@ -134,6 +192,29 @@ const conversationsRoutes: FastifyPluginAsyncZod = async app => {
           include: conversationRelationsInclude,
         },
       )
+
+      // Uma consulta agregada por página resolve os trechos de todas as conversas.
+      const matches: Map<string, MessageMatch> =
+        term && canSearchMessages(term)
+          ? await findMessageMatches(
+              result.data.map(conversation => conversation.id),
+              term,
+            )
+          : new Map()
+
+      return {
+        ...result,
+        data: result.data.map(conversation => ({
+          ...conversation,
+          match: term
+            ? buildConversationMatch(
+                conversation.contact,
+                term,
+                matches.get(conversation.id),
+              )
+            : null,
+        })),
+      }
     },
   )
 
