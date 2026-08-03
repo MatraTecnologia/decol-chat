@@ -33,9 +33,16 @@ interface SignupData {
   waba_id?: string
 }
 
+type SdkState = 'loading' | 'ready' | 'error'
+
 export const EmbeddedSignupButton = () => {
   const queryClient = useQueryClient()
   const [isPending, setIsPending] = useState(false)
+  // Lazy: numa remontagem com o SDK já carregado o `fbAsyncInit` não dispara
+  // de novo, e o botão ficaria preso em "Carregando...".
+  const [sdkState, setSdkState] = useState<SdkState>(() =>
+    typeof window !== 'undefined' && window.FB ? 'ready' : 'loading',
+  )
   const signupData = useRef<SignupData | null>(null)
 
   const appId = env.NEXT_PUBLIC_META_APP_ID
@@ -47,6 +54,7 @@ export const EmbeddedSignupButton = () => {
     // O SDK precisa da callback global definida antes do script carregar.
     window.fbAsyncInit = () => {
       window.FB?.init({ appId, autoLogAppEvents: true, xfbml: false, version: GRAPH_VERSION })
+      setSdkState('ready')
     }
 
     if (!document.getElementById('facebook-jssdk')) {
@@ -54,6 +62,9 @@ export const EmbeddedSignupButton = () => {
       script.id = 'facebook-jssdk'
       script.src = SDK_SRC
       script.async = true
+      // Bloqueador de rastreadores derruba connect.facebook.net. Sem tratar o
+      // erro, o SDK some em silêncio e o clique não faz nada.
+      script.onerror = () => setSdkState('error')
       document.body.appendChild(script)
     }
 
@@ -81,9 +92,19 @@ export const EmbeddedSignupButton = () => {
   const onConnect = () => {
     if (!configId) return
 
+    // Chamada direta, sem `?.`: com optional chaining um SDK ausente vira
+    // no-op silencioso e o botão fica preso em "Conectando...".
+    if (!window.FB) {
+      setSdkState('error')
+      toast.error(
+        'O SDK do Facebook não carregou. Desative o bloqueador de rastreadores para este site e recarregue a página.',
+      )
+      return
+    }
+
     setIsPending(true)
 
-    window.FB?.login(
+    window.FB.login(
       async response => {
         const code = response?.authResponse?.code
         const data = signupData.current
@@ -132,10 +153,26 @@ export const EmbeddedSignupButton = () => {
       </CardHeader>
       <CardContent>
         {appId && configId ? (
-          <Button onClick={onConnect} disabled={isPending}>
-            <MessageCircle className="size-4" />
-            {isPending ? 'Conectando...' : 'Conectar com o WhatsApp'}
-          </Button>
+          <div className="space-y-2">
+            <Button
+              onClick={onConnect}
+              disabled={isPending || sdkState !== 'ready'}
+            >
+              <MessageCircle className="size-4" />
+              {isPending
+                ? 'Conectando...'
+                : sdkState === 'loading'
+                  ? 'Carregando SDK...'
+                  : 'Conectar com o WhatsApp'}
+            </Button>
+
+            {sdkState === 'error' && (
+              <p className="text-destructive text-sm">
+                O SDK do Facebook foi bloqueado. Desative o bloqueador de
+                rastreadores para este site e recarregue a página.
+              </p>
+            )}
+          </div>
         ) : (
           <p className="text-muted-foreground text-sm">
             Defina NEXT_PUBLIC_META_APP_ID e NEXT_PUBLIC_META_ES_CONFIG_ID para
