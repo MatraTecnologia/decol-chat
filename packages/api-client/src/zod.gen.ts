@@ -889,6 +889,88 @@ export const zListMembersResponse = z.array(
   }),
 )
 
+export const zGetReportsOverviewQuery = z.object({
+  from: z.string(),
+  to: z.string(),
+  assigneeId: z.string().optional(),
+})
+
+/**
+ * Default Response
+ */
+export const zGetReportsOverviewResponse = z.object({
+  range: z.object({
+    from: z.string(),
+    to: z.string(),
+  }),
+  totals: z.object({
+    conversationsStarted: z.number(),
+    conversationsOpen: z.number(),
+    conversationsPending: z.number(),
+    conversationsClosed: z.number(),
+    messagesInbound: z.number(),
+    messagesOutbound: z.number(),
+    templatesSent: z.number(),
+    unassigned: z.number(),
+    outsideWindow: z.number(),
+    failedMessages: z.number(),
+  }),
+  averages: z.object({
+    firstResponseSeconds: z.number().nullable(),
+    resolutionSeconds: z.number().nullable(),
+    replySeconds: z.number().nullable(),
+  }),
+  series: z.array(
+    z.object({
+      date: z.string(),
+      inbound: z.number(),
+      outbound: z.number(),
+      started: z.number(),
+      closed: z.number(),
+    }),
+  ),
+  heatmap: z.array(
+    z.object({
+      weekday: z.number(),
+      hour: z.number(),
+      count: z.number(),
+    }),
+  ),
+  statusBreakdown: z.array(
+    z.object({
+      status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+      count: z.number(),
+    }),
+  ),
+})
+
+export const zListAgentPerformanceQuery = z.object({
+  from: z.string(),
+  to: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zListAgentPerformanceResponse = z.object({
+  data: z.array(
+    z.object({
+      userId: z.string(),
+      name: z.string(),
+      email: z.string(),
+      image: z.string().nullable(),
+      role: z.string(),
+      assigned: z.number(),
+      closed: z.number(),
+      open: z.number(),
+      messagesSent: z.number(),
+      firstResponseSeconds: z.number().nullable(),
+      resolutionSeconds: z.number().nullable(),
+      lastActivityAt: z.string().nullable(),
+    }),
+  ),
+})
+
 export const zListUsersQuery = z.object({
   search: z.string().optional(),
   role: z.enum(['admin', 'manager', 'agent', 'viewer', 'user']).optional(),

@@ -284,7 +284,7 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
             include: conversationRelationsInclude,
           })
 
-          return { conversation, message }
+          return { contact, contactCreated: !existing, conversation, message }
         })
       } catch (error) {
         app.log.error(
@@ -295,7 +295,13 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
         return reply.internalServerError(PERSIST_FAILED)
       }
 
-      const { conversation, message } = persisted
+      const { contact, contactCreated, conversation, message } = persisted
+
+      app.emitRealtimeEvent({
+        entity: 'contact',
+        action: contactCreated ? 'created' : 'updated',
+        entityId: contact.id,
+      })
 
       app.emitRealtimeEvent({
         entity: 'conversation',

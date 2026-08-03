@@ -11,6 +11,7 @@ import { en, ptBR } from '@/shared/i18n.js'
 import { recordAudit } from './audit.js'
 import { sendEmail } from './email.js'
 import { prisma } from './prisma.js'
+import { emitRealtime } from './realtime.js'
 import { redis } from './redis.js'
 
 import {
@@ -265,6 +266,13 @@ export const auth = betterAuth({
         },
         async after(user) {
           await recordAudit({ event: 'user.deleted', userId: user.id })
+
+          // As mutações de usuário são todas do plugin admin (`/api/auth/*`),
+          // então este hook é o único ponto onde a tabela de usuários e a
+          // lista de atendentes ficam sabendo da mudança. Sem payload: o
+          // objeto do Better Auth carrega e-mail e campos de autenticação, e o
+          // evento vai para todos os clientes conectados.
+          emitRealtime({ entity: 'user', action: 'deleted', entityId: user.id })
         },
       },
       create: {
@@ -276,6 +284,8 @@ export const auth = betterAuth({
         },
         async after(user) {
           await recordAudit({ event: 'user.created', userId: user.id })
+
+          emitRealtime({ entity: 'user', action: 'created', entityId: user.id })
         },
       },
       update: {
@@ -285,6 +295,8 @@ export const auth = betterAuth({
             userId: user.id,
             metadata: { role: user.role ?? null, banned: user.banned ?? null },
           })
+
+          emitRealtime({ entity: 'user', action: 'updated', entityId: user.id })
         },
       },
     },

@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 generator zod {
@@ -14,7 +15,8 @@ generator zod {
 // UserSchema.parse(data);
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [pg_trgm]
 }
 
 // ============================================================================
@@ -366,6 +368,8 @@ model Message {
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([status])
+  // busca textual da lista de conversas — ILIKE '%termo%' via trigramas
+  @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("message")
 }
 

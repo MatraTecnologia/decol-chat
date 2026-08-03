@@ -322,6 +322,14 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
           payload: info,
         })
 
+        // A consulta é GET, mas grava qualidade e `lastCheckedAt` — os outros
+        // admins veem o cartão de conexão desatualizado sem este evento.
+        app.emitRealtimeEvent({
+          entity: 'whatsappConnection',
+          action: 'updated',
+          entityId: 'singleton',
+        })
+
         return {
           id: info.id,
           displayPhoneNumber: info.display_phone_number ?? null,

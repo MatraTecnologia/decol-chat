@@ -22,11 +22,13 @@ import {
   duplicateWhatsappTemplate,
   getContact,
   getConversation,
+  getReportsOverview,
   getWhatsappConnection,
   getWhatsappReadiness,
   getWhatsappTemplate,
   getWhatsappTemplateAssetPreview,
   healthCheck,
+  listAgentPerformance,
   listContacts,
   listConversations,
   listMembers,
@@ -84,6 +86,8 @@ import type {
   GetContactResponse,
   GetConversationData,
   GetConversationResponse,
+  GetReportsOverviewData,
+  GetReportsOverviewResponse,
   GetWhatsappConnectionData,
   GetWhatsappConnectionResponse,
   GetWhatsappReadinessData,
@@ -95,6 +99,8 @@ import type {
   HealthCheckData,
   HealthCheckError,
   HealthCheckResponse,
+  ListAgentPerformanceData,
+  ListAgentPerformanceResponse,
   ListContactsData,
   ListContactsResponse,
   ListConversationsData,
@@ -912,6 +918,66 @@ export const listMembersOptions = (options?: Options<ListMembersData>) =>
       return data
     },
     queryKey: listMembersQueryKey(options),
+  })
+
+export const getReportsOverviewQueryKey = (
+  options: Options<GetReportsOverviewData>,
+) => createQueryKey('getReportsOverview', options, false, ['Reports'])
+
+/**
+ * Resumo do atendimento no período
+ *
+ * Totais, médias e séries da conta ativa. A coorte de conversas é a criada no período — `conversationsOpen/Pending/Closed` e `statusBreakdown` são a mesma contagem por status atual, e somam `conversationsStarted`. `resolutionSeconds` é a exceção: usa as conversas fechadas dentro do período. As séries cobrem todos os dias do intervalo e o heatmap todas as 168 células, no fuso America/Sao_Paulo; `heatmap.count` soma mensagens recebidas e enviadas. Vendedor e somente-leitura são sempre restritos às próprias conversas.
+ */
+export const getReportsOverviewOptions = (
+  options: Options<GetReportsOverviewData>,
+) =>
+  queryOptions<
+    GetReportsOverviewResponse,
+    DefaultError,
+    GetReportsOverviewResponse,
+    ReturnType<typeof getReportsOverviewQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getReportsOverview({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getReportsOverviewQueryKey(options),
+  })
+
+export const listAgentPerformanceQueryKey = (
+  options: Options<ListAgentPerformanceData>,
+) => createQueryKey('listAgentPerformance', options, false, ['Reports'])
+
+/**
+ * Desempenho por atendente no período
+ *
+ * Uma linha por membro da equipe (todo papel diferente de `user`), inclusive quem não teve atividade. `assigned` conta as conversas atribuídas no período pelo histórico e `open` quantas delas seguem abertas com ele; `closed` e `resolutionSeconds` usam as conversas que ele fechou no período; `firstResponseSeconds` mede a primeira resposta dele à primeira mensagem do contato. Restrito a admin e gestor.
+ */
+export const listAgentPerformanceOptions = (
+  options: Options<ListAgentPerformanceData>,
+) =>
+  queryOptions<
+    ListAgentPerformanceResponse,
+    DefaultError,
+    ListAgentPerformanceResponse,
+    ReturnType<typeof listAgentPerformanceQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAgentPerformance({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listAgentPerformanceQueryKey(options),
   })
 
 export const listUsersQueryKey = (options?: Options<ListUsersData>) =>

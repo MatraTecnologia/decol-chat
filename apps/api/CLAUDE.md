@@ -236,8 +236,17 @@ app.emitRealtimeEvent({
 | Entity | Invalidation Tags |
 |--------|-------------------|
 | `user` | `Users` |
+| `whatsappConnection` | `WhatsApp` |
+| `whatsapp-template` | `WhatsAppTemplates` |
+| `conversation` | `Conversations` |
+| `message` | `Messages`, `Conversations` |
+| `contact` | `Contacts`, `Conversations` |
 
 **Supported actions:** `created`, `updated`, `deleted`
+
+**Payload:** `payload` carries the entity body when the client must apply the change without refetch (`message created` e `message updated` mandam o item no formato de `listMessages`). Nunca inclua token, credencial ou dado sensível — o evento vai para todos os clientes conectados.
+
+**Emissão fora de rota:** quem muda estado sem ter o `app` em mãos (hoje só os `databaseHooks` do Better Auth, que cobrem as mutações de usuário do plugin admin) usa `emitRealtime()` de `lib/realtime.ts` — ponte para o mesmo emissor decorado pelo `socketPlugin`. A emissão é best-effort: falhar nela nunca derruba a requisição.
 
 **Tag-based invalidation:** Each entity maps to Swagger tags via `ENTITY_INVALIDATION_TAGS` in `lib/realtime-events.ts`. The frontend uses these tags to invalidate React Query caches (both via socket events and manual `invalidateByTags()` calls). When adding a new entity, add it to `ENTITY_INVALIDATION_TAGS` with the corresponding Swagger `tags`.
 

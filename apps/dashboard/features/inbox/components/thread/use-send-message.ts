@@ -14,7 +14,7 @@ import {
 import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
 import { errorText } from '../../lib/api-error'
-import { dedupeMessages } from '../../lib/merge-message-page'
+import { dedupeMessages, messageKey } from '../../lib/merge-message-page'
 import type { Message } from '../../types'
 
 interface MessagesPage {
@@ -84,7 +84,7 @@ const removeMessage = (pages: MessagesPage[], messageId: string) =>
  * a temporária já foi embora, então a real entra pelo topo e o dedupe por
  * `waMessageId` colapsa a cópia deixada pelo eco.
  */
-const replaceMessage = (
+const settleOptimisticMessage = (
   pages: MessagesPage[],
   tempId: string,
   real: Message,
@@ -93,7 +93,17 @@ const replaceMessage = (
     page.data.some(message => message.id === tempId),
   )
 
-  if (!found) return prependToThread(pages, real)
+  if (!found) {
+    // A resposta do POST é a versão mais antiga que existe desta mensagem: se
+    // o eco já a colocou na thread, um webhook de status pode ter avançado a
+    // bolha, e o dedupe (que fica com a primeira ocorrência) faria o status
+    // regredir de ENTREGUE para ENVIADA.
+    const settled = pages.some(page =>
+      page.data.some(message => messageKey(message) === messageKey(real)),
+    )
+
+    return settled ? pages : prependToThread(pages, real)
+  }
 
   return pages.map(page => ({
     ...page,
@@ -169,7 +179,7 @@ export const useSendMessage = (conversationId: string) => {
       })
 
       updateThread(queryClient, conversationId, pages =>
-        replaceMessage(pages, optimistic.id, sent),
+        settleOptimisticMessage(pages, optimistic.id, sent),
       )
     } catch (error) {
       updateThread(queryClient, conversationId, pages =>

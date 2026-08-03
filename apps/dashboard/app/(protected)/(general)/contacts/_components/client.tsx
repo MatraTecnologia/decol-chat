@@ -136,8 +136,10 @@ export const Client = () => {
   const totalPages = meta?.totalPages ?? 0
 
   // No render do servidor nada é buscado (`isFetching` é falso e `data` é
-  // undefined), então só `isFetching` mandaria o estado vazio para o HTML.
-  const isLoading = isPending || isFetching
+  // undefined), então só `isFetching` mandaria o estado vazio para o HTML. Já
+  // com dados em mãos o skeleton não volta, senão a tabela piscaria inteira a
+  // cada invalidação vinda do socket.
+  const isLoading = isPending || (isFetching && !data)
 
   const handleSearchChange = (value: string) => {
     setSearch(value)

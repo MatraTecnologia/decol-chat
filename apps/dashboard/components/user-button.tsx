@@ -45,7 +45,7 @@ export function UserButton({
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const mounted = useSyncExternalStore(
-    () => () => {},
+    () => () => { },
     () => true,
     () => false,
   )
@@ -58,11 +58,11 @@ export function UserButton({
 
   const initials = isReady
     ? user.name
-        ?.split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || '?'
+      ?.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || '?'
     : '?'
 
   async function handleLogout() {

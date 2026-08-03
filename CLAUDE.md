@@ -282,7 +282,7 @@ import { invalidateByTags } from '@/lib/invalidate-by-tags'
 invalidateByTags(queryClient, ['Users'])
 ```
 
-**Supported entities:** `user` (maps to `Users` tag).
+**Supported entities:** `user` (`Users`), `whatsappConnection` (`WhatsApp`), `whatsapp-template` (`WhatsAppTemplates`), `conversation` (`Conversations`), `message` (`Messages`, `Conversations`), `contact` (`Contacts`, `Conversations`).
 
 > **IMPORTANT:** When adding a new entity type, add it to `ENTITY_INVALIDATION_TAGS` in `apps/api/src/lib/realtime-events.ts` with the corresponding Swagger tags. The frontend invalidation (both realtime and manual) uses these tags to match queries.
 

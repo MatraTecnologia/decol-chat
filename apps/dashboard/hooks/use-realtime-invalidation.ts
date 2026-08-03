@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
+import { matchesQueryTags } from '@/lib/query-tags'
 import { useSocket } from '@/providers/socket-provider'
 
 interface RealtimeEvent {
@@ -10,9 +11,23 @@ interface RealtimeEvent {
   action: string
   entityId: string
   invalidateTags?: string[]
+  payload?: unknown
 }
 
 const REALTIME_EVENT = 'entity:mutated'
+
+/**
+ * Mensagem que chega com corpo é aplicada direto no cache da thread por
+ * `useThreadRealtime`. Invalidar `Messages` aqui desfaria isso com um refetch
+ * — e derrubaria a bolha otimista que ainda espera a resposta do POST.
+ */
+const pendingTags = (event: RealtimeEvent) => {
+  const tags = event.invalidateTags ?? []
+
+  if (event.entity !== 'message' || !event.payload) return tags
+
+  return tags.filter(tag => tag !== 'Messages')
+}
 
 export const useRealtimeInvalidation = () => {
   const socket = useSocket()
@@ -22,19 +37,11 @@ export const useRealtimeInvalidation = () => {
     if (!socket) return
 
     const handler = (event: RealtimeEvent) => {
-      const tags = event.invalidateTags
-      if (!tags || tags.length === 0) return
+      const tags = pendingTags(event)
+      if (tags.length === 0) return
 
       queryClient.invalidateQueries({
-        predicate: query => {
-          const key = query.queryKey[0]
-          if (typeof key === 'object' && key !== null && 'tags' in key) {
-            const queryTags = (key as { tags?: readonly string[] }).tags
-            if (!queryTags) return false
-            return queryTags.some(tag => tags.includes(tag))
-          }
-          return false
-        },
+        predicate: query => matchesQueryTags(query.queryKey, tags),
       })
     }
 

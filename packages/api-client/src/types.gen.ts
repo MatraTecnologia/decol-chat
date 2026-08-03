@@ -1021,6 +1021,100 @@ export type ListMembersResponses = {
 export type ListMembersResponse =
   ListMembersResponses[keyof ListMembersResponses]
 
+export type GetReportsOverviewData = {
+  body?: never
+  path?: never
+  query: {
+    from: string
+    to: string
+    assigneeId?: string
+  }
+  url: '/reports/overview'
+}
+
+export type GetReportsOverviewResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    range: {
+      from: string
+      to: string
+    }
+    totals: {
+      conversationsStarted: number
+      conversationsOpen: number
+      conversationsPending: number
+      conversationsClosed: number
+      messagesInbound: number
+      messagesOutbound: number
+      templatesSent: number
+      unassigned: number
+      outsideWindow: number
+      failedMessages: number
+    }
+    averages: {
+      firstResponseSeconds: number | null
+      resolutionSeconds: number | null
+      replySeconds: number | null
+    }
+    series: Array<{
+      date: string
+      inbound: number
+      outbound: number
+      started: number
+      closed: number
+    }>
+    heatmap: Array<{
+      weekday: number
+      hour: number
+      count: number
+    }>
+    statusBreakdown: Array<{
+      status: 'OPEN' | 'PENDING' | 'CLOSED'
+      count: number
+    }>
+  }
+}
+
+export type GetReportsOverviewResponse =
+  GetReportsOverviewResponses[keyof GetReportsOverviewResponses]
+
+export type ListAgentPerformanceData = {
+  body?: never
+  path?: never
+  query: {
+    from: string
+    to: string
+  }
+  url: '/reports/agents'
+}
+
+export type ListAgentPerformanceResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    data: Array<{
+      userId: string
+      name: string
+      email: string
+      image: string | null
+      role: string
+      assigned: number
+      closed: number
+      open: number
+      messagesSent: number
+      firstResponseSeconds: number | null
+      resolutionSeconds: number | null
+      lastActivityAt: string | null
+    }>
+  }
+}
+
+export type ListAgentPerformanceResponse =
+  ListAgentPerformanceResponses[keyof ListAgentPerformanceResponses]
+
 export type ListUsersData = {
   body?: never
   path?: never

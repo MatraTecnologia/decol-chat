@@ -64,6 +64,8 @@ import type {
   GetContactResponses,
   GetConversationData,
   GetConversationResponses,
+  GetReportsOverviewData,
+  GetReportsOverviewResponses,
   GetWhatsappConnectionData,
   GetWhatsappConnectionResponses,
   GetWhatsappReadinessData,
@@ -75,6 +77,8 @@ import type {
   HealthCheckData,
   HealthCheckErrors,
   HealthCheckResponses,
+  ListAgentPerformanceData,
+  ListAgentPerformanceResponses,
   ListContactsData,
   ListContactsResponses,
   ListConversationsData,
@@ -475,6 +479,34 @@ export const listMembers = <ThrowOnError extends boolean = false>(
     url: '/members/',
     ...options,
   })
+
+/**
+ * Resumo do atendimento no período
+ *
+ * Totais, médias e séries da conta ativa. A coorte de conversas é a criada no período — `conversationsOpen/Pending/Closed` e `statusBreakdown` são a mesma contagem por status atual, e somam `conversationsStarted`. `resolutionSeconds` é a exceção: usa as conversas fechadas dentro do período. As séries cobrem todos os dias do intervalo e o heatmap todas as 168 células, no fuso America/Sao_Paulo; `heatmap.count` soma mensagens recebidas e enviadas. Vendedor e somente-leitura são sempre restritos às próprias conversas.
+ */
+export const getReportsOverview = <ThrowOnError extends boolean = false>(
+  options: Options<GetReportsOverviewData, ThrowOnError>,
+): RequestResult<GetReportsOverviewResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetReportsOverviewResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/reports/overview', ...options })
+
+/**
+ * Desempenho por atendente no período
+ *
+ * Uma linha por membro da equipe (todo papel diferente de `user`), inclusive quem não teve atividade. `assigned` conta as conversas atribuídas no período pelo histórico e `open` quantas delas seguem abertas com ele; `closed` e `resolutionSeconds` usam as conversas que ele fechou no período; `firstResponseSeconds` mede a primeira resposta dele à primeira mensagem do contato. Restrito a admin e gestor.
+ */
+export const listAgentPerformance = <ThrowOnError extends boolean = false>(
+  options: Options<ListAgentPerformanceData, ThrowOnError>,
+): RequestResult<ListAgentPerformanceResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<
+    ListAgentPerformanceResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/reports/agents', ...options })
 
 /**
  * List users

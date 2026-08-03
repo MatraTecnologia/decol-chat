@@ -49,6 +49,7 @@ interface SidebarItem {
 }
 
 const generalItems: SidebarItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/conversations', label: 'Conversas', icon: MessagesSquare },
   { href: '/contacts', label: 'Contatos', icon: Contact },
   {
@@ -57,7 +58,7 @@ const generalItems: SidebarItem[] = [
     icon: LayoutTemplate,
     roles: TEMPLATE_READERS,
   },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+
   { href: '/conexao', label: 'Conexão', icon: Plug, roles: ['admin'] },
 ]
 
@@ -71,7 +72,7 @@ export const AppSidebar = () => {
   const { hasRole } = useUserRole()
 
   const mounted = useSyncExternalStore(
-    () => () => {},
+    () => () => { },
     () => true,
     () => false,
   )

@@ -25,3 +25,21 @@ export const dedupeMessages = (messages: Message[]) => {
  */
 export const prependMessage = (messages: Message[], incoming: Message) =>
   dedupeMessages([incoming, ...messages])
+
+/**
+ * Troca a bolha já renderizada pela versão nova (mudança de status). Devolve
+ * `null` quando a mensagem não está na página, para o chamador saber que não
+ * há o que atualizar ali — e não recriar o array à toa.
+ */
+export const replaceMessage = (messages: Message[], incoming: Message) => {
+  const index = messages.findIndex(
+    message => messageKey(message) === messageKey(incoming),
+  )
+
+  if (index === -1) return null
+
+  const next = [...messages]
+  next[index] = incoming
+
+  return next
+}

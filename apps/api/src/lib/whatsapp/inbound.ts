@@ -195,14 +195,14 @@ const resolveContact = async (
       whatsAppAccountId: accountId,
       OR: [{ waId: from }, { waId: toSendFormat(from) }, { phoneKey: key }],
     },
-    select: { id: true, waId: true, phoneKey: true },
+    select: { id: true, waId: true, phoneKey: true, profileName: true },
   })
 
   // O `waId` exato é a identidade que a Meta usa; a canônica só desempata.
   const existing = candidates.find(c => c.waId === from) ?? candidates[0]
 
   if (!existing) {
-    return tx.contact.create({
+    const created = await tx.contact.create({
       data: {
         whatsAppAccountId: accountId,
         waId: from,
@@ -212,6 +212,8 @@ const resolveContact = async (
       },
       select: { id: true },
     })
+
+    return { contact: created, action: 'created' as const }
   }
 
   // `phoneKey` entrou nullable na migração: a linha antiga é completada agora
@@ -220,7 +222,9 @@ const resolveContact = async (
   const fillKey =
     !existing.phoneKey && !candidates.some(c => c.phoneKey === key)
 
-  return tx.contact.update({
+  const renamed = Boolean(profileName) && profileName !== existing.profileName
+
+  const contact = await tx.contact.update({
     where: { id: existing.id },
     data: {
       ...(profileName ? { profileName } : {}),
@@ -228,6 +232,10 @@ const resolveContact = async (
     },
     select: { id: true },
   })
+
+  // A Meta manda `profile.name` em quase toda mensagem: sem comparar o valor,
+  // cada inbound invalidaria a lista de contatos à toa.
+  return { contact, action: renamed || fillKey ? ('updated' as const) : null }
 }
 
 // ── Status de mensagens enviadas ───────────────────────
@@ -262,15 +270,18 @@ const applyStatus = async (app: InboundContext, status: MetaStatus) => {
 
   const message = await prisma.message.findUnique({
     where: { waMessageId },
-    select: { id: true },
+    select: messageSelect,
   })
 
   if (!message) return
 
+  // O `payload` tem a forma do item de `listMessages`: o ícone da bolha
+  // (enviada/entregue/lida/falha) muda sem depender de refetch.
   app.emitRealtimeEvent({
     entity: 'message',
     action: 'updated',
     entityId: message.id,
+    payload: message,
   })
 }
 
@@ -307,7 +318,7 @@ const ingestMessage = async (
       // são wamids diferentes, o unique de `waMessageId` não vê nada.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${accountId}:${key}`}))`
 
-      const contact = await resolveContact(
+      const { contact, action: contactAction } = await resolveContact(
         tx,
         accountId,
         from,
@@ -315,12 +326,14 @@ const ingestMessage = async (
         profileName,
       )
 
+      const ongoing = await tx.conversation.findFirst({
+        where: { contactId: contact.id, status: { in: ['OPEN', 'PENDING'] } },
+        orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }],
+        select: { id: true },
+      })
+
       const conversation =
-        (await tx.conversation.findFirst({
-          where: { contactId: contact.id, status: { in: ['OPEN', 'PENDING'] } },
-          orderBy: [{ lastMessageAt: { sort: 'desc', nulls: 'last' } }],
-          select: { id: true },
-        })) ??
+        ongoing ??
         // Nasce sem responsável: a atribuição automática é outra etapa.
         (await tx.conversation.create({
           data: {
@@ -361,7 +374,13 @@ const ingestMessage = async (
         },
       })
 
-      return { conversation, message }
+      return {
+        contact,
+        contactAction,
+        conversation,
+        conversationCreated: !ongoing,
+        message,
+      }
     })
   } catch (error) {
     if (!isDuplicateMessage(error)) throw error
@@ -370,7 +389,8 @@ const ingestMessage = async (
     return
   }
 
-  const { conversation, message } = persisted
+  const { contact, contactAction, conversation, conversationCreated, message } =
+    persisted
 
   // Fora da transação: emitir antes do commit anunciaria um id que ainda pode
   // desaparecer. O `payload` tem a forma do item de `listMessages` para o
@@ -384,9 +404,17 @@ const ingestMessage = async (
 
   app.emitRealtimeEvent({
     entity: 'conversation',
-    action: 'updated',
+    action: conversationCreated ? 'created' : 'updated',
     entityId: conversation.id,
   })
+
+  if (contactAction) {
+    app.emitRealtimeEvent({
+      entity: 'contact',
+      action: contactAction,
+      entityId: contact.id,
+    })
+  }
 }
 
 // ── Entrada ────────────────────────────────────────────

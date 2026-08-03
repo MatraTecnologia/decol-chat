@@ -96,8 +96,6 @@ export const Thread = ({ conversationId }: ThreadProps) => {
   const queryClient = useQueryClient()
   const { hasRole } = useUserRole()
 
-  useThreadRealtime(conversationId)
-
   const { data: conversation } = useQuery({
     ...getConversationOptions({ path: { id: conversationId } }),
     placeholderData: undefined,
@@ -106,6 +104,18 @@ export const Thread = ({ conversationId }: ThreadProps) => {
   const { mutate: markRead } = useMutation({
     ...markConversationReadMutation(),
     onSuccess: () => invalidateByTags(queryClient, ['Conversations']),
+  })
+
+  // Com a conversa aberta e visível na tela, a mensagem que chega já nasce
+  // lida — sem isso a lista mostraria badge de uma conversa que o atendente
+  // está olhando. O evento é broadcast: sem o teste de visibilidade toda aba
+  // aberta na mesma conversa mandaria um POST por mensagem.
+  useThreadRealtime(conversationId, {
+    onIncoming: () => {
+      if (document.visibilityState !== 'visible') return
+
+      markRead({ path: { id: conversationId } })
+    },
   })
 
   const { send } = useSendMessage(conversationId)
