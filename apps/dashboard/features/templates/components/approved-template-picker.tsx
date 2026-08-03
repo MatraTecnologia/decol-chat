@@ -29,7 +29,7 @@ export type ApprovedTemplate = ListWhatsappTemplatesResponse['data'][number]
 /** A Meta limita a conta a poucas centenas de modelos — uma página basta. */
 const PAGE_LIMIT = 100
 
-export const CATEGORY_LABELS: Record<string, string> = {
+const CATEGORY_LABELS: Record<string, string> = {
   MARKETING: 'Marketing',
   UTILITY: 'Utilidade',
   AUTHENTICATION: 'Autenticação',
