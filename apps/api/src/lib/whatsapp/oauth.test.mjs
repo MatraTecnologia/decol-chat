@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildTokenExchangeUrl } from './oauth.ts'
+import { buildTokenExchangeUrl } from './oauth-url.ts'
 
 test('monta a url de troca com os tres parametros obrigatorios', () => {
   const url = new URL(

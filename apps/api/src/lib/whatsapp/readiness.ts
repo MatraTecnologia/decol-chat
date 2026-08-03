@@ -18,8 +18,7 @@ import { listWebhookLogs } from './webhook-log.js'
 
 export type ReadinessStatus = 'ok' | 'pending' | 'error' | 'skipped'
 
-export type ReadinessAction =
-  'register_number' | 'subscribe_app' | 'select_number' | null
+export type ReadinessAction = 'subscribe_app' | 'select_number' | null
 
 export interface ReadinessCheck {
   id: string
@@ -212,9 +211,8 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
     checks.push(
       check(
         'phone_registered',
-        'error',
-        `platform_type é ${entry.platform_type ?? 'desconhecido'} — o número ainda não foi registrado na Cloud API e todo envio falha com 133010. Registre-o com um PIN de 6 dígitos.`,
-        'register_number',
+        'ok',
+        `platform_type é ${entry.platform_type ?? 'desconhecido'} — em coexistence o registro vem do app WhatsApp Business do celular, não é feito por aqui.`,
       ),
     )
   }

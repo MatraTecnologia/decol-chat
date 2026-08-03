@@ -1,28 +1,7 @@
-import { env } from '@/env.js'
-
-import { GRAPH_API_VERSION, GraphApiError } from './graph-client.js'
+import { GraphApiError } from './graph-client.js'
+import { buildTokenExchangeUrl, type TokenExchangeParams } from './oauth-url.js'
 
 const REQUEST_TIMEOUT_MS = 15_000
-
-interface TokenExchangeParams {
-  appId: string
-  appSecret: string
-  code: string
-}
-
-export const buildTokenExchangeUrl = ({
-  appId,
-  appSecret,
-  code,
-}: TokenExchangeParams) => {
-  const query = new URLSearchParams({
-    client_id: appId,
-    client_secret: appSecret,
-    code,
-  })
-
-  return `https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token?${query}`
-}
 
 interface TokenResponse {
   access_token?: string
@@ -37,17 +16,11 @@ interface GraphErrorBody {
  * significa refazer o fluxo no browser, então o erro precisa chegar ao usuário
  * com a mensagem original da Meta.
  */
-export const exchangeCodeForToken = async (code: string) => {
-  const appId = env.META_APP_ID
-  const appSecret = env.META_APP_SECRET
-
-  if (!appId || !appSecret) {
-    throw new GraphApiError(
-      'META_APP_ID e META_APP_SECRET precisam estar configuradas para usar o Embedded Signup.',
-      { status: 500 },
-    )
-  }
-
+export const exchangeCodeForToken = async ({
+  appId,
+  appSecret,
+  code,
+}: TokenExchangeParams) => {
   let response: Response
 
   try {

@@ -17,16 +17,10 @@ import { toast } from 'sonner'
 import {
   getWhatsappReadinessOptions,
   listWhatsappPhoneNumbersOptions,
-  registerWhatsappNumberMutation,
   subscribeWhatsappAppMutation,
 } from '@workspace/api-client/react-query'
 import type { GetWhatsappReadinessResponse } from '@workspace/api-client/types'
 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@workspace/ui/components/alert'
 import { Badge } from '@workspace/ui/components/badge'
 import { Button } from '@workspace/ui/components/button'
 import {
@@ -40,12 +34,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@workspace/ui/components/dialog'
-import { Input } from '@workspace/ui/components/input'
-import { Label } from '@workspace/ui/components/label'
 import { Skeleton } from '@workspace/ui/components/skeleton'
 import { Spinner } from '@workspace/ui/components/spinner'
 import { cn } from '@workspace/ui/lib/utils'
@@ -71,7 +62,6 @@ const STATUS = {
 } as const
 
 const ACTION_LABELS = {
-  register_number: 'Registrar número',
   subscribe_app: 'Inscrever app',
   select_number: 'Escolher número',
 } as const
@@ -149,89 +139,6 @@ const CheckRow = ({ check, isBusy, onAction }: CheckRowProps) => {
 interface ActionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-const RegisterNumberDialog = ({ open, onOpenChange }: ActionDialogProps) => {
-  const queryClient = useQueryClient()
-  const [pin, setPin] = useState('123456')
-
-  const register = useMutation({
-    ...registerWhatsappNumberMutation(),
-    onSuccess: () => {
-      toast.success('Número registrado na Cloud API.')
-      invalidateByTags(queryClient, ['WhatsApp'])
-      onOpenChange(false)
-    },
-    onError: error => {
-      toast.error(
-        apiErrorMessage(error, 'Não foi possível registrar o número'),
-        { duration: 15000 },
-      )
-    },
-  })
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Registrar número na Cloud API</DialogTitle>
-          <DialogDescription>
-            Sem este registro a Meta recusa qualquer envio com o erro{' '}
-            <code className="font-mono">133010</code>.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-2">
-          <Label htmlFor="whatsapp-pin">PIN de verificação em duas etapas</Label>
-          <Input
-            id="whatsapp-pin"
-            value={pin}
-            onChange={event => setPin(event.target.value.replace(/\D/g, ''))}
-            inputMode="numeric"
-            maxLength={8}
-            autoComplete="off"
-            className="font-mono"
-            disabled={register.isPending}
-          />
-        </div>
-
-        <Alert>
-          <AlertTitle>Anote este PIN</AlertTitle>
-          <AlertDescription>
-            Se o número nunca teve verificação em duas etapas, o valor acima{' '}
-            <strong>define</strong> o PIN — e a Meta vai pedi-lo de novo em
-            futuros registros. Se o número já tem um PIN, informe o mesmo aqui,
-            senão o registro falha.
-          </AlertDescription>
-        </Alert>
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={register.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            disabled={register.isPending || !/^\d{4,8}$/.test(pin)}
-            onClick={() => register.mutate({ body: { pin } })}
-          >
-            {register.isPending ? (
-              <>
-                <Spinner className="mr-2" />
-                Registrando...
-              </>
-            ) : (
-              'Registrar número'
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
 }
 
 const PhoneNumbersDialog = ({ open, onOpenChange }: ActionDialogProps) => {
@@ -429,10 +336,6 @@ export const ReadinessPanel = () => {
 
       <CardContent>{renderContent()}</CardContent>
 
-      <RegisterNumberDialog
-        open={dialog === 'register_number'}
-        onOpenChange={open => setDialog(open ? 'register_number' : null)}
-      />
       <PhoneNumbersDialog
         open={dialog === 'select_number'}
         onOpenChange={open => setDialog(open ? 'select_number' : null)}

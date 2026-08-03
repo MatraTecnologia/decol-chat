@@ -20,7 +20,6 @@ import {
   GraphApiError,
   getPhoneNumberInfo,
   listPhoneNumbers,
-  registerPhoneNumber,
   sendTemplateMessage,
   sendTextMessage,
   subscribeApp,
@@ -81,9 +80,7 @@ const readinessCheckSchema = z.object({
   label: z.string(),
   status: z.enum(['ok', 'pending', 'error', 'skipped']),
   detail: z.string(),
-  action: z
-    .enum(['register_number', 'subscribe_app', 'select_number'])
-    .nullable(),
+  action: z.enum(['subscribe_app', 'select_number']).nullable(),
 })
 
 const phoneNumberEntrySchema = z.object({
@@ -400,59 +397,6 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
             codeVerificationStatus: entry.code_verification_status ?? null,
           })),
         }
-      } catch (error) {
-        const graphError = toGraphError(error)
-        if (!graphError) throw error
-
-        return graphError.isClient
-          ? reply.badRequest(graphError.message)
-          : reply.badGateway(graphError.message)
-      }
-    },
-  )
-
-  // POST /whatsapp/register-number
-  app.post(
-    '/register-number',
-    {
-      schema: {
-        operationId: 'registerWhatsappNumber',
-        tags: ['WhatsApp'],
-        summary: 'Registra o número na Cloud API com o PIN de verificação',
-        body: z.object({ pin: z.string().min(4).max(8) }),
-        response: { 200: z.object({ success: z.boolean() }) },
-      },
-    },
-    async (request, reply) => {
-      await requireRole(request, ['admin'])
-
-      if (!isEncryptionConfigured()) {
-        return reply.serviceUnavailable(MISSING_ENCRYPTION_KEY)
-      }
-
-      const connection = await getConnection()
-      if (!connection) return reply.notFound(request.t('NOT_FOUND'))
-
-      try {
-        const result = await registerPhoneNumber(
-          connection.accessToken,
-          connection.phoneNumberId,
-          request.body.pin,
-        )
-
-        await safePushWebhookLog(app, {
-          direction: 'outbound',
-          summary: `register phone_number_id=${connection.phoneNumberId} success=${result.success}`,
-          payload: result,
-        })
-
-        app.emitRealtimeEvent({
-          entity: 'whatsappConnection',
-          action: 'updated',
-          entityId: 'singleton',
-        })
-
-        return { success: result.success }
       } catch (error) {
         const graphError = toGraphError(error)
         if (!graphError) throw error

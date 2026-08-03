@@ -101,21 +101,6 @@ export const listPhoneNumbers = (token: string, wabaId: string) =>
     { headers: authHeaders(token) },
   )
 
-// Sem o register o número fica com platform_type NOT_APPLICABLE e todo envio falha com 133010.
-export const registerPhoneNumber = (
-  token: string,
-  phoneNumberId: string,
-  pin: string,
-) =>
-  request<{ success: boolean }>(`/${phoneNumberId}/register`, {
-    method: 'POST',
-    headers: {
-      ...authHeaders(token),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
-  })
-
 export const listSubscribedApps = (token: string, wabaId: string) =>
   request<{
     data: { whatsapp_business_api_data?: { id?: string; name?: string } }[]
