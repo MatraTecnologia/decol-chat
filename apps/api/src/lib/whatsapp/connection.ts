@@ -87,6 +87,19 @@ export const getAccountByPhoneNumberId = async (phoneNumberId: string) => {
 }
 
 /**
+ * Os eventos de coexistence não trazem `phone_number_id` — só o `entry[].id`,
+ * que é o WABA. Como a instalação é single-account, a conta ativa daquela WABA
+ * é sempre a certa.
+ */
+export const getAccountByWabaId = async (wabaId: string) => {
+  const record = await prisma.whatsAppAccount.findFirst({
+    where: { wabaId, isActive: true },
+  })
+
+  return record ? decrypt(record) : null
+}
+
+/**
  * O envio resolve a conta pela conversa (`Conversation.whatsAppAccountId`) —
  * responder pela conta ativa mandaria a mensagem pelo número errado assim que
  * existir mais de uma. Conta desativada não envia: `deleteConnection` só vira

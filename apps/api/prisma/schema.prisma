@@ -265,6 +265,7 @@ model WhatsAppAccount {
   templateAssets   WhatsAppTemplateAsset[]
 
   @@index([isActive])
+  @@index([wabaId])
   @@map("whatsapp_account")
 }
 
