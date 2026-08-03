@@ -415,45 +415,17 @@ Movimentação de código com uma única mudança de comportamento: o despacho p
 - Create: `apps/api/src/lib/whatsapp/inbound/messages.ts`
 - Create: `apps/api/src/lib/whatsapp/inbound/index.ts`
 - Delete: `apps/api/src/lib/whatsapp/inbound.ts`
-- Test: `apps/api/src/lib/whatsapp/inbound/index.test.mjs`
 
 **Interfaces:**
 - Consumes: `extractChanges` (Task 2), `resolveAccountForChange` (Task 3).
 - Produces:
-  - `processInboundPayload(app: InboundContext, payload: unknown): Promise<void>` — **mesma assinatura de hoje**, reexportada de `inbound/index.ts` para que `jobs/whatsapp-inbound.ts` continue importando de `@/lib/whatsapp/inbound.js` sem alteração.
-  - `HANDLED_FIELDS: readonly string[]`
+  - `processInboundPayload(app: InboundContext, payload: unknown): Promise<void>` — **mesma assinatura de hoje**, exportada de `inbound/index.ts`.
   - `type InboundContext` (reexportado de `shared.ts`)
   - `handleMessagesChange(app, accountId, value): Promise<void>` em `messages.ts`
 
-- [ ] **Step 1: Escrever o teste do router**
+Esta task é movimentação de código coberta pelo teste de `extractChanges` (Task 2) e pela verificação da ingestão viva (Step 7) — não introduz teste unitário novo.
 
-Crie `apps/api/src/lib/whatsapp/inbound/index.test.mjs`:
-
-```javascript
-import assert from 'node:assert/strict'
-import test from 'node:test'
-
-import { HANDLED_FIELDS } from './index.ts'
-
-test('apenas messages tem handler na fase 1', () => {
-  assert.deepEqual([...HANDLED_FIELDS], ['messages'])
-})
-
-test('os fields de coexistence ainda nao sao tratados', () => {
-  for (const field of ['smb_message_echoes', 'smb_app_state_sync', 'history']) {
-    assert.equal(HANDLED_FIELDS.includes(field), false)
-  }
-})
-```
-
-Este teste é a trava que documenta o escopo: quando a Fase 2 adicionar `smb_message_echoes`, ele falha e obriga a atualização consciente da lista.
-
-- [ ] **Step 2: Rodar o teste para confirmar que falha**
-
-Run: `pnpm --filter @workspace/api test`
-Expected: FAIL — `Cannot find module './index.ts'`.
-
-- [ ] **Step 3: Extrair `shared.ts`**
+- [ ] **Step 1: Extrair `shared.ts`**
 
 Crie `apps/api/src/lib/whatsapp/inbound/shared.ts` movendo, **sem alterar nenhuma linha**, de `apps/api/src/lib/whatsapp/inbound.ts`:
 
@@ -467,7 +439,7 @@ Ajuste os imports relativos: `./connection.js` vira `../connection.js`, `./phone
 
 Marque como `export` tudo que `messages.ts` vai consumir: `InboundContext`, `MetaMessage`, `MetaStatus`, `MetaContact`, `PREVIEW_LENGTH`, `mapType`, `mediaOf`, `extractText`, `toWaTimestamp`, `isDuplicateMessage`, `resolveContact`, `STATUS_MAP`, `LOWER_THAN`.
 
-- [ ] **Step 4: Extrair `messages.ts`**
+- [ ] **Step 2: Extrair `messages.ts`**
 
 Crie `apps/api/src/lib/whatsapp/inbound/messages.ts` com `applyStatus` (linhas 243-286) e `ingestMessage` (linhas 290-418) **sem alteração de comportamento**, importando o que precisa de `./shared.js`, mais o novo ponto de entrada do handler:
 
@@ -500,7 +472,7 @@ export const handleMessagesChange = async (
 }
 ```
 
-- [ ] **Step 5: Escrever o router**
+- [ ] **Step 3: Escrever o router**
 
 Crie `apps/api/src/lib/whatsapp/inbound/index.ts`:
 
@@ -518,9 +490,6 @@ import { resolveAccountForChange } from './resolve-account.js'
 import type { InboundContext } from './shared.js'
 
 export type { InboundContext } from './shared.js'
-
-/** Fields com parser escrito. Coexistence entra aqui na Fase 2. */
-export const HANDLED_FIELDS = ['messages'] as const
 
 export const processInboundPayload = async (
   app: InboundContext,
@@ -553,7 +522,7 @@ export const processInboundPayload = async (
 }
 ```
 
-- [ ] **Step 6: Apagar o arquivo antigo e corrigir o import do job**
+- [ ] **Step 4: Apagar o arquivo antigo e corrigir o import do job**
 
 ```bash
 git rm apps/api/src/lib/whatsapp/inbound.ts
@@ -567,25 +536,24 @@ import { processInboundPayload } from '@/lib/whatsapp/inbound/index.js'
 
 Atualize também o comentário do topo do job (linha 6), que aponta para `lib/whatsapp/inbound.ts`, para `lib/whatsapp/inbound/`.
 
-- [ ] **Step 7: Conferir que nada mais importava do arquivo antigo**
+- [ ] **Step 5: Conferir que nada mais importava do arquivo antigo**
 
 Run: `grep -rn "whatsapp/inbound" apps/api/src --include=*.ts`
 Expected: só `jobs/whatsapp-inbound.ts` (já apontando para `inbound/index.js`) e os arquivos dentro de `inbound/`. Qualquer specifier terminando em `inbound.js` sem o `/index` ainda é resolução quebrada.
 
-- [ ] **Step 8: Rodar testes e typecheck**
+- [ ] **Step 6: Rodar testes e typecheck**
 
 Run: `pnpm --filter @workspace/api test`
-Expected: PASS, incluindo os dois testes novos de `HANDLED_FIELDS`.
+Expected: PASS — os testes de `extractChanges` continuam verdes.
 
 Run: `pnpm --filter @workspace/api typecheck`
 Expected: sem erros.
 
-- [ ] **Step 9: Provar que a ingestão viva não regrediu**
+- [ ] **Step 7: [VERIFICAÇÃO HUMANA — não executar] Provar que a ingestão viva não regrediu**
 
-Com a API rodando e o túnel ativo, mande uma mensagem de WhatsApp para o número conectado.
-Expected: a mensagem aparece no inbox como hoje, e o console de `/conexao` mostra o evento com assinatura válida. Se não aparecer, **pare** — a refatoração regrediu e nenhuma task seguinte deve ser iniciada.
+Exige API rodando, túnel ativo e um celular. Fica pendente para o dono do projeto: mandar uma mensagem de WhatsApp para o número conectado e confirmar que ela aparece no inbox e no console de `/conexao`.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add apps/api/src/lib/whatsapp/inbound/ apps/api/src/lib/whatsapp/inbound.ts apps/api/src/jobs/whatsapp-inbound.ts
@@ -660,9 +628,9 @@ E ajuste o cálculo de `reason` logo abaixo, trocando o primeiro ramo:
 Run: `pnpm --filter @workspace/api typecheck`
 Expected: sem erros. Se acusar `safeGetAccount` não usado, é porque a remoção do Step 3 ficou incompleta.
 
-- [ ] **Step 5: Provar o handshake e a assinatura**
+- [ ] **Step 5: [VERIFICAÇÃO HUMANA — não executar] Provar o handshake e a assinatura**
 
-Com a API rodando e `META_WEBHOOK_VERIFY_TOKEN=teste-local` no `.env`:
+Exige API rodando e uma mensagem real. Fica pendente para o dono do projeto. Com a API rodando e `META_WEBHOOK_VERIFY_TOKEN=teste-local` no `.env`:
 
 ```bash
 curl -s "http://localhost:3333/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=teste-local&hub.challenge=42"
@@ -750,7 +718,9 @@ Para cada arquivo da lista do Step 1: remova o campo do formulário, da exibiç�
 Run: `pnpm --filter @workspace/api typecheck`
 Expected: sem erros. Erros aqui são o mapa do que ficou pendente.
 
-- [ ] **Step 8: Regenerar o client antes de checar o dashboard**
+- [ ] **Step 8: [CONTROLLER — não executar] Regenerar o client antes de checar o dashboard**
+
+Exige a API de pé; o controller da execução roda este passo. Anote na sua nota de saída que ficou pendente.
 
 `connectionSchema`, `connectionBodySchema` e `toMaskedConnection` perderam campos — mudaram o body **e** a resposta. Sem regenerar, o dashboard typechecka verde contra um client velho e só quebra em runtime:
 
@@ -1059,10 +1029,9 @@ import { registerWhatsappSmbSyncJob } from '@/jobs/whatsapp-smb-sync.js'
 Run: `pnpm --filter @workspace/api typecheck`
 Expected: sem erros.
 
-- [ ] **Step 5: Confirmar que a fila aparece no Bull Board**
+- [ ] **Step 5: [VERIFICAÇÃO HUMANA — não executar] Confirmar que a fila aparece no Bull Board**
 
-Com a API rodando, abra `http://localhost:3333/admin/queues`.
-Expected: a fila `whatsapp-smb-sync` listada (vazia). O Bull Board descobre filas via `getRegisteredQueues()`, então a ausência significa que o Step 3 não pegou.
+Exige API rodando. Fica pendente para o dono do projeto: abrir `http://localhost:3333/admin/queues` e conferir que a fila `whatsapp-smb-sync` aparece (vazia). O Bull Board descobre filas via `getRegisteredQueues()`, então a ausência significaria que o Step 3 não pegou.
 
 - [ ] **Step 6: Commit**
 
@@ -1222,22 +1191,18 @@ E replique a linha de registro encontrada pelo grep, trocando o identificador �
 Run: `pnpm --filter @workspace/api typecheck`
 Expected: sem erros.
 
-- [ ] **Step 4: Provar que a rota está no spec**
+- [ ] **Step 4: [CONTROLLER — não executar] Provar a rota e regenerar o client**
 
-Com a API rodando:
+Exige a API de pé; o controller da execução roda estes passos e o commit do client sai junto do dele. Anote na sua nota de saída que ficou pendente.
 
 ```bash
 curl -s http://localhost:3333/health
 curl -s http://localhost:3333/docs/openapi.json | grep -c "connectWhatsappEmbeddedSignup"
+pnpm generate:api
 ```
-Expected: `health` retorna `ok`; o grep retorna `1` ou mais.
+Expected: `health` = `ok`; grep ≥ 1; `connectWhatsappEmbeddedSignup` presente em `packages/api-client/src/sdk.gen.ts`.
 
-- [ ] **Step 5: Regenerar o client**
-
-Run: `pnpm generate:api`
-Expected: `packages/api-client/src/*.gen.ts` modificados, com `connectWhatsappEmbeddedSignup` presente em `sdk.gen.ts`.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add apps/api/src/routes/whatsapp/embedded-signup.ts apps/api/src/routes/whatsapp/index.ts packages/api-client/src/
@@ -1469,10 +1434,9 @@ Run: `pnpm --filter @workspace/dashboard typecheck`
 Run: `pnpm --filter @workspace/dashboard lint`
 Expected: sem erros nos dois.
 
-- [ ] **Step 6: Provar o fluxo ponta a ponta**
+- [ ] **Step 6: [VERIFICAÇÃO HUMANA — não executar] Provar o fluxo ponta a ponta**
 
-Com API e dashboard rodando, abra `/conexao` e clique em "Conectar com o WhatsApp".
-Expected: o popup da Meta abre, o fluxo pede o número já usado no app WhatsApp Business, e ao concluir o toast de sucesso aparece e o `ConnectionStatus` mostra o número. **Este é o passo que valida a Fase 1 inteira** — se o popup não abrir, confira `NEXT_PUBLIC_META_ES_CONFIG_ID` e se o domínio está liberado no App Dashboard.
+Exige browser, credenciais reais da Meta e o celular. Fica pendente para o dono do projeto: abrir `/conexao`, clicar em "Conectar com o WhatsApp" e concluir o fluxo. **É o passo que valida a Fase 1 inteira** — se o popup não abrir, conferir `NEXT_PUBLIC_META_ES_CONFIG_ID` e se o domínio está liberado no App Dashboard.
 
 - [ ] **Step 7: Commit**
 
@@ -1544,9 +1508,9 @@ Run: `pnpm --filter @workspace/dashboard typecheck`
 Run: `pnpm --filter @workspace/api test`
 Expected: sem erros; testes passando.
 
-- [ ] **Step 8: Regenerar o client**
+- [ ] **Step 8: [CONTROLLER — não executar] Regenerar o client**
 
-O `readinessCheckSchema` mudou, então o schema de resposta mudou:
+O `readinessCheckSchema` mudou, então o schema de resposta mudou. Exige a API de pé; o controller da execução roda este passo. Anote na sua nota de saída que ficou pendente.
 
 ```bash
 curl -s http://localhost:3333/health
@@ -1563,9 +1527,9 @@ git commit -m "refactor(whatsapp): remove registro de numero, incompativel com c
 
 ---
 
-### Task 12: Verificação final e captura dos payloads
+### Task 12: [VERIFICAÇÃO HUMANA — não despachar] Verificação final e captura dos payloads
 
-Esta task não escreve código: ela produz o insumo do plano da Fase 2.
+Esta task não escreve código: ela produz o insumo do plano da Fase 2. Todos os passos exigem App Dashboard da Meta, celular e a API em ambiente público — nenhum é executável por subagente. Fica integralmente com o dono do projeto.
 
 **Files:** nenhum.
 
@@ -1614,4 +1578,4 @@ git commit -m "docs(whatsapp): payloads reais dos webhooks de coexistence"
 
 Com os payloads capturados, escrever o plano da Fase 2 (`echoes.ts`, `contacts.ts`, campo `origin`, badge no front) e depois o da Fase 3 (SMB App Data API, fila `whatsapp-history`, backfill). Ambos seguem a mesma spec.
 
-> Criado em 2026-08-03 11:24 (-03) · Última modificação: 2026-08-03 11:39 (-03)
+> Criado em 2026-08-03 11:24 (-03) · Última modificação: 2026-08-03 11:52 (-03)
