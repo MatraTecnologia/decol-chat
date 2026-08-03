@@ -12,6 +12,7 @@
     "build": "tsc --project tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "cross-env NODE_ENV=production PORT=80 node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "node --test src/",
     "lint": "eslint . --max-warnings 0",
     "db:generate": "prisma generate && tsx scripts/fix-zod-imports.ts",
     "db:push": "prisma db push",
