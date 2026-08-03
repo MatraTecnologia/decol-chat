@@ -127,6 +127,27 @@ export const subscribeApp = (token: string, wabaId: string) =>
     headers: authHeaders(token),
   })
 
+export type SmbSyncType = 'smb_app_state_sync' | 'history'
+
+/**
+ * Pede à Meta o envio dos dados do app do celular (contatos e histórico). A
+ * resposta é só o aceite — os dados chegam depois, pelos webhooks `history` e
+ * `smb_app_state_sync`.
+ */
+export const requestSmbAppData = (
+  token: string,
+  phoneNumberId: string,
+  syncType: SmbSyncType,
+) =>
+  request<{ success: boolean }>(`/${phoneNumberId}/smb_app_data`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ messaging_product: 'whatsapp', sync_type: syncType }),
+  })
+
 // Este endpoint exige o app access token — o literal `appId|appSecret` como
 // query param, não o token de usuário em header Authorization.
 export const getAppSubscriptions = (appId: string, appSecret: string) => {
