@@ -712,8 +712,24 @@ export const zSendMessageResponse = z.object({
 })
 
 export const zSendTemplateMessageBody = z.object({
-  templateName: z.string().min(1),
-  languageCode: z.string().optional().default('pt_BR'),
+  templateId: z.string().min(1),
+  parameters: z
+    .object({
+      header: z
+        .union([z.array(z.string()), z.record(z.string(), z.string())])
+        .optional(),
+      body: z
+        .union([z.array(z.string()), z.record(z.string(), z.string())])
+        .optional(),
+      buttons: z
+        .array(z.union([z.array(z.string()), z.record(z.string(), z.string())]))
+        .optional(),
+      cards: z
+        .array(z.union([z.array(z.string()), z.record(z.string(), z.string())]))
+        .optional(),
+    })
+    .optional()
+    .default({}),
 })
 
 export const zSendTemplateMessagePath = z.object({
@@ -774,8 +790,24 @@ export const zSendTemplateMessageResponse = z.object({
 
 export const zStartConversationBody = z.object({
   phone: z.string().min(1),
-  templateName: z.string().min(1),
-  languageCode: z.string().optional().default('pt_BR'),
+  templateId: z.string().min(1),
+  parameters: z
+    .object({
+      header: z
+        .union([z.array(z.string()), z.record(z.string(), z.string())])
+        .optional(),
+      body: z
+        .union([z.array(z.string()), z.record(z.string(), z.string())])
+        .optional(),
+      buttons: z
+        .array(z.union([z.array(z.string()), z.record(z.string(), z.string())]))
+        .optional(),
+      cards: z
+        .array(z.union([z.array(z.string()), z.record(z.string(), z.string())]))
+        .optional(),
+    })
+    .optional()
+    .default({}),
   name: z.string().min(1).optional(),
 })
 
@@ -1076,4 +1108,2145 @@ export const zListWhatsappLogsResponse = z.object({
       payload: z.unknown().optional(),
     }),
   ),
+})
+
+export const zListWhatsappTemplatesQuery = z.object({
+  q: z.string().optional(),
+  category: z.string().optional(),
+  status: z.string().optional(),
+  language: z.string().optional(),
+  page: z.int().gte(1).lte(9007199254740991).optional().default(1),
+  limit: z.int().gte(1).lte(100).optional().default(20),
+})
+
+/**
+ * Default Response
+ */
+export const zListWhatsappTemplatesResponse = z.object({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      language: z.string(),
+      category: z.string(),
+      metaTemplateId: z.string().nullable(),
+      remoteStatus: z.string().nullable(),
+      remoteQuality: z.string().nullable(),
+      rejectionReason: z.string().nullable(),
+      remoteUpdatedAt: z.iso.datetime().nullable(),
+      lastSyncAttemptAt: z.iso.datetime().nullable(),
+      lastSyncError: z.string().nullable(),
+      createdById: z.string(),
+      updatedById: z.string(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+      latestRevision: z
+        .object({
+          id: z.string(),
+          version: z.number(),
+          state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+          lockVersion: z.number(),
+          parameterFormat: z.string(),
+          submittedAt: z.iso.datetime().nullable(),
+          submittedById: z.string().nullable(),
+          createdAt: z.iso.datetime(),
+          updatedAt: z.iso.datetime(),
+        })
+        .nullable(),
+      draftRevision: z
+        .object({
+          id: z.string(),
+          version: z.number(),
+          state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+          lockVersion: z.number(),
+          parameterFormat: z.string(),
+          submittedAt: z.iso.datetime().nullable(),
+          submittedById: z.string().nullable(),
+          createdAt: z.iso.datetime(),
+          updatedAt: z.iso.datetime(),
+        })
+        .nullable(),
+      submittedRevision: z
+        .object({
+          id: z.string(),
+          version: z.number(),
+          state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+          lockVersion: z.number(),
+          parameterFormat: z.string(),
+          submittedAt: z.iso.datetime().nullable(),
+          submittedById: z.string().nullable(),
+          createdAt: z.iso.datetime(),
+          updatedAt: z.iso.datetime(),
+        })
+        .nullable(),
+    }),
+  ),
+  meta: z.object({
+    total: z.number(),
+    page: z.number(),
+    limit: z.number(),
+    totalPages: z.number(),
+    hasNext: z.boolean(),
+  }),
+})
+
+export const zCreateWhatsappTemplateDraftBody = z.object({
+  name: z
+    .string()
+    .min(1)
+    .max(512)
+    .regex(/^[a-z0-9_]+$/),
+  definition: z.object({
+    category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+    language: z.string().min(2),
+    parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+    components: z
+      .array(
+        z.union([
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['TEXT']),
+            text: z.string().min(1),
+            examples: z.array(z.string()).optional(),
+          }),
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+            assetId: z.string().min(1).optional(),
+            example: z.string().optional(),
+          }),
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['LOCATION']),
+          }),
+          z.object({
+            type: z.enum(['BODY']),
+            text: z.string().min(1),
+            examples: z.array(z.string()).optional(),
+          }),
+          z.object({
+            type: z.enum(['FOOTER']),
+            text: z.string().min(1),
+          }),
+          z.object({
+            type: z.enum(['BUTTONS']),
+            buttons: z
+              .array(
+                z.union([
+                  z.object({
+                    kind: z.enum(['QUICK_REPLY']),
+                    text: z.string().min(1),
+                  }),
+                  z.object({
+                    kind: z.enum(['URL']),
+                    text: z.string().min(1),
+                    url: z.url(),
+                    examples: z.array(z.string()).optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['PHONE_NUMBER']),
+                    text: z.string().min(1),
+                    phoneNumber: z.string().min(1),
+                  }),
+                  z.object({
+                    kind: z.enum(['COPY_CODE']),
+                    text: z.string().min(1),
+                    example: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['OTP']),
+                    otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                    text: z.string().min(1),
+                    autofillText: z.string().optional(),
+                    packageName: z.string().optional(),
+                    signatureHash: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['CATALOG']),
+                    text: z.string().min(1),
+                    thumbnailProductRetailerId: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['FLOW']),
+                    text: z.string().min(1),
+                    flowId: z.string().min(1),
+                    flowAction: z
+                      .enum(['navigate', 'data_exchange'])
+                      .optional(),
+                    navigateScreen: z.string().optional(),
+                    flowData: z.record(z.string(), z.unknown()).optional(),
+                  }),
+                ]),
+              )
+              .min(1),
+          }),
+          z.object({
+            type: z.enum(['CAROUSEL']),
+            cards: z
+              .array(
+                z.object({
+                  header: z.object({
+                    format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                    assetId: z.string().min(1).optional(),
+                    example: z.string().optional(),
+                  }),
+                  body: z.object({
+                    text: z.string().min(1),
+                    examples: z.array(z.string()).optional(),
+                  }),
+                  buttons: z
+                    .array(
+                      z.union([
+                        z.object({
+                          kind: z.enum(['QUICK_REPLY']),
+                          text: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['URL']),
+                          text: z.string().min(1),
+                          url: z.url(),
+                          examples: z.array(z.string()).optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['PHONE_NUMBER']),
+                          text: z.string().min(1),
+                          phoneNumber: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['COPY_CODE']),
+                          text: z.string().min(1),
+                          example: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['OTP']),
+                          otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                          text: z.string().min(1),
+                          autofillText: z.string().optional(),
+                          packageName: z.string().optional(),
+                          signatureHash: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['CATALOG']),
+                          text: z.string().min(1),
+                          thumbnailProductRetailerId: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['FLOW']),
+                          text: z.string().min(1),
+                          flowId: z.string().min(1),
+                          flowAction: z
+                            .enum(['navigate', 'data_exchange'])
+                            .optional(),
+                          navigateScreen: z.string().optional(),
+                          flowData: z
+                            .record(z.string(), z.unknown())
+                            .optional(),
+                        }),
+                      ]),
+                    )
+                    .optional(),
+                }),
+              )
+              .min(1),
+          }),
+          z.object({
+            type: z.enum(['LIMITED_TIME_OFFER']),
+            text: z.string().min(1),
+            hasExpiration: z.boolean().optional(),
+          }),
+          z.object({
+            type: z.enum(['CUSTOM']),
+            raw: z.record(z.string(), z.unknown()),
+          }),
+        ]),
+      )
+      .min(1),
+  }),
+})
+
+/**
+ * Default Response
+ */
+export const zCreateWhatsappTemplateDraftResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  language: z.string(),
+  category: z.string(),
+  metaTemplateId: z.string().nullable(),
+  remoteStatus: z.string().nullable(),
+  remoteQuality: z.string().nullable(),
+  rejectionReason: z.string().nullable(),
+  remoteUpdatedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  lastSyncError: z.string().nullable(),
+  createdById: z.string(),
+  updatedById: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  latestRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  draftRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  submittedRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  definition: z
+    .object({
+      category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+      language: z.string().min(2),
+      parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+      components: z
+        .array(
+          z.union([
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['TEXT']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+              assetId: z.string().min(1).optional(),
+              example: z.string().optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['LOCATION']),
+            }),
+            z.object({
+              type: z.enum(['BODY']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['FOOTER']),
+              text: z.string().min(1),
+            }),
+            z.object({
+              type: z.enum(['BUTTONS']),
+              buttons: z
+                .array(
+                  z.union([
+                    z.object({
+                      kind: z.enum(['QUICK_REPLY']),
+                      text: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['URL']),
+                      text: z.string().min(1),
+                      url: z.url(),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['PHONE_NUMBER']),
+                      text: z.string().min(1),
+                      phoneNumber: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['COPY_CODE']),
+                      text: z.string().min(1),
+                      example: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['OTP']),
+                      otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                      text: z.string().min(1),
+                      autofillText: z.string().optional(),
+                      packageName: z.string().optional(),
+                      signatureHash: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['CATALOG']),
+                      text: z.string().min(1),
+                      thumbnailProductRetailerId: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['FLOW']),
+                      text: z.string().min(1),
+                      flowId: z.string().min(1),
+                      flowAction: z
+                        .enum(['navigate', 'data_exchange'])
+                        .optional(),
+                      navigateScreen: z.string().optional(),
+                      flowData: z.record(z.string(), z.unknown()).optional(),
+                    }),
+                  ]),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['CAROUSEL']),
+              cards: z
+                .array(
+                  z.object({
+                    header: z.object({
+                      format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                      assetId: z.string().min(1).optional(),
+                      example: z.string().optional(),
+                    }),
+                    body: z.object({
+                      text: z.string().min(1),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    buttons: z
+                      .array(
+                        z.union([
+                          z.object({
+                            kind: z.enum(['QUICK_REPLY']),
+                            text: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['URL']),
+                            text: z.string().min(1),
+                            url: z.url(),
+                            examples: z.array(z.string()).optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['PHONE_NUMBER']),
+                            text: z.string().min(1),
+                            phoneNumber: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['COPY_CODE']),
+                            text: z.string().min(1),
+                            example: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['OTP']),
+                            otpType: z.enum([
+                              'COPY_CODE',
+                              'ONE_TAP',
+                              'ZERO_TAP',
+                            ]),
+                            text: z.string().min(1),
+                            autofillText: z.string().optional(),
+                            packageName: z.string().optional(),
+                            signatureHash: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['CATALOG']),
+                            text: z.string().min(1),
+                            thumbnailProductRetailerId: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['FLOW']),
+                            text: z.string().min(1),
+                            flowId: z.string().min(1),
+                            flowAction: z
+                              .enum(['navigate', 'data_exchange'])
+                              .optional(),
+                            navigateScreen: z.string().optional(),
+                            flowData: z
+                              .record(z.string(), z.unknown())
+                              .optional(),
+                          }),
+                        ]),
+                      )
+                      .optional(),
+                  }),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['LIMITED_TIME_OFFER']),
+              text: z.string().min(1),
+              hasExpiration: z.boolean().optional(),
+            }),
+            z.object({
+              type: z.enum(['CUSTOM']),
+              raw: z.record(z.string(), z.unknown()),
+            }),
+          ]),
+        )
+        .min(1),
+    })
+    .nullable(),
+})
+
+export const zDeleteWhatsappTemplateDraftPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zDeleteWhatsappTemplateDraftResponse = z.object({
+  removedTemplate: z.boolean(),
+})
+
+export const zGetWhatsappTemplatePath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zGetWhatsappTemplateResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  language: z.string(),
+  category: z.string(),
+  metaTemplateId: z.string().nullable(),
+  remoteStatus: z.string().nullable(),
+  remoteQuality: z.string().nullable(),
+  rejectionReason: z.string().nullable(),
+  remoteUpdatedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  lastSyncError: z.string().nullable(),
+  createdById: z.string(),
+  updatedById: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  latestRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  draftRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  submittedRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  definition: z
+    .object({
+      category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+      language: z.string().min(2),
+      parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+      components: z
+        .array(
+          z.union([
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['TEXT']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+              assetId: z.string().min(1).optional(),
+              example: z.string().optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['LOCATION']),
+            }),
+            z.object({
+              type: z.enum(['BODY']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['FOOTER']),
+              text: z.string().min(1),
+            }),
+            z.object({
+              type: z.enum(['BUTTONS']),
+              buttons: z
+                .array(
+                  z.union([
+                    z.object({
+                      kind: z.enum(['QUICK_REPLY']),
+                      text: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['URL']),
+                      text: z.string().min(1),
+                      url: z.url(),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['PHONE_NUMBER']),
+                      text: z.string().min(1),
+                      phoneNumber: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['COPY_CODE']),
+                      text: z.string().min(1),
+                      example: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['OTP']),
+                      otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                      text: z.string().min(1),
+                      autofillText: z.string().optional(),
+                      packageName: z.string().optional(),
+                      signatureHash: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['CATALOG']),
+                      text: z.string().min(1),
+                      thumbnailProductRetailerId: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['FLOW']),
+                      text: z.string().min(1),
+                      flowId: z.string().min(1),
+                      flowAction: z
+                        .enum(['navigate', 'data_exchange'])
+                        .optional(),
+                      navigateScreen: z.string().optional(),
+                      flowData: z.record(z.string(), z.unknown()).optional(),
+                    }),
+                  ]),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['CAROUSEL']),
+              cards: z
+                .array(
+                  z.object({
+                    header: z.object({
+                      format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                      assetId: z.string().min(1).optional(),
+                      example: z.string().optional(),
+                    }),
+                    body: z.object({
+                      text: z.string().min(1),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    buttons: z
+                      .array(
+                        z.union([
+                          z.object({
+                            kind: z.enum(['QUICK_REPLY']),
+                            text: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['URL']),
+                            text: z.string().min(1),
+                            url: z.url(),
+                            examples: z.array(z.string()).optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['PHONE_NUMBER']),
+                            text: z.string().min(1),
+                            phoneNumber: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['COPY_CODE']),
+                            text: z.string().min(1),
+                            example: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['OTP']),
+                            otpType: z.enum([
+                              'COPY_CODE',
+                              'ONE_TAP',
+                              'ZERO_TAP',
+                            ]),
+                            text: z.string().min(1),
+                            autofillText: z.string().optional(),
+                            packageName: z.string().optional(),
+                            signatureHash: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['CATALOG']),
+                            text: z.string().min(1),
+                            thumbnailProductRetailerId: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['FLOW']),
+                            text: z.string().min(1),
+                            flowId: z.string().min(1),
+                            flowAction: z
+                              .enum(['navigate', 'data_exchange'])
+                              .optional(),
+                            navigateScreen: z.string().optional(),
+                            flowData: z
+                              .record(z.string(), z.unknown())
+                              .optional(),
+                          }),
+                        ]),
+                      )
+                      .optional(),
+                  }),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['LIMITED_TIME_OFFER']),
+              text: z.string().min(1),
+              hasExpiration: z.boolean().optional(),
+            }),
+            z.object({
+              type: z.enum(['CUSTOM']),
+              raw: z.record(z.string(), z.unknown()),
+            }),
+          ]),
+        )
+        .min(1),
+    })
+    .nullable(),
+})
+
+export const zUpdateWhatsappTemplateDraftBody = z.object({
+  expectedLockVersion: z.int().gt(0).lte(9007199254740991),
+  definition: z.object({
+    category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+    language: z.string().min(2),
+    parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+    components: z
+      .array(
+        z.union([
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['TEXT']),
+            text: z.string().min(1),
+            examples: z.array(z.string()).optional(),
+          }),
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+            assetId: z.string().min(1).optional(),
+            example: z.string().optional(),
+          }),
+          z.object({
+            type: z.enum(['HEADER']),
+            format: z.enum(['LOCATION']),
+          }),
+          z.object({
+            type: z.enum(['BODY']),
+            text: z.string().min(1),
+            examples: z.array(z.string()).optional(),
+          }),
+          z.object({
+            type: z.enum(['FOOTER']),
+            text: z.string().min(1),
+          }),
+          z.object({
+            type: z.enum(['BUTTONS']),
+            buttons: z
+              .array(
+                z.union([
+                  z.object({
+                    kind: z.enum(['QUICK_REPLY']),
+                    text: z.string().min(1),
+                  }),
+                  z.object({
+                    kind: z.enum(['URL']),
+                    text: z.string().min(1),
+                    url: z.url(),
+                    examples: z.array(z.string()).optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['PHONE_NUMBER']),
+                    text: z.string().min(1),
+                    phoneNumber: z.string().min(1),
+                  }),
+                  z.object({
+                    kind: z.enum(['COPY_CODE']),
+                    text: z.string().min(1),
+                    example: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['OTP']),
+                    otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                    text: z.string().min(1),
+                    autofillText: z.string().optional(),
+                    packageName: z.string().optional(),
+                    signatureHash: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['CATALOG']),
+                    text: z.string().min(1),
+                    thumbnailProductRetailerId: z.string().optional(),
+                  }),
+                  z.object({
+                    kind: z.enum(['FLOW']),
+                    text: z.string().min(1),
+                    flowId: z.string().min(1),
+                    flowAction: z
+                      .enum(['navigate', 'data_exchange'])
+                      .optional(),
+                    navigateScreen: z.string().optional(),
+                    flowData: z.record(z.string(), z.unknown()).optional(),
+                  }),
+                ]),
+              )
+              .min(1),
+          }),
+          z.object({
+            type: z.enum(['CAROUSEL']),
+            cards: z
+              .array(
+                z.object({
+                  header: z.object({
+                    format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                    assetId: z.string().min(1).optional(),
+                    example: z.string().optional(),
+                  }),
+                  body: z.object({
+                    text: z.string().min(1),
+                    examples: z.array(z.string()).optional(),
+                  }),
+                  buttons: z
+                    .array(
+                      z.union([
+                        z.object({
+                          kind: z.enum(['QUICK_REPLY']),
+                          text: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['URL']),
+                          text: z.string().min(1),
+                          url: z.url(),
+                          examples: z.array(z.string()).optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['PHONE_NUMBER']),
+                          text: z.string().min(1),
+                          phoneNumber: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['COPY_CODE']),
+                          text: z.string().min(1),
+                          example: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['OTP']),
+                          otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                          text: z.string().min(1),
+                          autofillText: z.string().optional(),
+                          packageName: z.string().optional(),
+                          signatureHash: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['CATALOG']),
+                          text: z.string().min(1),
+                          thumbnailProductRetailerId: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['FLOW']),
+                          text: z.string().min(1),
+                          flowId: z.string().min(1),
+                          flowAction: z
+                            .enum(['navigate', 'data_exchange'])
+                            .optional(),
+                          navigateScreen: z.string().optional(),
+                          flowData: z
+                            .record(z.string(), z.unknown())
+                            .optional(),
+                        }),
+                      ]),
+                    )
+                    .optional(),
+                }),
+              )
+              .min(1),
+          }),
+          z.object({
+            type: z.enum(['LIMITED_TIME_OFFER']),
+            text: z.string().min(1),
+            hasExpiration: z.boolean().optional(),
+          }),
+          z.object({
+            type: z.enum(['CUSTOM']),
+            raw: z.record(z.string(), z.unknown()),
+          }),
+        ]),
+      )
+      .min(1),
+  }),
+})
+
+export const zUpdateWhatsappTemplateDraftPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zUpdateWhatsappTemplateDraftResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  language: z.string(),
+  category: z.string(),
+  metaTemplateId: z.string().nullable(),
+  remoteStatus: z.string().nullable(),
+  remoteQuality: z.string().nullable(),
+  rejectionReason: z.string().nullable(),
+  remoteUpdatedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  lastSyncError: z.string().nullable(),
+  createdById: z.string(),
+  updatedById: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  latestRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  draftRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  submittedRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  definition: z
+    .object({
+      category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+      language: z.string().min(2),
+      parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+      components: z
+        .array(
+          z.union([
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['TEXT']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+              assetId: z.string().min(1).optional(),
+              example: z.string().optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['LOCATION']),
+            }),
+            z.object({
+              type: z.enum(['BODY']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['FOOTER']),
+              text: z.string().min(1),
+            }),
+            z.object({
+              type: z.enum(['BUTTONS']),
+              buttons: z
+                .array(
+                  z.union([
+                    z.object({
+                      kind: z.enum(['QUICK_REPLY']),
+                      text: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['URL']),
+                      text: z.string().min(1),
+                      url: z.url(),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['PHONE_NUMBER']),
+                      text: z.string().min(1),
+                      phoneNumber: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['COPY_CODE']),
+                      text: z.string().min(1),
+                      example: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['OTP']),
+                      otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                      text: z.string().min(1),
+                      autofillText: z.string().optional(),
+                      packageName: z.string().optional(),
+                      signatureHash: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['CATALOG']),
+                      text: z.string().min(1),
+                      thumbnailProductRetailerId: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['FLOW']),
+                      text: z.string().min(1),
+                      flowId: z.string().min(1),
+                      flowAction: z
+                        .enum(['navigate', 'data_exchange'])
+                        .optional(),
+                      navigateScreen: z.string().optional(),
+                      flowData: z.record(z.string(), z.unknown()).optional(),
+                    }),
+                  ]),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['CAROUSEL']),
+              cards: z
+                .array(
+                  z.object({
+                    header: z.object({
+                      format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                      assetId: z.string().min(1).optional(),
+                      example: z.string().optional(),
+                    }),
+                    body: z.object({
+                      text: z.string().min(1),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    buttons: z
+                      .array(
+                        z.union([
+                          z.object({
+                            kind: z.enum(['QUICK_REPLY']),
+                            text: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['URL']),
+                            text: z.string().min(1),
+                            url: z.url(),
+                            examples: z.array(z.string()).optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['PHONE_NUMBER']),
+                            text: z.string().min(1),
+                            phoneNumber: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['COPY_CODE']),
+                            text: z.string().min(1),
+                            example: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['OTP']),
+                            otpType: z.enum([
+                              'COPY_CODE',
+                              'ONE_TAP',
+                              'ZERO_TAP',
+                            ]),
+                            text: z.string().min(1),
+                            autofillText: z.string().optional(),
+                            packageName: z.string().optional(),
+                            signatureHash: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['CATALOG']),
+                            text: z.string().min(1),
+                            thumbnailProductRetailerId: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['FLOW']),
+                            text: z.string().min(1),
+                            flowId: z.string().min(1),
+                            flowAction: z
+                              .enum(['navigate', 'data_exchange'])
+                              .optional(),
+                            navigateScreen: z.string().optional(),
+                            flowData: z
+                              .record(z.string(), z.unknown())
+                              .optional(),
+                          }),
+                        ]),
+                      )
+                      .optional(),
+                  }),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['LIMITED_TIME_OFFER']),
+              text: z.string().min(1),
+              hasExpiration: z.boolean().optional(),
+            }),
+            z.object({
+              type: z.enum(['CUSTOM']),
+              raw: z.record(z.string(), z.unknown()),
+            }),
+          ]),
+        )
+        .min(1),
+    })
+    .nullable(),
+})
+
+export const zListWhatsappTemplateRevisionsPath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zListWhatsappTemplateRevisionsResponse = z.object({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+      definition: z
+        .object({
+          category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+          language: z.string().min(2),
+          parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+          components: z
+            .array(
+              z.union([
+                z.object({
+                  type: z.enum(['HEADER']),
+                  format: z.enum(['TEXT']),
+                  text: z.string().min(1),
+                  examples: z.array(z.string()).optional(),
+                }),
+                z.object({
+                  type: z.enum(['HEADER']),
+                  format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                  assetId: z.string().min(1).optional(),
+                  example: z.string().optional(),
+                }),
+                z.object({
+                  type: z.enum(['HEADER']),
+                  format: z.enum(['LOCATION']),
+                }),
+                z.object({
+                  type: z.enum(['BODY']),
+                  text: z.string().min(1),
+                  examples: z.array(z.string()).optional(),
+                }),
+                z.object({
+                  type: z.enum(['FOOTER']),
+                  text: z.string().min(1),
+                }),
+                z.object({
+                  type: z.enum(['BUTTONS']),
+                  buttons: z
+                    .array(
+                      z.union([
+                        z.object({
+                          kind: z.enum(['QUICK_REPLY']),
+                          text: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['URL']),
+                          text: z.string().min(1),
+                          url: z.url(),
+                          examples: z.array(z.string()).optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['PHONE_NUMBER']),
+                          text: z.string().min(1),
+                          phoneNumber: z.string().min(1),
+                        }),
+                        z.object({
+                          kind: z.enum(['COPY_CODE']),
+                          text: z.string().min(1),
+                          example: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['OTP']),
+                          otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                          text: z.string().min(1),
+                          autofillText: z.string().optional(),
+                          packageName: z.string().optional(),
+                          signatureHash: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['CATALOG']),
+                          text: z.string().min(1),
+                          thumbnailProductRetailerId: z.string().optional(),
+                        }),
+                        z.object({
+                          kind: z.enum(['FLOW']),
+                          text: z.string().min(1),
+                          flowId: z.string().min(1),
+                          flowAction: z
+                            .enum(['navigate', 'data_exchange'])
+                            .optional(),
+                          navigateScreen: z.string().optional(),
+                          flowData: z
+                            .record(z.string(), z.unknown())
+                            .optional(),
+                        }),
+                      ]),
+                    )
+                    .min(1),
+                }),
+                z.object({
+                  type: z.enum(['CAROUSEL']),
+                  cards: z
+                    .array(
+                      z.object({
+                        header: z.object({
+                          format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                          assetId: z.string().min(1).optional(),
+                          example: z.string().optional(),
+                        }),
+                        body: z.object({
+                          text: z.string().min(1),
+                          examples: z.array(z.string()).optional(),
+                        }),
+                        buttons: z
+                          .array(
+                            z.union([
+                              z.object({
+                                kind: z.enum(['QUICK_REPLY']),
+                                text: z.string().min(1),
+                              }),
+                              z.object({
+                                kind: z.enum(['URL']),
+                                text: z.string().min(1),
+                                url: z.url(),
+                                examples: z.array(z.string()).optional(),
+                              }),
+                              z.object({
+                                kind: z.enum(['PHONE_NUMBER']),
+                                text: z.string().min(1),
+                                phoneNumber: z.string().min(1),
+                              }),
+                              z.object({
+                                kind: z.enum(['COPY_CODE']),
+                                text: z.string().min(1),
+                                example: z.string().optional(),
+                              }),
+                              z.object({
+                                kind: z.enum(['OTP']),
+                                otpType: z.enum([
+                                  'COPY_CODE',
+                                  'ONE_TAP',
+                                  'ZERO_TAP',
+                                ]),
+                                text: z.string().min(1),
+                                autofillText: z.string().optional(),
+                                packageName: z.string().optional(),
+                                signatureHash: z.string().optional(),
+                              }),
+                              z.object({
+                                kind: z.enum(['CATALOG']),
+                                text: z.string().min(1),
+                                thumbnailProductRetailerId: z
+                                  .string()
+                                  .optional(),
+                              }),
+                              z.object({
+                                kind: z.enum(['FLOW']),
+                                text: z.string().min(1),
+                                flowId: z.string().min(1),
+                                flowAction: z
+                                  .enum(['navigate', 'data_exchange'])
+                                  .optional(),
+                                navigateScreen: z.string().optional(),
+                                flowData: z
+                                  .record(z.string(), z.unknown())
+                                  .optional(),
+                              }),
+                            ]),
+                          )
+                          .optional(),
+                      }),
+                    )
+                    .min(1),
+                }),
+                z.object({
+                  type: z.enum(['LIMITED_TIME_OFFER']),
+                  text: z.string().min(1),
+                  hasExpiration: z.boolean().optional(),
+                }),
+                z.object({
+                  type: z.enum(['CUSTOM']),
+                  raw: z.record(z.string(), z.unknown()),
+                }),
+              ]),
+            )
+            .min(1),
+        })
+        .nullable(),
+      submission: z
+        .object({
+          status: z.string().nullable(),
+          code: z.string().nullable(),
+          message: z.string().nullable(),
+        })
+        .nullable(),
+    }),
+  ),
+})
+
+export const zDuplicateWhatsappTemplateBody = z.object({
+  name: z
+    .string()
+    .min(1)
+    .max(512)
+    .regex(/^[a-z0-9_]+$/),
+})
+
+export const zDuplicateWhatsappTemplatePath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zDuplicateWhatsappTemplateResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  language: z.string(),
+  category: z.string(),
+  metaTemplateId: z.string().nullable(),
+  remoteStatus: z.string().nullable(),
+  remoteQuality: z.string().nullable(),
+  rejectionReason: z.string().nullable(),
+  remoteUpdatedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  lastSyncError: z.string().nullable(),
+  createdById: z.string(),
+  updatedById: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  latestRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  draftRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  submittedRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  definition: z
+    .object({
+      category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+      language: z.string().min(2),
+      parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+      components: z
+        .array(
+          z.union([
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['TEXT']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+              assetId: z.string().min(1).optional(),
+              example: z.string().optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['LOCATION']),
+            }),
+            z.object({
+              type: z.enum(['BODY']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['FOOTER']),
+              text: z.string().min(1),
+            }),
+            z.object({
+              type: z.enum(['BUTTONS']),
+              buttons: z
+                .array(
+                  z.union([
+                    z.object({
+                      kind: z.enum(['QUICK_REPLY']),
+                      text: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['URL']),
+                      text: z.string().min(1),
+                      url: z.url(),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['PHONE_NUMBER']),
+                      text: z.string().min(1),
+                      phoneNumber: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['COPY_CODE']),
+                      text: z.string().min(1),
+                      example: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['OTP']),
+                      otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                      text: z.string().min(1),
+                      autofillText: z.string().optional(),
+                      packageName: z.string().optional(),
+                      signatureHash: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['CATALOG']),
+                      text: z.string().min(1),
+                      thumbnailProductRetailerId: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['FLOW']),
+                      text: z.string().min(1),
+                      flowId: z.string().min(1),
+                      flowAction: z
+                        .enum(['navigate', 'data_exchange'])
+                        .optional(),
+                      navigateScreen: z.string().optional(),
+                      flowData: z.record(z.string(), z.unknown()).optional(),
+                    }),
+                  ]),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['CAROUSEL']),
+              cards: z
+                .array(
+                  z.object({
+                    header: z.object({
+                      format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                      assetId: z.string().min(1).optional(),
+                      example: z.string().optional(),
+                    }),
+                    body: z.object({
+                      text: z.string().min(1),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    buttons: z
+                      .array(
+                        z.union([
+                          z.object({
+                            kind: z.enum(['QUICK_REPLY']),
+                            text: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['URL']),
+                            text: z.string().min(1),
+                            url: z.url(),
+                            examples: z.array(z.string()).optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['PHONE_NUMBER']),
+                            text: z.string().min(1),
+                            phoneNumber: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['COPY_CODE']),
+                            text: z.string().min(1),
+                            example: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['OTP']),
+                            otpType: z.enum([
+                              'COPY_CODE',
+                              'ONE_TAP',
+                              'ZERO_TAP',
+                            ]),
+                            text: z.string().min(1),
+                            autofillText: z.string().optional(),
+                            packageName: z.string().optional(),
+                            signatureHash: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['CATALOG']),
+                            text: z.string().min(1),
+                            thumbnailProductRetailerId: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['FLOW']),
+                            text: z.string().min(1),
+                            flowId: z.string().min(1),
+                            flowAction: z
+                              .enum(['navigate', 'data_exchange'])
+                              .optional(),
+                            navigateScreen: z.string().optional(),
+                            flowData: z
+                              .record(z.string(), z.unknown())
+                              .optional(),
+                          }),
+                        ]),
+                      )
+                      .optional(),
+                  }),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['LIMITED_TIME_OFFER']),
+              text: z.string().min(1),
+              hasExpiration: z.boolean().optional(),
+            }),
+            z.object({
+              type: z.enum(['CUSTOM']),
+              raw: z.record(z.string(), z.unknown()),
+            }),
+          ]),
+        )
+        .min(1),
+    })
+    .nullable(),
+})
+
+export const zValidateWhatsappTemplateRevisionBody = z.object({
+  definition: z.unknown(),
+})
+
+/**
+ * Default Response
+ */
+export const zValidateWhatsappTemplateRevisionResponse = z.object({
+  valid: z.boolean(),
+  issues: z.array(
+    z.object({
+      path: z.string(),
+      message: z.string(),
+    }),
+  ),
+})
+
+export const zSubmitWhatsappTemplateBody = z.object({
+  idempotencyKey: z.string().min(1).optional(),
+})
+
+export const zSubmitWhatsappTemplatePath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zSubmitWhatsappTemplateResponse = z.object({
+  template: z.object({
+    id: z.string(),
+    name: z.string(),
+    language: z.string(),
+    category: z.string(),
+    metaTemplateId: z.string().nullable(),
+    remoteStatus: z.string().nullable(),
+    remoteQuality: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
+    remoteUpdatedAt: z.iso.datetime().nullable(),
+    lastSyncAttemptAt: z.iso.datetime().nullable(),
+    lastSyncError: z.string().nullable(),
+    createdById: z.string(),
+    updatedById: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    latestRevision: z
+      .object({
+        id: z.string(),
+        version: z.number(),
+        state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+        lockVersion: z.number(),
+        parameterFormat: z.string(),
+        submittedAt: z.iso.datetime().nullable(),
+        submittedById: z.string().nullable(),
+        createdAt: z.iso.datetime(),
+        updatedAt: z.iso.datetime(),
+      })
+      .nullable(),
+    draftRevision: z
+      .object({
+        id: z.string(),
+        version: z.number(),
+        state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+        lockVersion: z.number(),
+        parameterFormat: z.string(),
+        submittedAt: z.iso.datetime().nullable(),
+        submittedById: z.string().nullable(),
+        createdAt: z.iso.datetime(),
+        updatedAt: z.iso.datetime(),
+      })
+      .nullable(),
+    submittedRevision: z
+      .object({
+        id: z.string(),
+        version: z.number(),
+        state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+        lockVersion: z.number(),
+        parameterFormat: z.string(),
+        submittedAt: z.iso.datetime().nullable(),
+        submittedById: z.string().nullable(),
+        createdAt: z.iso.datetime(),
+        updatedAt: z.iso.datetime(),
+      })
+      .nullable(),
+    definition: z
+      .object({
+        category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+        language: z.string().min(2),
+        parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+        components: z
+          .array(
+            z.union([
+              z.object({
+                type: z.enum(['HEADER']),
+                format: z.enum(['TEXT']),
+                text: z.string().min(1),
+                examples: z.array(z.string()).optional(),
+              }),
+              z.object({
+                type: z.enum(['HEADER']),
+                format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                assetId: z.string().min(1).optional(),
+                example: z.string().optional(),
+              }),
+              z.object({
+                type: z.enum(['HEADER']),
+                format: z.enum(['LOCATION']),
+              }),
+              z.object({
+                type: z.enum(['BODY']),
+                text: z.string().min(1),
+                examples: z.array(z.string()).optional(),
+              }),
+              z.object({
+                type: z.enum(['FOOTER']),
+                text: z.string().min(1),
+              }),
+              z.object({
+                type: z.enum(['BUTTONS']),
+                buttons: z
+                  .array(
+                    z.union([
+                      z.object({
+                        kind: z.enum(['QUICK_REPLY']),
+                        text: z.string().min(1),
+                      }),
+                      z.object({
+                        kind: z.enum(['URL']),
+                        text: z.string().min(1),
+                        url: z.url(),
+                        examples: z.array(z.string()).optional(),
+                      }),
+                      z.object({
+                        kind: z.enum(['PHONE_NUMBER']),
+                        text: z.string().min(1),
+                        phoneNumber: z.string().min(1),
+                      }),
+                      z.object({
+                        kind: z.enum(['COPY_CODE']),
+                        text: z.string().min(1),
+                        example: z.string().optional(),
+                      }),
+                      z.object({
+                        kind: z.enum(['OTP']),
+                        otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                        text: z.string().min(1),
+                        autofillText: z.string().optional(),
+                        packageName: z.string().optional(),
+                        signatureHash: z.string().optional(),
+                      }),
+                      z.object({
+                        kind: z.enum(['CATALOG']),
+                        text: z.string().min(1),
+                        thumbnailProductRetailerId: z.string().optional(),
+                      }),
+                      z.object({
+                        kind: z.enum(['FLOW']),
+                        text: z.string().min(1),
+                        flowId: z.string().min(1),
+                        flowAction: z
+                          .enum(['navigate', 'data_exchange'])
+                          .optional(),
+                        navigateScreen: z.string().optional(),
+                        flowData: z.record(z.string(), z.unknown()).optional(),
+                      }),
+                    ]),
+                  )
+                  .min(1),
+              }),
+              z.object({
+                type: z.enum(['CAROUSEL']),
+                cards: z
+                  .array(
+                    z.object({
+                      header: z.object({
+                        format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                        assetId: z.string().min(1).optional(),
+                        example: z.string().optional(),
+                      }),
+                      body: z.object({
+                        text: z.string().min(1),
+                        examples: z.array(z.string()).optional(),
+                      }),
+                      buttons: z
+                        .array(
+                          z.union([
+                            z.object({
+                              kind: z.enum(['QUICK_REPLY']),
+                              text: z.string().min(1),
+                            }),
+                            z.object({
+                              kind: z.enum(['URL']),
+                              text: z.string().min(1),
+                              url: z.url(),
+                              examples: z.array(z.string()).optional(),
+                            }),
+                            z.object({
+                              kind: z.enum(['PHONE_NUMBER']),
+                              text: z.string().min(1),
+                              phoneNumber: z.string().min(1),
+                            }),
+                            z.object({
+                              kind: z.enum(['COPY_CODE']),
+                              text: z.string().min(1),
+                              example: z.string().optional(),
+                            }),
+                            z.object({
+                              kind: z.enum(['OTP']),
+                              otpType: z.enum([
+                                'COPY_CODE',
+                                'ONE_TAP',
+                                'ZERO_TAP',
+                              ]),
+                              text: z.string().min(1),
+                              autofillText: z.string().optional(),
+                              packageName: z.string().optional(),
+                              signatureHash: z.string().optional(),
+                            }),
+                            z.object({
+                              kind: z.enum(['CATALOG']),
+                              text: z.string().min(1),
+                              thumbnailProductRetailerId: z.string().optional(),
+                            }),
+                            z.object({
+                              kind: z.enum(['FLOW']),
+                              text: z.string().min(1),
+                              flowId: z.string().min(1),
+                              flowAction: z
+                                .enum(['navigate', 'data_exchange'])
+                                .optional(),
+                              navigateScreen: z.string().optional(),
+                              flowData: z
+                                .record(z.string(), z.unknown())
+                                .optional(),
+                            }),
+                          ]),
+                        )
+                        .optional(),
+                    }),
+                  )
+                  .min(1),
+              }),
+              z.object({
+                type: z.enum(['LIMITED_TIME_OFFER']),
+                text: z.string().min(1),
+                hasExpiration: z.boolean().optional(),
+              }),
+              z.object({
+                type: z.enum(['CUSTOM']),
+                raw: z.record(z.string(), z.unknown()),
+              }),
+            ]),
+          )
+          .min(1),
+      })
+      .nullable(),
+  }),
+  revisionId: z.string(),
+  replayed: z.boolean(),
+})
+
+/**
+ * Default Response
+ */
+export const zSyncWhatsappTemplatesResponse = z.object({
+  imported: z.number(),
+  updated: z.number(),
+  failed: z.number(),
+  nextCursor: z.unknown().nullable(),
+})
+
+export const zDeleteWhatsappTemplateRemotePath = z.object({
+  id: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zDeleteWhatsappTemplateRemoteResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  language: z.string(),
+  category: z.string(),
+  metaTemplateId: z.string().nullable(),
+  remoteStatus: z.string().nullable(),
+  remoteQuality: z.string().nullable(),
+  rejectionReason: z.string().nullable(),
+  remoteUpdatedAt: z.iso.datetime().nullable(),
+  lastSyncAttemptAt: z.iso.datetime().nullable(),
+  lastSyncError: z.string().nullable(),
+  createdById: z.string(),
+  updatedById: z.string(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  latestRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  draftRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  submittedRevision: z
+    .object({
+      id: z.string(),
+      version: z.number(),
+      state: z.enum(['DRAFT', 'SUBMITTED', 'SUPERSEDED']),
+      lockVersion: z.number(),
+      parameterFormat: z.string(),
+      submittedAt: z.iso.datetime().nullable(),
+      submittedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+    })
+    .nullable(),
+  definition: z
+    .object({
+      category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
+      language: z.string().min(2),
+      parameterFormat: z.enum(['POSITIONAL', 'NAMED']),
+      components: z
+        .array(
+          z.union([
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['TEXT']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+              assetId: z.string().min(1).optional(),
+              example: z.string().optional(),
+            }),
+            z.object({
+              type: z.enum(['HEADER']),
+              format: z.enum(['LOCATION']),
+            }),
+            z.object({
+              type: z.enum(['BODY']),
+              text: z.string().min(1),
+              examples: z.array(z.string()).optional(),
+            }),
+            z.object({
+              type: z.enum(['FOOTER']),
+              text: z.string().min(1),
+            }),
+            z.object({
+              type: z.enum(['BUTTONS']),
+              buttons: z
+                .array(
+                  z.union([
+                    z.object({
+                      kind: z.enum(['QUICK_REPLY']),
+                      text: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['URL']),
+                      text: z.string().min(1),
+                      url: z.url(),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['PHONE_NUMBER']),
+                      text: z.string().min(1),
+                      phoneNumber: z.string().min(1),
+                    }),
+                    z.object({
+                      kind: z.enum(['COPY_CODE']),
+                      text: z.string().min(1),
+                      example: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['OTP']),
+                      otpType: z.enum(['COPY_CODE', 'ONE_TAP', 'ZERO_TAP']),
+                      text: z.string().min(1),
+                      autofillText: z.string().optional(),
+                      packageName: z.string().optional(),
+                      signatureHash: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['CATALOG']),
+                      text: z.string().min(1),
+                      thumbnailProductRetailerId: z.string().optional(),
+                    }),
+                    z.object({
+                      kind: z.enum(['FLOW']),
+                      text: z.string().min(1),
+                      flowId: z.string().min(1),
+                      flowAction: z
+                        .enum(['navigate', 'data_exchange'])
+                        .optional(),
+                      navigateScreen: z.string().optional(),
+                      flowData: z.record(z.string(), z.unknown()).optional(),
+                    }),
+                  ]),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['CAROUSEL']),
+              cards: z
+                .array(
+                  z.object({
+                    header: z.object({
+                      format: z.enum(['IMAGE', 'VIDEO', 'DOCUMENT']),
+                      assetId: z.string().min(1).optional(),
+                      example: z.string().optional(),
+                    }),
+                    body: z.object({
+                      text: z.string().min(1),
+                      examples: z.array(z.string()).optional(),
+                    }),
+                    buttons: z
+                      .array(
+                        z.union([
+                          z.object({
+                            kind: z.enum(['QUICK_REPLY']),
+                            text: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['URL']),
+                            text: z.string().min(1),
+                            url: z.url(),
+                            examples: z.array(z.string()).optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['PHONE_NUMBER']),
+                            text: z.string().min(1),
+                            phoneNumber: z.string().min(1),
+                          }),
+                          z.object({
+                            kind: z.enum(['COPY_CODE']),
+                            text: z.string().min(1),
+                            example: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['OTP']),
+                            otpType: z.enum([
+                              'COPY_CODE',
+                              'ONE_TAP',
+                              'ZERO_TAP',
+                            ]),
+                            text: z.string().min(1),
+                            autofillText: z.string().optional(),
+                            packageName: z.string().optional(),
+                            signatureHash: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['CATALOG']),
+                            text: z.string().min(1),
+                            thumbnailProductRetailerId: z.string().optional(),
+                          }),
+                          z.object({
+                            kind: z.enum(['FLOW']),
+                            text: z.string().min(1),
+                            flowId: z.string().min(1),
+                            flowAction: z
+                              .enum(['navigate', 'data_exchange'])
+                              .optional(),
+                            navigateScreen: z.string().optional(),
+                            flowData: z
+                              .record(z.string(), z.unknown())
+                              .optional(),
+                          }),
+                        ]),
+                      )
+                      .optional(),
+                  }),
+                )
+                .min(1),
+            }),
+            z.object({
+              type: z.enum(['LIMITED_TIME_OFFER']),
+              text: z.string().min(1),
+              hasExpiration: z.boolean().optional(),
+            }),
+            z.object({
+              type: z.enum(['CUSTOM']),
+              raw: z.record(z.string(), z.unknown()),
+            }),
+          ]),
+        )
+        .min(1),
+    })
+    .nullable(),
+})
+
+export const zPrepareWhatsappTemplateAssetUploadBody = z.object({
+  revisionId: z.string().min(1),
+  fileName: z.string().min(1).max(255),
+  mimeType: z.string().min(1),
+  byteSize: z.int().gt(0).lte(9007199254740991),
+})
+
+/**
+ * Default Response
+ */
+export const zPrepareWhatsappTemplateAssetUploadResponse = z.object({
+  assetId: z.string(),
+  kind: z.string(),
+  uploadUrl: z.string(),
+  expiresIn: z.number(),
+})
+
+export const zConfirmWhatsappTemplateAssetUploadPath = z.object({
+  assetId: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zConfirmWhatsappTemplateAssetUploadResponse = z.object({
+  assetId: z.string(),
+  kind: z.string(),
+  mimeType: z.string(),
+  byteSize: z.number(),
+  metaHandle: z.string(),
+  reusedMetaHandle: z.boolean(),
+})
+
+export const zGetWhatsappTemplateAssetPreviewPath = z.object({
+  assetId: z.string(),
+})
+
+/**
+ * Default Response
+ */
+export const zGetWhatsappTemplateAssetPreviewResponse = z.object({
+  url: z.string(),
+  expiresIn: z.number(),
 })

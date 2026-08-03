@@ -14,11 +14,18 @@ import {
   blockContact,
   checkWhatsappHealth,
   closeConversation,
+  confirmWhatsappTemplateAssetUpload,
+  createWhatsappTemplateDraft,
   deleteWhatsappConnection,
+  deleteWhatsappTemplateDraft,
+  deleteWhatsappTemplateRemote,
+  duplicateWhatsappTemplate,
   getContact,
   getConversation,
   getWhatsappConnection,
   getWhatsappReadiness,
+  getWhatsappTemplate,
+  getWhatsappTemplateAssetPreview,
   healthCheck,
   listContacts,
   listConversations,
@@ -27,9 +34,12 @@ import {
   listUsers,
   listWhatsappLogs,
   listWhatsappPhoneNumbers,
+  listWhatsappTemplateRevisions,
+  listWhatsappTemplates,
   livenessProbe,
   markConversationRead,
   type Options,
+  prepareWhatsappTemplateAssetUpload,
   readinessProbe,
   receiveWhatsappWebhook,
   registerWhatsappNumber,
@@ -38,11 +48,15 @@ import {
   sendTemplateMessage,
   sendWhatsappTestMessage,
   startConversation,
+  submitWhatsappTemplate,
   subscribeWhatsappApp,
+  syncWhatsappTemplates,
   unassignConversation,
   updateContact,
   updateConversation,
   updateWhatsappConnection,
+  updateWhatsappTemplateDraft,
+  validateWhatsappTemplateRevision,
   verifyWhatsappWebhook,
 } from '../sdk.gen'
 import type {
@@ -54,8 +68,18 @@ import type {
   CheckWhatsappHealthResponse,
   CloseConversationData,
   CloseConversationResponse,
+  ConfirmWhatsappTemplateAssetUploadData,
+  ConfirmWhatsappTemplateAssetUploadResponse,
+  CreateWhatsappTemplateDraftData,
+  CreateWhatsappTemplateDraftResponse,
   DeleteWhatsappConnectionData,
   DeleteWhatsappConnectionResponse,
+  DeleteWhatsappTemplateDraftData,
+  DeleteWhatsappTemplateDraftResponse,
+  DeleteWhatsappTemplateRemoteData,
+  DeleteWhatsappTemplateRemoteResponse,
+  DuplicateWhatsappTemplateData,
+  DuplicateWhatsappTemplateResponse,
   GetContactData,
   GetContactResponse,
   GetConversationData,
@@ -64,6 +88,10 @@ import type {
   GetWhatsappConnectionResponse,
   GetWhatsappReadinessData,
   GetWhatsappReadinessResponse,
+  GetWhatsappTemplateAssetPreviewData,
+  GetWhatsappTemplateAssetPreviewResponse,
+  GetWhatsappTemplateData,
+  GetWhatsappTemplateResponse,
   HealthCheckData,
   HealthCheckError,
   HealthCheckResponse,
@@ -81,10 +109,16 @@ import type {
   ListWhatsappLogsResponse,
   ListWhatsappPhoneNumbersData,
   ListWhatsappPhoneNumbersResponse,
+  ListWhatsappTemplateRevisionsData,
+  ListWhatsappTemplateRevisionsResponse,
+  ListWhatsappTemplatesData,
+  ListWhatsappTemplatesResponse,
   LivenessProbeData,
   LivenessProbeResponse,
   MarkConversationReadData,
   MarkConversationReadResponse,
+  PrepareWhatsappTemplateAssetUploadData,
+  PrepareWhatsappTemplateAssetUploadResponse,
   ReadinessProbeData,
   ReadinessProbeError,
   ReadinessProbeResponse,
@@ -102,8 +136,12 @@ import type {
   SendWhatsappTestMessageResponse,
   StartConversationData,
   StartConversationResponse,
+  SubmitWhatsappTemplateData,
+  SubmitWhatsappTemplateResponse,
   SubscribeWhatsappAppData,
   SubscribeWhatsappAppResponse,
+  SyncWhatsappTemplatesData,
+  SyncWhatsappTemplatesResponse,
   UnassignConversationData,
   UnassignConversationResponse,
   UpdateContactData,
@@ -112,6 +150,10 @@ import type {
   UpdateConversationResponse,
   UpdateWhatsappConnectionData,
   UpdateWhatsappConnectionResponse,
+  UpdateWhatsappTemplateDraftData,
+  UpdateWhatsappTemplateDraftResponse,
+  ValidateWhatsappTemplateRevisionData,
+  ValidateWhatsappTemplateRevisionResponse,
   VerifyWhatsappWebhookData,
   VerifyWhatsappWebhookResponse,
 } from '../types.gen'
@@ -1275,4 +1317,446 @@ export const listWhatsappLogsOptions = (
       return data
     },
     queryKey: listWhatsappLogsQueryKey(options),
+  })
+
+export const listWhatsappTemplatesQueryKey = (
+  options?: Options<ListWhatsappTemplatesData>,
+) =>
+  createQueryKey('listWhatsappTemplates', options, false, ['WhatsAppTemplates'])
+
+/**
+ * Lista os modelos da conta ativa com filtros e paginação
+ */
+export const listWhatsappTemplatesOptions = (
+  options?: Options<ListWhatsappTemplatesData>,
+) =>
+  queryOptions<
+    ListWhatsappTemplatesResponse,
+    DefaultError,
+    ListWhatsappTemplatesResponse,
+    ReturnType<typeof listWhatsappTemplatesQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listWhatsappTemplates({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listWhatsappTemplatesQueryKey(options),
+  })
+
+export const listWhatsappTemplatesInfiniteQueryKey = (
+  options?: Options<ListWhatsappTemplatesData>,
+): QueryKey<Options<ListWhatsappTemplatesData>> =>
+  createQueryKey('listWhatsappTemplates', options, true)
+
+/**
+ * Lista os modelos da conta ativa com filtros e paginação
+ */
+export const listWhatsappTemplatesInfiniteOptions = (
+  options?: Options<ListWhatsappTemplatesData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListWhatsappTemplatesResponse,
+    DefaultError,
+    InfiniteData<ListWhatsappTemplatesResponse>,
+    QueryKey<Options<ListWhatsappTemplatesData>>,
+    | number
+    | Pick<
+        QueryKey<Options<ListWhatsappTemplatesData>>[0],
+        'body' | 'headers' | 'path' | 'query'
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListWhatsappTemplatesData>>[0],
+          'body' | 'headers' | 'path' | 'query'
+        > =
+          typeof pageParam === 'object'
+            ? pageParam
+            : {
+                query: {
+                  page: pageParam,
+                },
+              }
+        const params = createInfiniteParams(queryKey, page)
+        const { data } = await listWhatsappTemplates({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        })
+        return data
+      },
+      queryKey: listWhatsappTemplatesInfiniteQueryKey(options),
+    },
+  )
+  return opts as Omit<typeof opts, 'initialData'>
+}
+
+/**
+ * Cria um modelo com a primeira revisão em rascunho
+ */
+export const createWhatsappTemplateDraftMutation = (
+  options?: Partial<Options<CreateWhatsappTemplateDraftData>>,
+): UseMutationOptions<
+  CreateWhatsappTemplateDraftResponse,
+  DefaultError,
+  Options<CreateWhatsappTemplateDraftData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateWhatsappTemplateDraftResponse,
+    DefaultError,
+    Options<CreateWhatsappTemplateDraftData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await createWhatsappTemplateDraft({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Apaga o rascunho (e o modelo, quando nunca foi enviado)
+ */
+export const deleteWhatsappTemplateDraftMutation = (
+  options?: Partial<Options<DeleteWhatsappTemplateDraftData>>,
+): UseMutationOptions<
+  DeleteWhatsappTemplateDraftResponse,
+  DefaultError,
+  Options<DeleteWhatsappTemplateDraftData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteWhatsappTemplateDraftResponse,
+    DefaultError,
+    Options<DeleteWhatsappTemplateDraftData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await deleteWhatsappTemplateDraft({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getWhatsappTemplateQueryKey = (
+  options: Options<GetWhatsappTemplateData>,
+) =>
+  createQueryKey('getWhatsappTemplate', options, false, ['WhatsAppTemplates'])
+
+/**
+ * Detalha um modelo com a definição mais recente
+ */
+export const getWhatsappTemplateOptions = (
+  options: Options<GetWhatsappTemplateData>,
+) =>
+  queryOptions<
+    GetWhatsappTemplateResponse,
+    DefaultError,
+    GetWhatsappTemplateResponse,
+    ReturnType<typeof getWhatsappTemplateQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getWhatsappTemplate({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getWhatsappTemplateQueryKey(options),
+  })
+
+/**
+ * Edita o rascunho com trava otimista de versão
+ */
+export const updateWhatsappTemplateDraftMutation = (
+  options?: Partial<Options<UpdateWhatsappTemplateDraftData>>,
+): UseMutationOptions<
+  UpdateWhatsappTemplateDraftResponse,
+  DefaultError,
+  Options<UpdateWhatsappTemplateDraftData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateWhatsappTemplateDraftResponse,
+    DefaultError,
+    Options<UpdateWhatsappTemplateDraftData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await updateWhatsappTemplateDraft({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const listWhatsappTemplateRevisionsQueryKey = (
+  options: Options<ListWhatsappTemplateRevisionsData>,
+) =>
+  createQueryKey('listWhatsappTemplateRevisions', options, false, [
+    'WhatsAppTemplates',
+  ])
+
+/**
+ * Histórico de revisões do modelo, da mais nova para a antiga
+ */
+export const listWhatsappTemplateRevisionsOptions = (
+  options: Options<ListWhatsappTemplateRevisionsData>,
+) =>
+  queryOptions<
+    ListWhatsappTemplateRevisionsResponse,
+    DefaultError,
+    ListWhatsappTemplateRevisionsResponse,
+    ReturnType<typeof listWhatsappTemplateRevisionsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listWhatsappTemplateRevisions({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: listWhatsappTemplateRevisionsQueryKey(options),
+  })
+
+/**
+ * Duplica o modelo em um novo rascunho com outro nome
+ */
+export const duplicateWhatsappTemplateMutation = (
+  options?: Partial<Options<DuplicateWhatsappTemplateData>>,
+): UseMutationOptions<
+  DuplicateWhatsappTemplateResponse,
+  DefaultError,
+  Options<DuplicateWhatsappTemplateData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DuplicateWhatsappTemplateResponse,
+    DefaultError,
+    Options<DuplicateWhatsappTemplateData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await duplicateWhatsappTemplate({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Valida uma definição sem gravar nada
+ */
+export const validateWhatsappTemplateRevisionMutation = (
+  options?: Partial<Options<ValidateWhatsappTemplateRevisionData>>,
+): UseMutationOptions<
+  ValidateWhatsappTemplateRevisionResponse,
+  DefaultError,
+  Options<ValidateWhatsappTemplateRevisionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ValidateWhatsappTemplateRevisionResponse,
+    DefaultError,
+    Options<ValidateWhatsappTemplateRevisionData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await validateWhatsappTemplateRevision({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Envia o rascunho para aprovação da Meta
+ */
+export const submitWhatsappTemplateMutation = (
+  options?: Partial<Options<SubmitWhatsappTemplateData>>,
+): UseMutationOptions<
+  SubmitWhatsappTemplateResponse,
+  DefaultError,
+  Options<SubmitWhatsappTemplateData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SubmitWhatsappTemplateResponse,
+    DefaultError,
+    Options<SubmitWhatsappTemplateData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await submitWhatsappTemplate({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Espelha o catálogo da Meta sem tocar nos rascunhos locais
+ */
+export const syncWhatsappTemplatesMutation = (
+  options?: Partial<Options<SyncWhatsappTemplatesData>>,
+): UseMutationOptions<
+  SyncWhatsappTemplatesResponse,
+  DefaultError,
+  Options<SyncWhatsappTemplatesData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    SyncWhatsappTemplatesResponse,
+    DefaultError,
+    Options<SyncWhatsappTemplatesData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await syncWhatsappTemplates({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Apaga o modelo na Meta e zera o espelho remoto local
+ */
+export const deleteWhatsappTemplateRemoteMutation = (
+  options?: Partial<Options<DeleteWhatsappTemplateRemoteData>>,
+): UseMutationOptions<
+  DeleteWhatsappTemplateRemoteResponse,
+  DefaultError,
+  Options<DeleteWhatsappTemplateRemoteData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteWhatsappTemplateRemoteResponse,
+    DefaultError,
+    Options<DeleteWhatsappTemplateRemoteData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await deleteWhatsappTemplateRemote({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Abre um upload assinado no bucket privado para a mídia
+ */
+export const prepareWhatsappTemplateAssetUploadMutation = (
+  options?: Partial<Options<PrepareWhatsappTemplateAssetUploadData>>,
+): UseMutationOptions<
+  PrepareWhatsappTemplateAssetUploadResponse,
+  DefaultError,
+  Options<PrepareWhatsappTemplateAssetUploadData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PrepareWhatsappTemplateAssetUploadResponse,
+    DefaultError,
+    Options<PrepareWhatsappTemplateAssetUploadData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await prepareWhatsappTemplateAssetUpload({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+/**
+ * Confere o arquivo enviado e gera o handle de upload da Meta
+ */
+export const confirmWhatsappTemplateAssetUploadMutation = (
+  options?: Partial<Options<ConfirmWhatsappTemplateAssetUploadData>>,
+): UseMutationOptions<
+  ConfirmWhatsappTemplateAssetUploadResponse,
+  DefaultError,
+  Options<ConfirmWhatsappTemplateAssetUploadData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConfirmWhatsappTemplateAssetUploadResponse,
+    DefaultError,
+    Options<ConfirmWhatsappTemplateAssetUploadData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await confirmWhatsappTemplateAssetUpload({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getWhatsappTemplateAssetPreviewQueryKey = (
+  options: Options<GetWhatsappTemplateAssetPreviewData>,
+) =>
+  createQueryKey('getWhatsappTemplateAssetPreview', options, false, [
+    'WhatsAppTemplates',
+  ])
+
+/**
+ * Devolve uma URL assinada curta para pré-visualizar a mídia
+ */
+export const getWhatsappTemplateAssetPreviewOptions = (
+  options: Options<GetWhatsappTemplateAssetPreviewData>,
+) =>
+  queryOptions<
+    GetWhatsappTemplateAssetPreviewResponse,
+    DefaultError,
+    GetWhatsappTemplateAssetPreviewResponse,
+    ReturnType<typeof getWhatsappTemplateAssetPreviewQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getWhatsappTemplateAssetPreview({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getWhatsappTemplateAssetPreviewQueryKey(options),
   })
