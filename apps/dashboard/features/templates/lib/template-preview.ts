@@ -56,9 +56,6 @@ const appearanceOrder = (text: string) => {
   return order
 }
 
-export const countTemplateVariables = (text: string) =>
-  appearanceOrder(text).size
-
 /**
  * Substitui `{{1}}` (posicional) e `{{nome}}` (nomeado) pelos exemplos.
  * Variável sem exemplo permanece visível como placeholder no preview.
@@ -139,7 +136,7 @@ const renderCard = (card: TemplateCard, values?: TemplateExamples) => {
     media: list?.[0] ?? card.header.example ?? null,
     body: renderTemplateText(
       card.body.text,
-      list ? list.slice(1) : card.body.examples,
+      usable(list?.slice(1)) ?? card.body.examples,
     ),
     buttons: (card.buttons ?? []).map(button => renderButton(button)),
   } satisfies PreviewCard

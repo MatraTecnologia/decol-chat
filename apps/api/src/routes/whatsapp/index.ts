@@ -30,6 +30,8 @@ import { runReadinessChecks } from '@/lib/whatsapp/readiness.js'
 
 import { listWebhookLogs, pushWebhookLog } from '@/lib/whatsapp/webhook-log.js'
 
+import templatesRoutes from './templates.js'
+
 const LOCAL_HOSTS = ['localhost', '127.0.0.1']
 
 const MISSING_ENCRYPTION_KEY =
@@ -609,6 +611,9 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
       return { data }
     },
   )
+
+  // Catálogo de modelos: /whatsapp/templates/...
+  await app.register(templatesRoutes, { prefix: '/templates' })
 }
 
 export default whatsappRoutes
