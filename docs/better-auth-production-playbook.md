@@ -518,13 +518,13 @@ createServer((req, res) => {
 ```bash
 # /sign-in com cookie stale → DEVE renderizar (200), não redirecionar
 curl -s -o /dev/null -D - -H "Cookie: better-auth.session_token=stale" \
-  http://localhost:3000/sign-in | grep -iE "^HTTP/|^location:"
+  https://localhost:3000/sign-in | grep -iE "^HTTP/|^location:"
 
 # Cadeia de recuperação → 1 hop, jar limpo, form renderiza
 J=$(mktemp); printf "localhost\tFALSE\t/\tFALSE\t0\tbetter-auth.session_token\tstale\n" > "$J"
 curl -s -L -b "$J" -c "$J" -o /dev/null \
   -w "hops=%{num_redirects} final=%{url_effective}\n" \
-  http://localhost:3000/api/clear-session
+  https://localhost:3000/api/clear-session
 grep -c session_token "$J"   # → 0
 ```
 

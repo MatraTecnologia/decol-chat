@@ -89,6 +89,26 @@ export const EmbeddedSignupButton = () => {
     return () => window.removeEventListener('message', onMessage)
   }, [appId])
 
+  const finishSignup = async (
+    code: string,
+    phoneNumberId: string,
+    wabaId: string,
+  ) => {
+    const result = await connectWhatsappEmbeddedSignup({
+      body: { code, phoneNumberId, wabaId },
+    })
+
+    setIsPending(false)
+
+    if (result.error) {
+      toast.error('Não foi possível concluir a conexão.')
+      return
+    }
+
+    toast.success('Número conectado — ele continua ativo no celular.')
+    invalidateByTags(queryClient, ['WhatsApp'])
+  }
+
   const onConnect = () => {
     if (!configId) return
 
@@ -102,10 +122,20 @@ export const EmbeddedSignupButton = () => {
       return
     }
 
+    // O SDK recusa a página quando não é HTTPS, e o erro só aparece no console.
+    if (window.location.protocol !== 'https:') {
+      toast.error(
+        'O login da Meta exige HTTPS. Rode o dashboard com `pnpm dev:https` ou acesse por um domínio seguro.',
+      )
+      return
+    }
+
     setIsPending(true)
 
     window.FB.login(
-      async response => {
+      // Callback síncrono de propósito: o SDK rejeita função async com
+      // "Expression is of type asyncfunction, not function".
+      response => {
         const code = response?.authResponse?.code
         const data = signupData.current
 
@@ -115,23 +145,7 @@ export const EmbeddedSignupButton = () => {
           return
         }
 
-        const result = await connectWhatsappEmbeddedSignup({
-          body: {
-            code,
-            phoneNumberId: data.phone_number_id,
-            wabaId: data.waba_id,
-          },
-        })
-
-        setIsPending(false)
-
-        if (result.error) {
-          toast.error('Não foi possível concluir a conexão.')
-          return
-        }
-
-        toast.success('Número conectado — ele continua ativo no celular.')
-        invalidateByTags(queryClient, ['WhatsApp'])
+        void finishSignup(code, data.phone_number_id, data.waba_id)
       },
       {
         config_id: configId,
