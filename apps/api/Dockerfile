@@ -40,6 +40,21 @@ RUN pnpm turbo build --filter=@workspace/api
 # ── Runtime ──────────────────────────────────────────
 # O CMD roda db:generate/db:push/start no boot, então o runtime precisa das
 # devDeps (prisma CLI, tsx) — reaproveitamos a árvore do builder inteira.
+#
+# Env vars do serviço (não declaradas aqui de propósito: `ENV VAR=` viraria
+# string vazia, que reprova no `.min(1)` do schema e impede o boot — pior que
+# ausente). Além das de base (DATABASE_URL, BETTER_AUTH_SECRET, REDIS_URL, …),
+# a integração WhatsApp exige:
+#
+#   WHATSAPP_ENCRYPTION_KEY    cifra o access token gravado na conta
+#   META_APP_ID                troca do authorization code do Embedded Signup
+#   META_APP_SECRET            troca do code + HMAC do webhook
+#   META_ES_CONFIG_ID          configuração de coexistence do App Dashboard
+#   META_WEBHOOK_VERIFY_TOKEN  handshake GET /webhooks/whatsapp
+#   PUBLIC_WEBHOOK_BASE_URL    URL pública da API (base do webhook)
+#
+# Sem META_APP_SECRET o webhook responde 401 em todo evento, e 401 repetido faz
+# a Meta desativar a assinatura — a ingestão morre sem erro visível no boot.
 FROM base AS runtime
 ENV NODE_ENV=production
 
