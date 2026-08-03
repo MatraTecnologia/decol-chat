@@ -1043,11 +1043,9 @@ export const zGetWhatsappConnectionResponse = z.object({
   connection: z
     .object({
       accessToken: z.string(),
-      appSecret: z.string(),
       phoneNumberId: z.string(),
       wabaId: z.string(),
       appId: z.string().nullable(),
-      verifyToken: z.string(),
       webhookBaseUrl: z.string().nullable(),
       displayPhoneNumber: z.string().nullable(),
       verifiedName: z.string().nullable(),
@@ -1062,11 +1060,9 @@ export const zGetWhatsappConnectionResponse = z.object({
 
 export const zUpdateWhatsappConnectionBody = z.object({
   accessToken: z.string().min(1),
-  appSecret: z.string().min(1),
   phoneNumberId: z.string().min(1),
   wabaId: z.string().min(1),
   appId: z.string().optional(),
-  verifyToken: z.string().min(1),
   webhookBaseUrl: z.string().optional(),
 })
 
@@ -1078,11 +1074,9 @@ export const zUpdateWhatsappConnectionResponse = z.object({
   connection: z
     .object({
       accessToken: z.string(),
-      appSecret: z.string(),
       phoneNumberId: z.string(),
       wabaId: z.string(),
       appId: z.string().nullable(),
-      verifyToken: z.string(),
       webhookBaseUrl: z.string().nullable(),
       displayPhoneNumber: z.string().nullable(),
       verifiedName: z.string().nullable(),
@@ -1117,7 +1111,7 @@ export const zGetWhatsappReadinessResponse = z.object({
       label: z.string(),
       status: z.enum(['ok', 'pending', 'error', 'skipped']),
       detail: z.string(),
-      action: z.enum(['register_number', 'subscribe_app', 'select_number']),
+      action: z.enum(['subscribe_app', 'select_number']),
     }),
   ),
 })
@@ -1136,17 +1130,6 @@ export const zListWhatsappPhoneNumbersResponse = z.object({
       codeVerificationStatus: z.string().nullable(),
     }),
   ),
-})
-
-export const zRegisterWhatsappNumberBody = z.object({
-  pin: z.string().min(4).max(8),
-})
-
-/**
- * Default Response
- */
-export const zRegisterWhatsappNumberResponse = z.object({
-  success: z.boolean(),
 })
 
 /**
@@ -3331,4 +3314,20 @@ export const zGetWhatsappTemplateAssetPreviewPath = z.object({
 export const zGetWhatsappTemplateAssetPreviewResponse = z.object({
   url: z.string(),
   expiresIn: z.number(),
+})
+
+export const zConnectWhatsappEmbeddedSignupBody = z.object({
+  code: z.string().min(1),
+  phoneNumberId: z.string().min(1),
+  wabaId: z.string().min(1),
+})
+
+/**
+ * Default Response
+ */
+export const zConnectWhatsappEmbeddedSignupResponse = z.object({
+  phoneNumberId: z.string(),
+  wabaId: z.string(),
+  displayPhoneNumber: z.string().nullable(),
+  verifiedName: z.string().nullable(),
 })

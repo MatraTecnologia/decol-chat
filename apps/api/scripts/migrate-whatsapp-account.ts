@@ -42,11 +42,9 @@ const account =
     data: {
       label: LABEL,
       accessToken: legacy.accessToken,
-      appSecret: legacy.appSecret,
       phoneNumberId: legacy.phoneNumberId,
       wabaId: legacy.wabaId,
       appId: legacy.appId,
-      verifyToken: legacy.verifyToken,
       webhookBaseUrl: legacy.webhookBaseUrl,
       displayPhoneNumber: legacy.displayPhoneNumber,
       verifiedName: legacy.verifiedName,
@@ -70,7 +68,6 @@ const rows: [string, string | Date | null, string | Date | null][] = [
   ['phoneNumberId', legacy.phoneNumberId, account.phoneNumberId],
   ['wabaId', legacy.wabaId, account.wabaId],
   ['appId', legacy.appId, account.appId],
-  ['verifyToken', legacy.verifyToken, account.verifyToken],
   ['webhookBaseUrl', legacy.webhookBaseUrl, account.webhookBaseUrl],
   ['displayPhoneNumber', legacy.displayPhoneNumber, account.displayPhoneNumber],
   ['verifiedName', legacy.verifiedName, account.verifiedName],
@@ -88,9 +85,6 @@ for (const [field, before, after] of rows) {
 // Segredos nunca são impressos — só o veredito de que o ciphertext é idêntico.
 console.log(
   `\ncipher accessToken idêntico: ${legacy.accessToken === account.accessToken} (${account.accessToken.length} chars)`,
-)
-console.log(
-  `cipher appSecret idêntico: ${legacy.appSecret === account.appSecret} (${account.appSecret.length} chars)`,
 )
 console.log(
   `id: ${account.id} | label: ${account.label} | isActive: ${account.isActive}`,

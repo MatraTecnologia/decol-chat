@@ -15,6 +15,7 @@ import {
   checkWhatsappHealth,
   closeConversation,
   confirmWhatsappTemplateAssetUpload,
+  connectWhatsappEmbeddedSignup,
   createWhatsappTemplateDraft,
   deleteWhatsappConnection,
   deleteWhatsappTemplateDraft,
@@ -44,7 +45,6 @@ import {
   prepareWhatsappTemplateAssetUpload,
   readinessProbe,
   receiveWhatsappWebhook,
-  registerWhatsappNumber,
   reopenConversation,
   sendMessage,
   sendTemplateMessage,
@@ -72,6 +72,8 @@ import type {
   CloseConversationResponse,
   ConfirmWhatsappTemplateAssetUploadData,
   ConfirmWhatsappTemplateAssetUploadResponse,
+  ConnectWhatsappEmbeddedSignupData,
+  ConnectWhatsappEmbeddedSignupResponse,
   CreateWhatsappTemplateDraftData,
   CreateWhatsappTemplateDraftResponse,
   DeleteWhatsappConnectionData,
@@ -130,8 +132,6 @@ import type {
   ReadinessProbeResponse,
   ReceiveWhatsappWebhookData,
   ReceiveWhatsappWebhookResponse,
-  RegisterWhatsappNumberData,
-  RegisterWhatsappNumberResponse,
   ReopenConversationData,
   ReopenConversationResponse,
   SendMessageData,
@@ -1277,33 +1277,6 @@ export const listWhatsappPhoneNumbersOptions = (
   })
 
 /**
- * Registra o número na Cloud API com o PIN de verificação
- */
-export const registerWhatsappNumberMutation = (
-  options?: Partial<Options<RegisterWhatsappNumberData>>,
-): UseMutationOptions<
-  RegisterWhatsappNumberResponse,
-  DefaultError,
-  Options<RegisterWhatsappNumberData>
-> => {
-  const mutationOptions: UseMutationOptions<
-    RegisterWhatsappNumberResponse,
-    DefaultError,
-    Options<RegisterWhatsappNumberData>
-  > = {
-    mutationFn: async fnOptions => {
-      const { data } = await registerWhatsappNumber({
-        ...options,
-        ...fnOptions,
-        throwOnError: true,
-      })
-      return data
-    },
-  }
-  return mutationOptions
-}
-
-/**
  * Inscreve o app no WABA para receber os webhooks
  */
 export const subscribeWhatsappAppMutation = (
@@ -1826,3 +1799,30 @@ export const getWhatsappTemplateAssetPreviewOptions = (
     },
     queryKey: getWhatsappTemplateAssetPreviewQueryKey(options),
   })
+
+/**
+ * Conclui o Embedded Signup e grava a conexão (coexistence)
+ */
+export const connectWhatsappEmbeddedSignupMutation = (
+  options?: Partial<Options<ConnectWhatsappEmbeddedSignupData>>,
+): UseMutationOptions<
+  ConnectWhatsappEmbeddedSignupResponse,
+  DefaultError,
+  Options<ConnectWhatsappEmbeddedSignupData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConnectWhatsappEmbeddedSignupResponse,
+    DefaultError,
+    Options<ConnectWhatsappEmbeddedSignupData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await connectWhatsappEmbeddedSignup({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}

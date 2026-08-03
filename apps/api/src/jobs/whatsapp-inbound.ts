@@ -3,12 +3,12 @@
  *
  * O handler HTTP só valida o HMAC e enfileira o payload cru — todo o trabalho
  * de persistência acontece aqui, onde pode ser retentado sem devolver erro à
- * Meta. A lógica mora em `lib/whatsapp/inbound.ts`.
+ * Meta. A lógica mora em `lib/whatsapp/inbound/`.
  */
 import type { FastifyInstance } from 'fastify'
 
 import { createQueue, createWorker } from '@/lib/queue.js'
-import { processInboundPayload } from '@/lib/whatsapp/inbound.js'
+import { processInboundPayload } from '@/lib/whatsapp/inbound/index.js'
 
 // ── Types ──────────────────────────────────────────────
 

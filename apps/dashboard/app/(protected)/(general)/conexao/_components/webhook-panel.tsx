@@ -161,7 +161,7 @@ export const WebhookPanel = () => {
         <div className="space-y-1">
           <CardTitle className="text-base">Webhook</CardTitle>
           <CardDescription>
-            Cole estes dois valores no App Dashboard da Meta, em WhatsApp →
+            Cole a Callback URL no App Dashboard da Meta, em WhatsApp →
             Configuração → Webhook.
           </CardDescription>
         </div>
@@ -182,11 +182,12 @@ export const WebhookPanel = () => {
                   value={data.webhookUrl}
                   description="Endereço completo que recebe o handshake e os eventos da Meta."
                 />
-                <CopyField
-                  label="Verify Token"
-                  value={data.connection.verifyToken}
-                  description="Precisa ser idêntico ao token informado na Meta — qualquer divergência resulta em 403."
-                />
+                <p className="text-muted-foreground text-xs">
+                  O verify token agora é configurado direto no App Dashboard
+                  da Meta, via a variável{' '}
+                  <Code>META_WEBHOOK_VERIFY_TOKEN</Code> no ambiente da API —
+                  não é mais gerado por conta.
+                </p>
               </>
             ) : (
               <Empty className="border">
@@ -196,8 +197,7 @@ export const WebhookPanel = () => {
                   </EmptyMedia>
                   <EmptyTitle>Nenhuma conexão configurada</EmptyTitle>
                   <EmptyDescription>
-                    Salve as credenciais para gerar a Callback URL e o verify
-                    token.
+                    Salve as credenciais para gerar a Callback URL.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

@@ -5,10 +5,12 @@ import fp from 'fastify-plugin'
 import { registerCleanupAuditLogsJob } from '@/jobs/scheduled/cleanup-audit-logs.js'
 import { registerCleanupSessionsJob } from '@/jobs/scheduled/cleanup-sessions.js'
 import { registerWhatsappInboundJob } from '@/jobs/whatsapp-inbound.js'
+import { registerWhatsappSmbSyncJob } from '@/jobs/whatsapp-smb-sync.js'
 
 export const queuePlugin = fp(async (app: FastifyInstance) => {
   // Register job queues + workers here:
   registerWhatsappInboundJob(app)
+  registerWhatsappSmbSyncJob(app)
 
   // ── Scheduled jobs ────────────────────────────────────
   registerCleanupSessionsJob(app)

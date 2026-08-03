@@ -2,12 +2,9 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
+import { env } from '@/env.js'
 import { whatsappInboundQueue } from '@/jobs/whatsapp-inbound.js'
 
-import {
-  getAccountByPhoneNumberId,
-  getConnection,
-} from '@/lib/whatsapp/connection.js'
 import { verifySignature } from '@/lib/whatsapp/signature.js'
 import { pushWebhookLog } from '@/lib/whatsapp/webhook-log.js'
 
@@ -101,35 +98,6 @@ const enqueueInbound = (payload: unknown) =>
     }),
   ])
 
-const extractPhoneNumberId = (payload: unknown) =>
-  (payload as MetaWebhookPayload)?.entry?.[0]?.changes?.[0]?.value?.metadata
-    ?.phone_number_id ?? null
-
-/**
- * A leitura da conta decifra os segredos e pode lançar quando a
- * WHATSAPP_ENCRYPTION_KEY não está configurada — sem conta não há como
- * verificar nada, mas isso nunca pode virar 500 para a Meta.
- *
- * O `phone_number_id` do payload escolhe a conta; o handshake GET não o traz e
- * um número desconhecido não deve mudar a resposta, então ambos caem na conta
- * ativa (que falha na assinatura se de fato for outra conta).
- */
-const safeGetAccount = async (
-  app: FastifyInstance,
-  phoneNumberId: string | null,
-) => {
-  try {
-    const byNumber = phoneNumberId
-      ? await getAccountByPhoneNumberId(phoneNumberId)
-      : null
-
-    return byNumber ?? (await getConnection())
-  } catch (error) {
-    app.log.error({ err: error }, 'Falha ao ler a conexão do WhatsApp')
-    return null
-  }
-}
-
 // ── Routes ─────────────────────────────────────────────
 
 const whatsappWebhook: FastifyPluginAsyncZod = async app => {
@@ -176,13 +144,10 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       const token = request.query['hub.verify_token']
       const challenge = request.query['hub.challenge'] ?? ''
 
-      const connection = await safeGetAccount(app, null)
+      const expected = env.META_WEBHOOK_VERIFY_TOKEN
 
       const valid =
-        mode === 'subscribe' &&
-        Boolean(token) &&
-        Boolean(connection) &&
-        token === connection?.verifyToken
+        mode === 'subscribe' && Boolean(token) && Boolean(expected) && token === expected
 
       await safePushWebhookLog(app, {
         direction: 'inbound_verify',
@@ -213,28 +178,26 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       },
     },
     async (request, reply) => {
-      const connection = await safeGetAccount(
-        app,
-        extractPhoneNumberId(request.body),
-      )
       const rawBody = request.rawBody
+
+      const appSecret = env.META_APP_SECRET
 
       // Sem raw body não há HMAC possível — nunca recalcular sobre o body
       // parseado, isso seria um bypass silencioso da autenticação
       const valid =
-        Boolean(connection) &&
+        Boolean(appSecret) &&
         Boolean(rawBody) &&
         verifySignature(
           rawBody as Buffer,
           headerValue(request, SIGNATURE_HEADER),
-          connection?.appSecret ?? '',
+          appSecret as string,
         )
 
       if (!valid) {
         const signatureHeader = headerValue(request, SIGNATURE_HEADER)
 
-        const reason = !connection
-          ? 'conexão não configurada'
+        const reason = !appSecret
+          ? 'META_APP_SECRET não configurada'
           : !rawBody
             ? 'raw body ausente'
             : !signatureHeader

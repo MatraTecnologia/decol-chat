@@ -99,90 +99,51 @@ const steps: Step[] = [
     ),
   },
   {
-    value: 'ids',
-    title: '2. Obter o Phone Number ID e o WABA ID',
+    value: 'connect',
+    title: '2. Conectar o número (coexistence)',
     content: (
       <>
         <p>
-          No painel do app, vá em <strong>WhatsApp → Configuração da API</strong>
-          . O bloco &quot;Enviar e receber mensagens&quot; mostra os dois
-          identificadores:
+          Sob coexistence, o número continua ativo no celular — não existe
+          mais token de system user para gerar nem Phone Number ID/WABA ID
+          para copiar à mão. A conexão acontece pelo fluxo da própria Meta:
         </p>
         <ul className="ml-4 list-disc space-y-1">
           <li>
-            <strong>Identificação do número de telefone</strong> — é o{' '}
-            <Code>phone_number_id</Code>. É esse valor (não o número em si) que
-            entra em todas as chamadas de envio.
+            Tenha o app <strong>WhatsApp Business</strong> instalado no
+            celular (versão <strong>2.24.17</strong> ou superior) com o número
+            já em uso.
           </li>
           <li>
-            <strong>Identificação da conta do WhatsApp Business</strong> — é o{' '}
-            <Code>waba_id</Code>, usado para gerenciar templates e assinaturas de
-            webhook.
+            Clique em <strong>Conectar com o WhatsApp</strong> nesta página e
+            conclua o fluxo da Meta.
+          </li>
+          <li>
+            Mantenha o app do celular aberto normalmente — as mensagens
+            aparecem nos dois lados.
+          </li>
+          <li>
+            Para desconectar: no celular,{' '}
+            <strong>
+              Configurações → Conta → Plataforma Business → Desconectar
+            </strong>
+            .
           </li>
         </ul>
-        <p>
-          Ambos são numéricos e longos. Não confunda com o{' '}
-          <strong>App ID</strong>, que aparece no topo do painel e não serve
-          aqui.
-        </p>
-      </>
-    ),
-  },
-  {
-    value: 'token',
-    title: '3. Gerar um System User Token permanente',
-    content: (
-      <>
-        <p>
-          O token exibido na tela de configuração da API expira em{' '}
-          <strong>24 horas</strong> — serve só para o primeiro teste. Para um
-          token permanente, use um system user.
-        </p>
-        <p>
-          Em{' '}
-          <DocLink href="https://business.facebook.com/settings/system-users">
-            Configurações do negócio → Usuários do sistema
-          </DocLink>
-          :
-        </p>
-        <ul className="ml-4 list-disc space-y-1">
-          <li>
-            Crie um system user com função <strong>Administrador</strong>.
-          </li>
-          <li>
-            Em <strong>Adicionar ativos</strong>, conceda a ele o{' '}
-            <strong>app</strong> e a <strong>WhatsApp Business Account</strong>{' '}
-            com controle total. Sem os dois ativos, o token autentica mas retorna{' '}
-            <Code>(#200) permissions error</Code>.
-          </li>
-          <li>
-            Clique em <strong>Gerar token</strong>, selecione o app e marque as
-            permissões <Code>whatsapp_business_messaging</Code> e{' '}
-            <Code>whatsapp_business_management</Code>. Escolha expiração{' '}
-            <strong>Nunca</strong>.
-          </li>
-        </ul>
-        <p>
-          O token só é exibido uma vez — copie-o direto para o campo de
-          credenciais desta página.
-        </p>
-        <p className="text-muted-foreground">
-          Referência:{' '}
-          <DocLink href="https://developers.facebook.com/docs/whatsapp/business-management-api/get-started">
-            Business Management API — Get Started
-          </DocLink>
-        </p>
       </>
     ),
   },
   {
     value: 'secret',
-    title: '4. Copiar o App Secret',
+    title: '3. Copiar o App Secret',
     content: (
       <>
         <p>
           No painel do app, <strong>Configurações → Básico</strong>, campo{' '}
-          <strong>Chave secreta do app</strong> → <em>Mostrar</em>.
+          <strong>Chave secreta do app</strong> → <em>Mostrar</em>. Cole o
+          valor na variável <Code>META_APP_SECRET</Code> do{' '}
+          <Code>.env</Code> da API e reinicie o servidor — não é mais colado
+          nesta página.
         </p>
         <p>
           O app secret não é usado para enviar mensagens: ele é a chave do HMAC{' '}
@@ -202,7 +163,7 @@ const steps: Step[] = [
   },
   {
     value: 'tunnel',
-    title: '5. Expor a API por HTTPS público (obrigatório em desenvolvimento)',
+    title: '4. Expor a API por HTTPS público (obrigatório em desenvolvimento)',
     content: (
       <>
         <p>
@@ -240,7 +201,7 @@ const steps: Step[] = [
   },
   {
     value: 'webhook',
-    title: '6. Configurar o webhook no App Dashboard',
+    title: '5. Configurar o webhook no App Dashboard',
     content: (
       <>
         <p>
@@ -254,9 +215,10 @@ const steps: Step[] = [
             <Code>/webhooks/whatsapp</Code>.
           </li>
           <li>
-            <strong>Token de verificação</strong> — exatamente o verify token
-            mostrado na página. Qualquer divergência resulta em 403 e a Meta
-            recusa salvar.
+            <strong>Token de verificação</strong> — exatamente o valor
+            configurado em <Code>META_WEBHOOK_VERIFY_TOKEN</Code> no{' '}
+            <Code>.env</Code> da API. Qualquer divergência resulta em 403 e a
+            Meta recusa salvar.
           </li>
         </ul>
         <p>
@@ -283,7 +245,7 @@ const steps: Step[] = [
   },
   {
     value: 'test',
-    title: '7. Provar o ciclo completo',
+    title: '6. Provar o ciclo completo',
     content: (
       <>
         <p>
@@ -324,6 +286,32 @@ const steps: Step[] = [
       </>
     ),
   },
+  {
+    value: 'coexistence-limits',
+    title: '7. Limites e o que não funciona em coexistence',
+    content: (
+      <>
+        <p>
+          Coexistence roda sobre o mesmo throughput da Cloud API padrão: teto
+          de <strong>20 mensagens por segundo</strong>. Acima disso a Meta
+          passa a devolver erro de rate limit.
+        </p>
+        <p>
+          O celular continua sendo o WhatsApp Business normal, então alguns
+          recursos dele simplesmente não aparecem do lado da API — não é bug,
+          é limitação do modo coexistence:
+        </p>
+        <ul className="ml-4 list-disc space-y-1">
+          <li>Grupos</li>
+          <li>Mensagens temporárias</li>
+          <li>Mensagens de visualização única (view-once)</li>
+          <li>Listas de transmissão</li>
+          <li>Chamadas</li>
+          <li>Catálogo e pedidos</li>
+        </ul>
+      </>
+    ),
+  },
 ]
 
 const troubleshooting: Step[] = [
@@ -333,23 +321,24 @@ const troubleshooting: Step[] = [
     content: (
       <>
         <p>
-          O número existe na WABA mas nunca foi vinculado à Cloud API. Confirme
-          listando os números da conta e olhando o campo{' '}
-          <Code>platform_type</Code> — se vier <Code>NOT_APPLICABLE</Code>, é
-          exatamente isso:
+          Em coexistence isso é esperado: o número não vive na Cloud API, vive
+          no celular, então <Code>platform_type</Code> nunca vira{' '}
+          <Code>CLOUD_API</Code> — confira em Prontidão, o check{' '}
+          <strong>Número na Cloud API</strong> já mostra isso como normal.
         </p>
-        <Cmd>{`GET https://graph.facebook.com/v25.0/<WABA_ID>/phone_numbers?access_token=<TOKEN>`}</Cmd>
         <p>
-          A correção é registrar o número na Cloud API. O <Code>pin</Code> são 6
-          dígitos e, se o número nunca teve PIN de verificação em duas etapas,
-          esta chamada <strong>define</strong> esse PIN — anote o valor usado:
+          <strong>
+            Nunca chame <Code>POST /{'{'}phone_number_id{'}'}/register</Code>{' '}
+            para “corrigir” este erro.
+          </strong>{' '}
+          Esse endpoint migra o número para a Cloud API e{' '}
+          <strong>desativa o WhatsApp Business no celular</strong> — exatamente
+          o que o coexistence existe para evitar.
         </p>
-        <Cmd>{`POST https://graph.facebook.com/v25.0/<PHONE_NUMBER_ID>/register
-{ "messaging_product": "whatsapp", "pin": "123456" }`}</Cmd>
         <p>
-          Exige token com a permissão <Code>whatsapp_business_management</Code>{' '}
-          (passo 3). Depois do registro, <Code>platform_type</Code> passa a{' '}
-          <Code>CLOUD_API</Code> e o envio funciona.
+          Se o envio está mesmo falhando, o problema é a conexão, não o
+          registro: reconecte pelo botão <strong>Conectar com o WhatsApp</strong>{' '}
+          (passo 2) com o app do celular aberto e o número já em uso.
         </p>
       </>
     ),
@@ -388,7 +377,7 @@ const troubleshooting: Step[] = [
         </p>
         <p>
           Motivo: <strong>texto livre só é aceito dentro da janela de 24h</strong>{' '}
-          aberta pelo destinatário (passo 7). Se ele nunca escreveu para o seu
+          aberta pelo destinatário (passo 6). Se ele nunca escreveu para o seu
           número, a janela está fechada e a mensagem é descartada depois de
           aceita.
         </p>
@@ -427,7 +416,7 @@ const troubleshooting: Step[] = [
         <p>
           E marque o checkbox do campo <Code>messages</Code> em{' '}
           <strong>WhatsApp → Configuração → Webhook → Gerenciar</strong> (passo
-          6). É esse campo que entrega tanto as mensagens recebidas quanto os
+          5). É esse campo que entrega tanto as mensagens recebidas quanto os
           status de entrega — vêm os dois ou não vem nenhum.
         </p>
       </>
@@ -504,7 +493,7 @@ export const SetupGuide = () => {
             </Cmd>
             <p>
               Cole a origem HTTPS gerada no campo <strong>Webhook Base URL</strong>
-              , no formulário de Credenciais acima. Detalhes no passo 5.
+              , no formulário de Credenciais acima. Detalhes no passo 4.
             </p>
           </AlertDescription>
         </Alert>

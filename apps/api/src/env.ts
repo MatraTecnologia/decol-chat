@@ -52,6 +52,13 @@ export const env = createEnv({
     WHATSAPP_ENCRYPTION_KEY: z.string().trim().min(1).optional(),
     // Aceita string vazia porque a base do túnel costuma ficar em branco no .env.
     PUBLIC_WEBHOOK_BASE_URL: z.url().trim().or(z.literal('')).optional(),
+
+    // Embedded Signup (Coexistence) — credenciais do app Meta, não da conta.
+    // Opcionais pelo mesmo motivo das demais: a API sobe sem WhatsApp.
+    META_APP_ID: z.string().trim().min(1).optional(),
+    META_APP_SECRET: z.string().trim().min(1).optional(),
+    META_ES_CONFIG_ID: z.string().trim().min(1).optional(),
+    META_WEBHOOK_VERIFY_TOKEN: z.string().trim().min(1).optional(),
   },
   runtimeEnv: process.env,
   skipValidation: process.env.SKIP_ENV_VALIDATION === 'true',

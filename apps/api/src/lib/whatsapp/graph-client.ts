@@ -101,21 +101,6 @@ export const listPhoneNumbers = (token: string, wabaId: string) =>
     { headers: authHeaders(token) },
   )
 
-// Sem o register o número fica com platform_type NOT_APPLICABLE e todo envio falha com 133010.
-export const registerPhoneNumber = (
-  token: string,
-  phoneNumberId: string,
-  pin: string,
-) =>
-  request<{ success: boolean }>(`/${phoneNumberId}/register`, {
-    method: 'POST',
-    headers: {
-      ...authHeaders(token),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
-  })
-
 export const listSubscribedApps = (token: string, wabaId: string) =>
   request<{
     data: { whatsapp_business_api_data?: { id?: string; name?: string } }[]
@@ -125,6 +110,27 @@ export const subscribeApp = (token: string, wabaId: string) =>
   request<{ success: boolean }>(`/${wabaId}/subscribed_apps`, {
     method: 'POST',
     headers: authHeaders(token),
+  })
+
+export type SmbSyncType = 'smb_app_state_sync' | 'history'
+
+/**
+ * Pede à Meta o envio dos dados do app do celular (contatos e histórico). A
+ * resposta é só o aceite — os dados chegam depois, pelos webhooks `history` e
+ * `smb_app_state_sync`.
+ */
+export const requestSmbAppData = (
+  token: string,
+  phoneNumberId: string,
+  syncType: SmbSyncType,
+) =>
+  request<{ success: boolean }>(`/${phoneNumberId}/smb_app_data`, {
+    method: 'POST',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ messaging_product: 'whatsapp', sync_type: syncType }),
   })
 
 // Este endpoint exige o app access token — o literal `appId|appSecret` como

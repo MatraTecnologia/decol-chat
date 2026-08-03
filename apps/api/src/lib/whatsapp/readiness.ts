@@ -1,3 +1,5 @@
+import { env } from '@/env.js'
+
 import {
   getConnection,
   resolveWebhookUrl,
@@ -16,8 +18,7 @@ import { listWebhookLogs } from './webhook-log.js'
 
 export type ReadinessStatus = 'ok' | 'pending' | 'error' | 'skipped'
 
-export type ReadinessAction =
-  'register_number' | 'subscribe_app' | 'select_number' | null
+export type ReadinessAction = 'subscribe_app' | 'select_number' | null
 
 export interface ReadinessCheck {
   id: string
@@ -104,13 +105,14 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
       check(
         'credentials',
         'pending',
-        'Nenhuma conexão salva — preencha token, app secret, Phone Number ID e WABA ID no formulário e salve.',
+        'Nenhuma conexão salva — preencha token, Phone Number ID e WABA ID no formulário e salve.',
       ),
       ...skipFrom('token', 'Depende das credenciais salvas.'),
     ]
   }
 
-  const { accessToken, appSecret, appId, phoneNumberId, wabaId } = connection
+  const { accessToken, appId, phoneNumberId, wabaId } = connection
+  const appSecret = env.META_APP_SECRET
 
   checks.push(
     check(
@@ -209,9 +211,8 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
     checks.push(
       check(
         'phone_registered',
-        'error',
-        `platform_type é ${entry.platform_type ?? 'desconhecido'} — o número ainda não foi registrado na Cloud API e todo envio falha com 133010. Registre-o com um PIN de 6 dígitos.`,
-        'register_number',
+        'ok',
+        `platform_type é ${entry.platform_type ?? 'desconhecido'} — em coexistence o registro vem do app WhatsApp Business do celular, não é feito por aqui.`,
       ),
     )
   }
@@ -256,6 +257,14 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
         'messages_field',
         'skipped',
         'Depende do App ID — salve-o nas credenciais para conferir os campos assinados pelo app.',
+      ),
+    )
+  } else if (!appSecret) {
+    checks.push(
+      check(
+        'messages_field',
+        'skipped',
+        'Depende da META_APP_SECRET estar configurada no .env da API.',
       ),
     )
   } else {
@@ -317,7 +326,7 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
       : check(
           'webhook_verified',
           'pending',
-          `Nenhum handshake registrado nas últimas 24h — cadastre ${resolveWebhookUrl(connection)} com o verify token salvo em Webhooks no App Dashboard.`,
+          `Nenhum handshake registrado nas últimas 24h — cadastre ${resolveWebhookUrl(connection)} com o verify token da META_WEBHOOK_VERIFY_TOKEN em Webhooks no App Dashboard.`,
         ),
   )
 

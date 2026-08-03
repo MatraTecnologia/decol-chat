@@ -15,11 +15,9 @@ export interface DecryptedAccount {
   id: string
   label: string
   accessToken: string
-  appSecret: string
   phoneNumberId: string
   wabaId: string
   appId: string | null
-  verifyToken: string
   webhookBaseUrl: string | null
   displayPhoneNumber: string | null
   verifiedName: string | null
@@ -35,21 +33,15 @@ export type DecryptedConnection = DecryptedAccount
 
 export interface UpsertConnectionInput {
   accessToken: string
-  appSecret: string
   phoneNumberId: string
   wabaId: string
   appId?: string | null
-  verifyToken: string
   webhookBaseUrl?: string | null
 }
 
 const decrypt = (record: WhatsAppAccount): DecryptedAccount => {
   try {
-    return {
-      ...record,
-      accessToken: decryptSecret(record.accessToken),
-      appSecret: decryptSecret(record.appSecret),
-    }
+    return { ...record, accessToken: decryptSecret(record.accessToken) }
   } catch (error) {
     // Env ausente já vem com mensagem própria — não mascarar como troca de chave.
     if (!isEncryptionConfigured()) throw error
@@ -87,6 +79,19 @@ export const getAccountByPhoneNumberId = async (phoneNumberId: string) => {
 }
 
 /**
+ * Os eventos de coexistence não trazem `phone_number_id` — só o `entry[].id`,
+ * que é o WABA. Como a instalação é single-account, a conta ativa daquela WABA
+ * é sempre a certa.
+ */
+export const getAccountByWabaId = async (wabaId: string) => {
+  const record = await prisma.whatsAppAccount.findFirst({
+    where: { wabaId, isActive: true },
+  })
+
+  return record ? decrypt(record) : null
+}
+
+/**
  * O envio resolve a conta pela conversa (`Conversation.whatsAppAccountId`) —
  * responder pela conta ativa mandaria a mensagem pelo número errado assim que
  * existir mais de uma. Conta desativada não envia: `deleteConnection` só vira
@@ -101,17 +106,13 @@ export const getAccountById = async (id: string) => {
 }
 
 export const upsertConnection = async (input: UpsertConnectionInput) => {
-  const secrets = {
-    accessToken: encryptSecret(input.accessToken),
-    appSecret: encryptSecret(input.appSecret),
-  }
+  const secrets = { accessToken: encryptSecret(input.accessToken) }
 
   const data = {
     ...secrets,
     phoneNumberId: input.phoneNumberId,
     wabaId: input.wabaId,
     appId: input.appId ?? null,
-    verifyToken: input.verifyToken,
     webhookBaseUrl: input.webhookBaseUrl ?? null,
   }
 

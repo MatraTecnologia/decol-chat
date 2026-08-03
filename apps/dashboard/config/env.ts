@@ -20,6 +20,10 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: z.url(),
     NEXT_PUBLIC_COOKIE_DOMAIN: z.string().optional(),
 
+    // Embedded Signup (Coexistence)
+    NEXT_PUBLIC_META_APP_ID: z.string().trim().min(1).optional(),
+    NEXT_PUBLIC_META_ES_CONFIG_ID: z.string().trim().min(1).optional(),
+
     // SEO
     NEXT_PUBLIC_INDEXABLE: z
       .string()
@@ -41,6 +45,8 @@ export const env = createEnv({
     NEXT_PUBLIC_COMPANY_NAME: process.env.NEXT_PUBLIC_COMPANY_NAME,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_COOKIE_DOMAIN: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
+    NEXT_PUBLIC_META_APP_ID: process.env.NEXT_PUBLIC_META_APP_ID,
+    NEXT_PUBLIC_META_ES_CONFIG_ID: process.env.NEXT_PUBLIC_META_ES_CONFIG_ID,
     NEXT_PUBLIC_INDEXABLE: process.env.NEXT_PUBLIC_INDEXABLE,
     NEXT_PUBLIC_GOOGLE_VERIFICATION:
       process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
