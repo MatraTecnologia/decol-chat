@@ -244,11 +244,9 @@ model WhatsAppAccount {
   id                 String    @id @default(cuid(2))
   label              String // nome interno, ex.: "Comercial SP"
   accessToken        String // AES-256-GCM
-  appSecret          String // AES-256-GCM — necessário para validar o HMAC
   phoneNumberId      String    @unique
   wabaId             String
   appId              String?
-  verifyToken        String
   webhookBaseUrl     String?
   displayPhoneNumber String?
   verifiedName       String?

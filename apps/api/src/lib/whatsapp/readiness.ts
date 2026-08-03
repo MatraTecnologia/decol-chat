@@ -1,3 +1,5 @@
+import { env } from '@/env.js'
+
 import {
   getConnection,
   resolveWebhookUrl,
@@ -104,13 +106,14 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
       check(
         'credentials',
         'pending',
-        'Nenhuma conexão salva — preencha token, app secret, Phone Number ID e WABA ID no formulário e salve.',
+        'Nenhuma conexão salva — preencha token, Phone Number ID e WABA ID no formulário e salve.',
       ),
       ...skipFrom('token', 'Depende das credenciais salvas.'),
     ]
   }
 
-  const { accessToken, appSecret, appId, phoneNumberId, wabaId } = connection
+  const { accessToken, appId, phoneNumberId, wabaId } = connection
+  const appSecret = env.META_APP_SECRET
 
   checks.push(
     check(
@@ -258,6 +261,14 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
         'Depende do App ID — salve-o nas credenciais para conferir os campos assinados pelo app.',
       ),
     )
+  } else if (!appSecret) {
+    checks.push(
+      check(
+        'messages_field',
+        'skipped',
+        'Depende da META_APP_SECRET estar configurada no .env da API.',
+      ),
+    )
   } else {
     try {
       const { data } = await getAppSubscriptions(appId, appSecret)
@@ -317,7 +328,7 @@ export const runReadinessChecks = async (): Promise<ReadinessCheck[]> => {
       : check(
           'webhook_verified',
           'pending',
-          `Nenhum handshake registrado nas últimas 24h — cadastre ${resolveWebhookUrl(connection)} com o verify token salvo em Webhooks no App Dashboard.`,
+          `Nenhum handshake registrado nas últimas 24h — cadastre ${resolveWebhookUrl(connection)} com o verify token da META_WEBHOOK_VERIFY_TOKEN em Webhooks no App Dashboard.`,
         ),
   )
 

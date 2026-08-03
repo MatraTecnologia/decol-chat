@@ -41,11 +41,9 @@ const MISSING_ENCRYPTION_KEY =
 
 const connectionSchema = z.object({
   accessToken: z.string(),
-  appSecret: z.string(),
   phoneNumberId: z.string(),
   wabaId: z.string(),
   appId: z.string().nullable(),
-  verifyToken: z.string(),
   webhookBaseUrl: z.string().nullable(),
   displayPhoneNumber: z.string().nullable(),
   verifiedName: z.string().nullable(),
@@ -63,11 +61,9 @@ const statusSchema = z.object({
 
 const connectionBodySchema = z.object({
   accessToken: z.string().min(1),
-  appSecret: z.string().min(1),
   phoneNumberId: z.string().min(1),
   wabaId: z.string().min(1),
   appId: z.string().optional(),
-  verifyToken: z.string().min(1),
   webhookBaseUrl: z.string().optional(),
 })
 
@@ -128,11 +124,9 @@ const toGraphError = (error: unknown) => {
 
 const toMaskedConnection = (connection: DecryptedConnection) => ({
   accessToken: maskSecret(connection.accessToken),
-  appSecret: maskSecret(connection.appSecret),
   phoneNumberId: connection.phoneNumberId,
   wabaId: connection.wabaId,
   appId: connection.appId,
-  verifyToken: connection.verifyToken,
   webhookBaseUrl: connection.webhookBaseUrl,
   displayPhoneNumber: connection.displayPhoneNumber,
   verifiedName: connection.verifiedName,
@@ -221,11 +215,9 @@ const whatsappRoutes: FastifyPluginAsyncZod = async app => {
 
         await upsertConnection({
           accessToken: body.accessToken,
-          appSecret: body.appSecret,
           phoneNumberId: body.phoneNumberId,
           wabaId: body.wabaId,
           appId: body.appId,
-          verifyToken: body.verifyToken,
           webhookBaseUrl: body.webhookBaseUrl,
         })
 

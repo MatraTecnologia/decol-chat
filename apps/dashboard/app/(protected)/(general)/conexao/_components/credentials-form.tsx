@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, ShieldAlert, Trash2, Wand2 } from 'lucide-react'
+import { KeyRound, ShieldAlert, Trash2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -69,11 +69,9 @@ const apiErrorMessage = (error: unknown, fallback: string) =>
 
 const credentialsSchema = z.object({
   accessToken: z.string().min(1, 'Cole o access token completo'),
-  appSecret: z.string().min(1, 'Cole o app secret completo'),
   phoneNumberId: z.string().min(1, 'Informe o Phone Number ID'),
   wabaId: z.string().min(1, 'Informe o WABA ID'),
   appId: z.string(),
-  verifyToken: z.string().min(1, 'Informe ou gere um verify token'),
   webhookBaseUrl: z.union([
     z.literal(''),
     z.url('Informe uma URL completa, com https://'),
@@ -86,11 +84,9 @@ const toFormValues = (
   connection: WhatsappConnection | null,
 ): CredentialsFormValues => ({
   accessToken: '',
-  appSecret: '',
   phoneNumberId: connection?.phoneNumberId ?? '',
   wabaId: connection?.wabaId ?? '',
   appId: connection?.appId ?? '',
-  verifyToken: connection?.verifyToken ?? '',
   webhookBaseUrl: connection?.webhookBaseUrl ?? '',
 })
 
@@ -143,20 +139,11 @@ const CredentialsFields = ({
     update.mutate({
       body: {
         accessToken: values.accessToken.trim(),
-        appSecret: values.appSecret.trim(),
         phoneNumberId: values.phoneNumberId.trim(),
         wabaId: values.wabaId.trim(),
         appId: values.appId.trim() || undefined,
-        verifyToken: values.verifyToken.trim(),
         webhookBaseUrl: values.webhookBaseUrl.trim() || undefined,
       },
-    })
-  }
-
-  const handleGenerateVerifyToken = () => {
-    form.setValue('verifyToken', crypto.randomUUID().replace(/-/g, ''), {
-      shouldValidate: true,
-      shouldDirty: true,
     })
   }
 
@@ -184,33 +171,6 @@ const CredentialsFields = ({
               <FormDescription>
                 O token salvo nunca é exibido. Ao atualizar qualquer campo, cole
                 o valor completo de novo.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="appSecret"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>App Secret</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  autoComplete="off"
-                  placeholder={
-                    connection
-                      ? `Atual: ${connection.appSecret}`
-                      : 'Segredo do app na Meta'
-                  }
-                  disabled={isBusy}
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Usado para validar a assinatura HMAC dos eventos do webhook.
-                Também precisa ser colado de novo a cada atualização.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -280,40 +240,6 @@ const CredentialsFields = ({
                 Não é segredo. Habilita a verificação de quais campos do webhook
                 o app tem assinados — sem ele, esse item do checklist fica sem
                 resposta.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="verifyToken"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Verify Token</FormLabel>
-                <button
-                  type="button"
-                  onClick={handleGenerateVerifyToken}
-                  disabled={isBusy}
-                  className="text-muted-foreground hover:text-primary flex items-center gap-1 text-xs transition-colors disabled:opacity-50"
-                >
-                  <Wand2 className="size-3" />
-                  Gerar
-                </button>
-              </div>
-              <FormControl>
-                <Input
-                  autoComplete="off"
-                  placeholder="Valor que você define e repete na Meta"
-                  disabled={isBusy}
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Você inventa este valor e repete o mesmo no App Dashboard da
-                Meta ao configurar o webhook.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -449,8 +375,8 @@ export const CredentialsForm = () => {
         <div className="space-y-1">
           <CardTitle className="text-base">Credenciais</CardTitle>
           <CardDescription>
-            Validadas contra a Graph API antes de gravar. Token e app secret
-            ficam cifrados em repouso.
+            Validadas contra a Graph API antes de gravar. Token fica cifrado
+            em repouso.
           </CardDescription>
         </div>
       </CardHeader>

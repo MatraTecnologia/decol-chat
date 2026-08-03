@@ -182,7 +182,10 @@ const steps: Step[] = [
       <>
         <p>
           No painel do app, <strong>Configurações → Básico</strong>, campo{' '}
-          <strong>Chave secreta do app</strong> → <em>Mostrar</em>.
+          <strong>Chave secreta do app</strong> → <em>Mostrar</em>. Cole o
+          valor na variável <Code>META_APP_SECRET</Code> do{' '}
+          <Code>.env</Code> da API e reinicie o servidor — não é mais colado
+          nesta página.
         </p>
         <p>
           O app secret não é usado para enviar mensagens: ele é a chave do HMAC{' '}
@@ -254,9 +257,10 @@ const steps: Step[] = [
             <Code>/webhooks/whatsapp</Code>.
           </li>
           <li>
-            <strong>Token de verificação</strong> — exatamente o verify token
-            mostrado na página. Qualquer divergência resulta em 403 e a Meta
-            recusa salvar.
+            <strong>Token de verificação</strong> — exatamente o valor
+            configurado em <Code>META_WEBHOOK_VERIFY_TOKEN</Code> no{' '}
+            <Code>.env</Code> da API. Qualquer divergência resulta em 403 e a
+            Meta recusa salvar.
           </li>
         </ul>
         <p>
