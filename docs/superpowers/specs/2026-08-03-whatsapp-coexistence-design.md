@@ -65,6 +65,8 @@ POST /whatsapp/connection/embedded-signup { code, phoneNumberId, wabaId }
 
 `getPhoneNumberInfo` é **bloqueante**: `displayPhoneNumber` é o MSISDN da empresa e é o que classifica direção no backfill. Falhou, o onboarding falha — não grava conta meio configurada.
 
+`subscribeApp(wabaId)` fica como idempotência defensiva, não como o mecanismo que habilita os eventos: o Embedded Signup já assina o app na WABA, e a **assinatura dos três fields novos é configuração de app no App Dashboard**, não consequência dessa chamada. Confirmar contra o resultado real do onboarding; se for no-op comprovado, remover.
+
 ### Ingestão (Fase 2 e 3)
 
 ```
@@ -79,6 +81,8 @@ lib/whatsapp/inbound/
 ```
 
 `shared.ts` é extração pura do `inbound.ts` de hoje. `messages.ts` recebe o código existente intacto — é o que garante que a refatoração não regride o caminho que já funciona.
+
+`inbound/index.ts` **precisa reexportar `processInboundPayload`**: `jobs/whatsapp-inbound.ts` importa de `lib/whatsapp/inbound.js`, e o caminho só continua válido se o índice do diretório mantiver o mesmo entrypoint.
 
 ```ts
 // resolve-account.ts
@@ -155,7 +159,7 @@ enum MessageOrigin {
 }
 
 model Message {
-  origin MessageOrigin?   // null em INBOUND
+  origin MessageOrigin?   // null em INBOUND e em linhas anteriores à migração
 }
 
 model WhatsAppAccount {
@@ -165,6 +169,8 @@ model WhatsAppAccount {
 ```
 
 `origin` entra no `messageSelect` (`routes/conversations/messages.ts`) — sem isso o `payload` do realtime não o carrega e a bolha não sabe que veio do celular. É mudança de response schema ⇒ `pnpm generate:api` com a API de pé (`/health` confirmado antes).
+
+**A rota de envio passa a gravar `origin: DASHBOARD` explicitamente.** Sem isso `null` significaria duas coisas — "é inbound" e "é outbound de origem desconhecida" — e o badge não conseguiria distinguir envio pelo painel de envio pelo celular. Fora do envio, `null` em `OUTBOUND` só aparece em linhas anteriores à migração e o front o trata como `DASHBOARD`.
 
 A remoção de `appSecret`/`verifyToken` é destrutiva e intencional. Sob Embedded Signup o segredo é do app e o webhook é registrado uma vez no App Dashboard; manter as colunas mortas é exatamente o caminho para a verificação de assinatura ler o segredo errado em silêncio.
 
@@ -194,7 +200,7 @@ A remoção de `appSecret`/`verifyToken` é destrutiva e intencional. Sob Embedd
 | novo | `apps/dashboard/.../conexao/_components/embedded-signup-button.tsx` |
 | removido | `apps/api/src/lib/whatsapp/inbound.ts` (vira o diretório) |
 | removido | `credentials-form.tsx`, `PUT /whatsapp/connection`, `registerPhoneNumber`, ação `register_number` do readiness |
-| editado | `webhooks/whatsapp.ts`, `connection.ts`, `routes/conversations/messages.ts`, `setup-guide.tsx` |
+| editado | `webhooks/whatsapp.ts`, `connection.ts`, `routes/conversations/messages.ts`, `lib/whatsapp/readiness.ts`, rota de envio (grava `origin: DASHBOARD`), `setup-guide.tsx`, `readiness-panel.tsx` |
 
 ---
 
@@ -222,15 +228,17 @@ Padrão `.test.mjs` com `node:test`, como os existentes. Cada handler separa **p
 
 | Fase | Entrega | Verificação |
 |---|---|---|
-| 0 | envs novos, três fields assinados no App Dashboard, router despachando por `field` e logando os desconhecidos | **payloads reais capturados em `/conexao`** |
-| 1 | Embedded Signup, remoção do fluxo manual, `appSecret`/`verifyToken` → env | conectar o número e receber uma mensagem do celular |
+| 1 | envs novos, `appSecret`/`verifyToken` → env, Embedded Signup, remoção do fluxo manual, router despachando por `field` e **logando verbatim os fields desconhecidos** | conectar o número e receber uma mensagem do celular |
+| — | *observação* — ler os payloads de `smb_message_echoes`, `smb_app_state_sync` e `history` capturados em `/conexao` | payloads reais em mãos |
 | 2 | echoes + contatos + `origin` + `generate:api` + badge no front | mandar do celular e ver aparecer no inbox marcada |
 | 3 | backfill + fila dedicada + progresso | conversas antigas no inbox com o estado correto |
 
-**A Fase 0 é obrigatória e vem antes de qualquer parser.** Os nomes de campo dos três webhooks novos saem de payload observado, não de documentação de terceiro — o `pushWebhookLog` já persiste o corpo cru e o `/conexao` já o renderiza, então a captura não custa código novo.
+**Os parsers só são escritos depois da observação.** Os nomes de campo dos três webhooks novos saem de payload observado, não de documentação de terceiro — o `pushWebhookLog` já persiste o corpo cru e o `/conexao` já o renderiza, então a captura não custa código novo.
+
+Não existe fase de observação *antes* da Fase 1: os três webhooks só disparam para um número que já concluiu o onboarding de coexistence, e `history`/`smb_app_state_sync` só chegam depois da chamada à SMB App Data API. Por isso a Fase 1 entrega o router com log de field desconhecido — é ela que produz o material que as fases seguintes consomem. Pelo mesmo motivo a mudança de `appSecret`/`verifyToken` para env entra na Fase 1 e não depois: assinar os fields no App Dashboard revalida a assinatura do webhook, e o handshake precisa já estar lendo do env.
 
 ## Questões em aberto
 
-**`smb_message_echoes` ecoa o que o nosso dashboard envia pela Cloud API?** A redação da Meta ("messages the business customer sends with the WhatsApp Business app") sugere que não. Se ecoar, a mensagem colide no `@unique(waMessageId)` e o `isDuplicateMessage` a engole — que por acaso é o comportamento correto. Confirmar no payload capturado na Fase 0; não blindar preventivamente.
+**`smb_message_echoes` ecoa o que o nosso dashboard envia pela Cloud API?** A redação da Meta ("messages the business customer sends with the WhatsApp Business app") sugere que não. Se ecoar, o caso comum colide no `@unique(waMessageId)` e o `isDuplicateMessage` o engole — mas isso **só vale quando a nossa linha já foi persistida com aquele wamid**. Envio que falhou no meio do caminho, ou cuja linha ainda não foi escrita, geraria uma segunda linha `OUTBOUND` atribuída ao celular. Confirmar no payload observado depois da Fase 1 antes de decidir se precisa de guarda.
 
-> Criado em 2026-08-03 10:58 (-03) · Última modificação: 2026-08-03 10:58 (-03)
+> Criado em 2026-08-03 10:58 (-03) · Última modificação: 2026-08-03 11:06 (-03)
