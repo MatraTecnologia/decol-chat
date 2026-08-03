@@ -167,7 +167,17 @@ export const toTemplateSummary = (template: TemplateWithRevisions) => {
   }
 }
 
-export const toTemplateDetail = (template: TemplateWithRevisions) => ({
-  ...toTemplateSummary(template),
-  definition: resolveDefinition(template),
-})
+/**
+ * O espelho remoto vira definição por conversão, não por validação: template
+ * aprovado na Meta costuma vir sem os exemplos que o schema exige. Sai `null`
+ * quando não passa — o detalhe do modelo não pode virar 500 no serializer.
+ */
+export const toTemplateDetail = (template: TemplateWithRevisions) => {
+  const resolved = resolveDefinition(template)
+  const parsed = resolved ? templateDefinitionSchema.safeParse(resolved) : null
+
+  return {
+    ...toTemplateSummary(template),
+    definition: parsed?.success ? parsed.data : null,
+  }
+}
