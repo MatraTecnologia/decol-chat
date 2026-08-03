@@ -20,6 +20,13 @@ import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
 const SDK_SRC = 'https://connect.facebook.net/en_US/sdk.js'
 const GRAPH_VERSION = 'v25.0'
+// Comparação exata (não endsWith/includes): evita que origens como
+// "https://evil-facebook.com" passem no filtro.
+const ALLOWED_ORIGINS = new Set([
+  'https://www.facebook.com',
+  'https://web.facebook.com',
+  'https://business.facebook.com',
+])
 
 interface SignupData {
   phone_number_id?: string
@@ -53,7 +60,7 @@ export const EmbeddedSignupButton = () => {
     // O phone_number_id e o waba_id só chegam por postMessage; o callback do
     // FB.login devolve apenas o code.
     const onMessage = (event: MessageEvent) => {
-      if (!event.origin.endsWith('facebook.com')) return
+      if (!ALLOWED_ORIGINS.has(event.origin)) return
 
       try {
         const parsed = JSON.parse(event.data)

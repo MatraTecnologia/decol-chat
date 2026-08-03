@@ -150,7 +150,7 @@ export const confirmAssetUpload = async (
   const asset = await findAccountAsset(accountId, assetId)
   if (!asset) return notFound()
 
-  let contentLength: number | null = null
+  let contentLength: number | null
   try {
     contentLength = (await headFile(R2_PRIVATE_BUCKET, asset.objectKey))
       .contentLength
