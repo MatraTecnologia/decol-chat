@@ -6,6 +6,7 @@ import {
   LayoutTemplate,
   Mic,
   RotateCcw,
+  Smartphone,
   Sticker,
   Video,
 } from 'lucide-react'
@@ -18,10 +19,7 @@ import {
 } from '@workspace/ui/components/tooltip'
 import { cn } from '@workspace/ui/lib/utils'
 
-import {
-  formatBubbleTime,
-  formatFullTime,
-} from '../../lib/format-message-time'
+import { formatBubbleTime, formatFullTime } from '../../lib/format-message-time'
 import type { Message } from '../../types'
 import { MessageStatusIcon } from './message-status-icon'
 
@@ -88,13 +86,18 @@ const MessageContent = ({ message }: MessageBubbleProps) => {
     )
   }
 
+  // Histórico do celular grava o motivo em `content` (mídia não sincronizada,
+  // contato compartilhado…) — é mais útil que o genérico.
   return (
-    <p className="text-sm italic opacity-80">Mensagem não suportada</p>
+    <p className="text-sm italic opacity-80">
+      {message.content ?? 'Mensagem não suportada'}
+    </p>
   )
 }
 
 export const MessageBubble = ({ message, onRetry }: MessageBubbleProps) => {
   const isOutbound = message.direction === 'OUTBOUND'
+  const fromPhone = message.origin === 'WHATSAPP_APP'
   const hasFailed = message.status === 'FAILED'
   const timestamp = message.waTimestamp ?? message.createdAt
 
@@ -144,6 +147,20 @@ export const MessageBubble = ({ message, onRetry }: MessageBubbleProps) => {
               : 'text-muted-foreground',
           )}
         >
+          {fromPhone && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Smartphone
+                  className="size-3"
+                  aria-label="Enviada pelo celular"
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                Enviada pelo app WhatsApp Business
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-[10px] tabular-nums">

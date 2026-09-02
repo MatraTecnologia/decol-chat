@@ -262,6 +262,7 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
               conversationId: created.id,
               senderId: session.user.id,
               direction: 'OUTBOUND',
+              origin: 'DASHBOARD',
               type: 'TEMPLATE',
               status: 'SENT',
               waMessageId,

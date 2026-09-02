@@ -103,6 +103,11 @@ export const listConversationsResponseTransformer = async (
     }
     item.createdAt = new Date(item.createdAt)
     item.updatedAt = new Date(item.updatedAt)
+    if (item.match) {
+      if (item.match.messageAt) {
+        item.match.messageAt = new Date(item.match.messageAt)
+      }
+    }
     return item
   })
   return data

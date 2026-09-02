@@ -135,6 +135,7 @@ const createOptimisticMessage = (
   conversationId,
   senderId: null,
   direction: 'OUTBOUND',
+  origin: 'DASHBOARD',
   type: 'TEXT',
   status: 'PENDING',
   waMessageId: null,

@@ -4,12 +4,14 @@ import fp from 'fastify-plugin'
 // ── Scheduled (cron) jobs ──────────────────────────────
 import { registerCleanupAuditLogsJob } from '@/jobs/scheduled/cleanup-audit-logs.js'
 import { registerCleanupSessionsJob } from '@/jobs/scheduled/cleanup-sessions.js'
+import { registerWhatsappHistoryJob } from '@/jobs/whatsapp-history.js'
 import { registerWhatsappInboundJob } from '@/jobs/whatsapp-inbound.js'
 import { registerWhatsappSmbSyncJob } from '@/jobs/whatsapp-smb-sync.js'
 
 export const queuePlugin = fp(async (app: FastifyInstance) => {
   // Register job queues + workers here:
   registerWhatsappInboundJob(app)
+  registerWhatsappHistoryJob(app)
   registerWhatsappSmbSyncJob(app)
 
   // ── Scheduled jobs ────────────────────────────────────

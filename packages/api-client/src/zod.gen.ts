@@ -174,6 +174,8 @@ export const zListConversationsQuery = z.object({
   assignedToId: z.string().optional(),
   teamId: z.string().optional(),
   q: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
   scope: z.enum(['mine', 'unassigned', 'all']).optional().default('mine'),
   page: z.int().gte(1).lte(9007199254740991).optional().default(1),
   limit: z.int().gte(1).lte(100).optional().default(20),
@@ -221,6 +223,15 @@ export const zListConversationsResponse = z.object({
               /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
             ),
           image: z.string().nullable(),
+        })
+        .nullable(),
+      match: z
+        .object({
+          field: z.enum(['contact', 'message']),
+          snippet: z.string(),
+          messageId: z.string().nullable(),
+          messageAt: z.iso.datetime().nullable(),
+          count: z.number(),
         })
         .nullable(),
     }),
@@ -620,6 +631,7 @@ export const zListMessagesResponse = z.object({
         'UNSUPPORTED',
       ]),
       status: z.enum(['PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED']),
+      origin: z.enum(['DASHBOARD', 'WHATSAPP_APP']),
       waMessageId: z.string().nullable(),
       waTimestamp: z.iso.datetime().nullable(),
       content: z.string().nullable(),
@@ -683,6 +695,7 @@ export const zSendMessageResponse = z.object({
     'UNSUPPORTED',
   ]),
   status: z.enum(['PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED']),
+  origin: z.enum(['DASHBOARD', 'WHATSAPP_APP']),
   waMessageId: z.string().nullable(),
   waTimestamp: z.iso.datetime().nullable(),
   content: z.string().nullable(),
@@ -760,6 +773,7 @@ export const zSendTemplateMessageResponse = z.object({
     'UNSUPPORTED',
   ]),
   status: z.enum(['PENDING', 'SENT', 'DELIVERED', 'READ', 'FAILED']),
+  origin: z.enum(['DASHBOARD', 'WHATSAPP_APP']),
   waMessageId: z.string().nullable(),
   waTimestamp: z.iso.datetime().nullable(),
   content: z.string().nullable(),
@@ -3330,4 +3344,26 @@ export const zConnectWhatsappEmbeddedSignupResponse = z.object({
   wabaId: z.string(),
   displayPhoneNumber: z.string().nullable(),
   verifiedName: z.string().nullable(),
+})
+
+/**
+ * Default Response
+ */
+export const zGetWhatsappSyncStatusResponse = z.object({
+  status: z.enum(['idle', 'running', 'done']),
+  phase: z.number().nullable(),
+  progress: z.number().nullable(),
+  chunks: z.number(),
+  threads: z.number(),
+  messages: z.number(),
+  conversationsCreated: z.number(),
+  updatedAt: z.string().nullable(),
+})
+
+/**
+ * Default Response
+ */
+export const zReplayWhatsappLogsResponse = z.object({
+  history: z.number(),
+  other: z.number(),
 })

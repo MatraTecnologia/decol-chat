@@ -72,6 +72,8 @@ import type {
   GetWhatsappConnectionResponses,
   GetWhatsappReadinessData,
   GetWhatsappReadinessResponses,
+  GetWhatsappSyncStatusData,
+  GetWhatsappSyncStatusResponses,
   GetWhatsappTemplateAssetPreviewData,
   GetWhatsappTemplateAssetPreviewResponses,
   GetWhatsappTemplateData,
@@ -112,6 +114,8 @@ import type {
   ReceiveWhatsappWebhookResponses,
   ReopenConversationData,
   ReopenConversationResponses,
+  ReplayWhatsappLogsData,
+  ReplayWhatsappLogsResponses,
   SendMessageData,
   SendMessageResponses,
   SendTemplateMessageData,
@@ -971,3 +975,27 @@ export const connectWhatsappEmbeddedSignup = <
       ...options.headers,
     },
   })
+
+/**
+ * Progresso do backfill de histórico do app do celular
+ */
+export const getWhatsappSyncStatus = <ThrowOnError extends boolean = false>(
+  options?: Options<GetWhatsappSyncStatusData, ThrowOnError>,
+): RequestResult<GetWhatsappSyncStatusResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetWhatsappSyncStatusResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/connection/sync-status', ...options })
+
+/**
+ * Reenfileira os eventos de coexistence guardados no log
+ */
+export const replayWhatsappLogs = <ThrowOnError extends boolean = false>(
+  options?: Options<ReplayWhatsappLogsData, ThrowOnError>,
+): RequestResult<ReplayWhatsappLogsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<
+    ReplayWhatsappLogsResponses,
+    unknown,
+    ThrowOnError
+  >({ url: '/whatsapp/connection/replay-logs', ...options })

@@ -3,7 +3,9 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
 import { env } from '@/env.js'
+import { whatsappHistoryQueue } from '@/jobs/whatsapp-history.js'
 import { whatsappInboundQueue } from '@/jobs/whatsapp-inbound.js'
+import { extractChanges } from '@/lib/whatsapp/inbound/payload.js'
 
 import { verifySignature } from '@/lib/whatsapp/signature.js'
 import { pushWebhookLog } from '@/lib/whatsapp/webhook-log.js'
@@ -86,9 +88,16 @@ const safePushWebhookLog = async (
  */
 const ENQUEUE_TIMEOUT_MS = 3_000
 
+// Chunk de histórico leva segundos e não pode atrasar mensagem viva: vai
+// para a fila dedicada, com concorrência 1.
+const hasHistory = (payload: unknown) =>
+  extractChanges(payload).some(change => change.field === 'history')
+
 const enqueueInbound = (payload: unknown) =>
   Promise.race([
-    whatsappInboundQueue.add('inbound', { payload }),
+    hasHistory(payload)
+      ? whatsappHistoryQueue.add('history', { payload })
+      : whatsappInboundQueue.add('inbound', { payload }),
     new Promise((_, reject) => {
       setTimeout(
         () =>
@@ -147,7 +156,10 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
       const expected = env.META_WEBHOOK_VERIFY_TOKEN
 
       const valid =
-        mode === 'subscribe' && Boolean(token) && Boolean(expected) && token === expected
+        mode === 'subscribe' &&
+        Boolean(token) &&
+        Boolean(expected) &&
+        token === expected
 
       await safePushWebhookLog(app, {
         direction: 'inbound_verify',

@@ -201,6 +201,11 @@ enum MessageStatus {
   FAILED
 }
 
+enum MessageOrigin {
+  DASHBOARD // enviada por um atendente pelo painel
+  WHATSAPP_APP // enviada pelo app WhatsApp Business do celular (coexistence)
+}
+
 enum MessageType {
   TEXT
   IMAGE
@@ -337,6 +342,7 @@ model Message {
   direction MessageDirection
   type      MessageType      @default(TEXT)
   status    MessageStatus    @default(PENDING)
+  origin    MessageOrigin? // null em INBOUND e em linhas anteriores à coluna
 
   waMessageId String?   @unique // wamid — chave de idempotência
   waTimestamp DateTime?

@@ -27,6 +27,8 @@ export interface MetaMedia {
 export interface MetaMessage {
   id?: string
   from?: string
+  /** Só em `smb_message_echoes`: o cliente para quem o celular mandou. */
+  to?: string
   timestamp?: string
   type?: string
   text?: { body?: string }

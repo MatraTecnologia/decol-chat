@@ -26,6 +26,7 @@ import {
   getReportsOverview,
   getWhatsappConnection,
   getWhatsappReadiness,
+  getWhatsappSyncStatus,
   getWhatsappTemplate,
   getWhatsappTemplateAssetPreview,
   healthCheck,
@@ -46,6 +47,7 @@ import {
   readinessProbe,
   receiveWhatsappWebhook,
   reopenConversation,
+  replayWhatsappLogs,
   sendMessage,
   sendTemplateMessage,
   sendWhatsappTestMessage,
@@ -94,6 +96,8 @@ import type {
   GetWhatsappConnectionResponse,
   GetWhatsappReadinessData,
   GetWhatsappReadinessResponse,
+  GetWhatsappSyncStatusData,
+  GetWhatsappSyncStatusResponse,
   GetWhatsappTemplateAssetPreviewData,
   GetWhatsappTemplateAssetPreviewResponse,
   GetWhatsappTemplateData,
@@ -134,6 +138,8 @@ import type {
   ReceiveWhatsappWebhookResponse,
   ReopenConversationData,
   ReopenConversationResponse,
+  ReplayWhatsappLogsData,
+  ReplayWhatsappLogsResponse,
   SendMessageData,
   SendMessageResponse,
   SendTemplateMessageData,
@@ -1817,6 +1823,61 @@ export const connectWhatsappEmbeddedSignupMutation = (
   > = {
     mutationFn: async fnOptions => {
       const { data } = await connectWhatsappEmbeddedSignup({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      })
+      return data
+    },
+  }
+  return mutationOptions
+}
+
+export const getWhatsappSyncStatusQueryKey = (
+  options?: Options<GetWhatsappSyncStatusData>,
+) => createQueryKey('getWhatsappSyncStatus', options, false, ['WhatsApp'])
+
+/**
+ * Progresso do backfill de histórico do app do celular
+ */
+export const getWhatsappSyncStatusOptions = (
+  options?: Options<GetWhatsappSyncStatusData>,
+) =>
+  queryOptions<
+    GetWhatsappSyncStatusResponse,
+    DefaultError,
+    GetWhatsappSyncStatusResponse,
+    ReturnType<typeof getWhatsappSyncStatusQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getWhatsappSyncStatus({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      })
+      return data
+    },
+    queryKey: getWhatsappSyncStatusQueryKey(options),
+  })
+
+/**
+ * Reenfileira os eventos de coexistence guardados no log
+ */
+export const replayWhatsappLogsMutation = (
+  options?: Partial<Options<ReplayWhatsappLogsData>>,
+): UseMutationOptions<
+  ReplayWhatsappLogsResponse,
+  DefaultError,
+  Options<ReplayWhatsappLogsData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ReplayWhatsappLogsResponse,
+    DefaultError,
+    Options<ReplayWhatsappLogsData>
+  > = {
+    mutationFn: async fnOptions => {
+      const { data } = await replayWhatsappLogs({
         ...options,
         ...fnOptions,
         throwOnError: true,

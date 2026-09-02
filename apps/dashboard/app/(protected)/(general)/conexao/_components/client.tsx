@@ -7,6 +7,7 @@ import { ConnectionStatus } from './connection-status'
 import { EmbeddedSignupButton } from './embedded-signup-button'
 import { ReadinessPanel } from './readiness-panel'
 import { SetupGuide } from './setup-guide'
+import { SyncProgress } from './sync-progress'
 import { TestMessageForm } from './test-message-form'
 import { WebhookConsole } from './webhook-console'
 import { WebhookPanel } from './webhook-panel'
@@ -46,6 +47,7 @@ export const Client = () => {
       >
         <EmbeddedSignupButton />
         <ConnectionStatus />
+        <SyncProgress />
         <WebhookPanel />
         <TestMessageForm />
       </motion.div>

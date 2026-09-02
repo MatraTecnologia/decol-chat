@@ -266,6 +266,8 @@ export type ListConversationsData = {
     assignedToId?: string
     teamId?: string
     q?: string
+    from?: string
+    to?: string
     scope?: 'mine' | 'unassigned' | 'all'
     page?: number
     limit?: number
@@ -310,6 +312,13 @@ export type ListConversationsResponses = {
         name: string
         email: string
         image: string | null
+      } | null
+      match: {
+        field: 'contact' | 'message'
+        snippet: string
+        messageId: string | null
+        messageAt: Date | null
+        count: number
       } | null
     }>
     meta: {
@@ -735,6 +744,7 @@ export type ListMessagesResponses = {
         | 'SYSTEM'
         | 'UNSUPPORTED'
       status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+      origin: 'DASHBOARD' | 'WHATSAPP_APP'
       waMessageId: string | null
       waTimestamp: Date | null
       content: string | null
@@ -798,6 +808,7 @@ export type SendMessageResponses = {
       | 'SYSTEM'
       | 'UNSUPPORTED'
     status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+    origin: 'DASHBOARD' | 'WHATSAPP_APP'
     waMessageId: string | null
     waTimestamp: Date | null
     content: string | null
@@ -883,6 +894,7 @@ export type SendTemplateMessageResponses = {
       | 'SYSTEM'
       | 'UNSUPPORTED'
     status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+    origin: 'DASHBOARD' | 'WHATSAPP_APP'
     waMessageId: string | null
     waTimestamp: Date | null
     content: string | null
@@ -3492,3 +3504,49 @@ export type ConnectWhatsappEmbeddedSignupResponses = {
 
 export type ConnectWhatsappEmbeddedSignupResponse =
   ConnectWhatsappEmbeddedSignupResponses[keyof ConnectWhatsappEmbeddedSignupResponses]
+
+export type GetWhatsappSyncStatusData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/connection/sync-status'
+}
+
+export type GetWhatsappSyncStatusResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    status: 'idle' | 'running' | 'done'
+    phase: number | null
+    progress: number | null
+    chunks: number
+    threads: number
+    messages: number
+    conversationsCreated: number
+    updatedAt: string | null
+  }
+}
+
+export type GetWhatsappSyncStatusResponse =
+  GetWhatsappSyncStatusResponses[keyof GetWhatsappSyncStatusResponses]
+
+export type ReplayWhatsappLogsData = {
+  body?: never
+  path?: never
+  query?: never
+  url: '/whatsapp/connection/replay-logs'
+}
+
+export type ReplayWhatsappLogsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    history: number
+    other: number
+  }
+}
+
+export type ReplayWhatsappLogsResponse =
+  ReplayWhatsappLogsResponses[keyof ReplayWhatsappLogsResponses]

@@ -5,6 +5,7 @@ import type { Prisma } from '@/generated/prisma/client.js'
 
 import {
   MessageDirectionSchema,
+  MessageOriginSchema,
   MessageStatusSchema,
   MessageTypeSchema,
 } from '@/generated/zod/schemas.js'
@@ -22,6 +23,7 @@ export const messageSchema = z.object({
   direction: MessageDirectionSchema,
   type: MessageTypeSchema,
   status: MessageStatusSchema,
+  origin: MessageOriginSchema.nullable(),
   waMessageId: z.string().nullable(),
   waTimestamp: z.date().nullable(),
   content: z.string().nullable(),
@@ -55,6 +57,7 @@ export const messageSelect = {
   direction: true,
   type: true,
   status: true,
+  origin: true,
   waMessageId: true,
   waTimestamp: true,
   content: true,
