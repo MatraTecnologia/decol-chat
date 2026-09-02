@@ -153,6 +153,9 @@ export const EmbeddedSignupButton = () => {
         override_default_response_type: true,
         extras: {
           setup: {},
+          // Sem a versão o popup abre o Embedded Signup antigo, que ignora o
+          // featureType e manda excluir o número do app do celular.
+          version: 'v4',
           featureType: 'whatsapp_business_app_onboarding',
           // Sem isto a Meta não emite o postMessage no formato que o handler
           // acima espera — o popup conclui e os ids nunca chegam.
