@@ -143,6 +143,10 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 6,
       expiresIn: 300,
+      // Login por código só para conta existente: sem isto, validar o código
+      // de um email novo criava a conta. Email desconhecido recebe o mesmo
+      // "sucesso" sem envio, então a resposta não revela quem tem conta.
+      disableSignUp: true,
       // Grava só o hash: leitura do banco/Redis não entrega um código válido
       storeOTP: 'hashed',
       sendVerificationOTP: async ({ email, otp, type }, ctx) => {
@@ -200,6 +204,9 @@ export const auth = betterAuth({
   ],
   emailAndPassword: {
     enabled: true,
+    // Sem cadastro público: contas são criadas pelo admin no painel, e o
+    // primeiro admin de um banco novo sai de `pnpm create-admin` (scripts/)
+    disableSignUp: true,
     autoSignIn: false,
     requireEmailVerification: true,
     // Reset por email derruba todas as sessões: quem redefine por suspeita de

@@ -1,7 +1,6 @@
 'use client'
 
 import { motion } from 'motion/react'
-import Link from 'next/link'
 
 import {
   Tabs,
@@ -77,23 +76,6 @@ export const Client = () => {
           </TabsContent>
         </Tabs>
       </motion.div>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.45 }}
-        className="text-muted-foreground mt-8 text-center text-sm"
-        style={{ fontFamily: 'var(--font-dm-sans)' }}
-      >
-        Não tem uma conta?{' '}
-        <Link
-          href="/sign-up"
-          className="font-medium transition-colors"
-          style={{ color: '#C8A86B' }}
-        >
-          Cadastre-se
-        </Link>
-      </motion.p>
     </div>
   )
 }

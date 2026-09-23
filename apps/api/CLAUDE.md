@@ -358,7 +358,7 @@ Active plugins:
 - `emailVerification.autoSignInAfterVerification: false` — no auto-login after verification.
 - `onPasswordReset` callback sends a confirmation email after password reset.
 
-**Bootstrap rule (important):** `databaseHooks.user.create.before` checks if the user count is zero. If it is, the first user created is forced to `role: 'admin'`. Subsequent signups default to `user`. This means the first signup on a fresh DB becomes the system admin.
+**Bootstrap rule (important):** there is no public sign-up — `emailAndPassword.disableSignUp: true`, and `emailOTP.disableSignUp: true` so email-code login never creates an account (an unknown email gets the same success response with nothing sent). Users are created by an admin (`/admin/create-user`). The first admin of a fresh database: `pnpm --filter @workspace/api create-admin <email> <name>` (`scripts/create-admin.ts` — server-side `auth.api.createUser`, generated password printed once, `emailVerified: true`). `databaseHooks.user.create.before` still forces the first user ever to `role: 'admin'`.
 
 **Session freshness:** `session.freshAge: 60 * 60` (1h) — sensitive actions (e.g., `delete-user`) require a session authenticated within the last hour.
 

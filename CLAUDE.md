@@ -115,7 +115,7 @@ The dashboard app uses Next.js App Router with route groups. **Dev server runs o
 ```
 apps/dashboard/app/
 ├── (root)/             # Public pages (landing page)
-├── (auth)/             # Auth pages (sign-in, sign-up, forgot-password, reset-password, 2FA)
+├── (auth)/             # Auth pages (sign-in, forgot-password, reset-password, 2FA) — no public sign-up
 ├── (protected)/        # Authenticated pages
 │   ├── (general)/      # Dashboard (welcome page)
 │   └── admin/          # Global admin panel (wrapped in <AdminGate>)
@@ -311,7 +311,7 @@ This project uses [Better Auth](https://www.better-auth.com/) with the Prisma ad
 
 **Additional user fields:** `phone: String?` (optional, via `additionalFields`).
 
-**Bootstrap behavior:** The first user ever created in the system is automatically promoted to `admin` (via `databaseHooks.user.create.before` in `lib/auth.ts`). Subsequent signups default to `user`.
+**Bootstrap behavior:** Public sign-up is closed (`emailAndPassword.disableSignUp` + `emailOTP.disableSignUp`): accounts are created by an admin in the panel. The first admin of a fresh database comes from `pnpm --filter @workspace/api create-admin <email> <name>` (`apps/api/scripts/create-admin.ts`, prints a generated password once). `databaseHooks.user.create.before` still promotes the very first user to `admin`.
 
 **Session freshness:** `session.freshAge: 60 * 60` (1h) — sensitive actions (e.g., `delete-user`) require a session authenticated within the last hour.
 

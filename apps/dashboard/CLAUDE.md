@@ -25,7 +25,7 @@ apps/dashboard/
 │   ├── (root)/                 # Public pages (landing)
 │   ├── (auth)/                 # Auth pages with two-column branded layout (custom fonts)
 │   │   ├── _components/        # auth-layout-provider.tsx (branding + form columns)
-│   │   ├── sign-in/, sign-up/, forgot-password/, reset-password/, two-factor/
+│   │   ├── sign-in/, forgot-password/, reset-password/, two-factor/
 │   ├── (protected)/            # Authenticated pages (sidebar layout)
 │   │   ├── (general)/          # dashboard/ (welcome page)
 │   │   └── admin/              # Admin panel — wrapped in AdminGate

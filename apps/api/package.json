@@ -18,7 +18,8 @@
     "db:push": "prisma db push",
     "db:reset": "prisma db push --force-reset && prisma generate && tsx scripts/fix-zod-imports.ts",
     "db:studio": "prisma studio",
-    "redis:flush": "tsx scripts/redis-flush.ts"
+    "redis:flush": "tsx scripts/redis-flush.ts",
+    "create-admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.58",

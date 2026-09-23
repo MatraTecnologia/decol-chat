@@ -19,9 +19,6 @@ const Page = () => {
           <Button asChild size="lg">
             <Link href="/sign-in">Entrar</Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/sign-up">Criar conta</Link>
-          </Button>
         </div>
       </div>
     </div>

@@ -7,7 +7,6 @@ import {
 
 const publicPaths = [
   '/sign-in',
-  '/sign-up',
   '/forgot-password',
   '/reset-password',
   '/two-factor',
