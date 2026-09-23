@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
+import { ADMIN_ROOM } from '@/lib/realtime-events.js'
 import { redis } from '@/lib/redis.js'
 import { generateId } from '@/utils/generate-id.js'
 
@@ -11,9 +12,7 @@ const TTL_SECONDS = 86_400
 const REDACTED_HEADERS = ['authorization', 'cookie', 'proxy-authorization']
 
 export type WebhookLogDirection =
-  | 'inbound_verify'
-  | 'inbound_event'
-  | 'outbound'
+  'inbound_verify' | 'inbound_event' | 'outbound'
 
 export interface WebhookLogEntry {
   id: string
@@ -58,7 +57,9 @@ export const pushWebhookLog = async (
   }
 
   // Fora do try: uma falha do Redis custa o histórico, não o console ao vivo.
-  app.io?.emit(WEBHOOK_LOG_EVENT, logEntry)
+  // Só admin: o payload cru traz mensagem e telefone de cliente, e o REST
+  // equivalente (GET /whatsapp/logs) também é admin-only.
+  app.io?.to(ADMIN_ROOM).emit(WEBHOOK_LOG_EVENT, logEntry)
 
   return logEntry
 }

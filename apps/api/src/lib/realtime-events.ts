@@ -19,6 +19,13 @@ export interface RealtimeEvent {
 
 export const REALTIME_EVENT = 'entity:mutated' as const
 
+/** Recebe o `payload` de toda mensagem: quem enxerga todas as conversas. */
+export const GLOBAL_READERS_ROOM = 'readers:global'
+/** Recebe o console de webhooks, que no REST é só de admin. */
+export const ADMIN_ROOM = 'role:admin'
+/** Recebe o `payload` das mensagens das conversas atribuídas ao usuário. */
+export const userRoom = (userId: string) => `user:${userId}`
+
 export const ENTITY_INVALIDATION_TAGS: Record<RealtimeEntity, string[]> = {
   user: ['Users'],
   whatsappConnection: ['WhatsApp'],

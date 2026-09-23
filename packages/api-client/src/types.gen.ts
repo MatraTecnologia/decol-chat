@@ -994,7 +994,7 @@ export type StartConversationResponses = {
         email: string
         image: string | null
       } | null
-    }
+    } | null
     created: boolean
     previousAssignee: {
       id: string

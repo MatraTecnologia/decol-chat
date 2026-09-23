@@ -264,7 +264,7 @@ The API emits `entity:mutated` Socket.io events after mutations. The frontend li
 **Backend flow:**
 1. Route handler performs mutation
 2. Calls `app.emitRealtimeEvent()`
-3. Event broadcast to all connected clients via `io.emit()`
+3. Event sent to connected staff sockets (roles `admin`/`manager`/`agent`/`viewer`; `user` and banned are refused at handshake). An event with `payload` (message body) only carries it to global readers and the conversation's assignee — everyone else gets it without `payload` and refetches through the scoped REST
 
 **Frontend flow:**
 1. `SocketProvider` manages socket lifecycle

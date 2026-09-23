@@ -110,7 +110,7 @@ export const zUpdateContactBody = z.object({
   email: z
     .email()
     .regex(
-      /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+      /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
     )
     .nullish(),
   notes: z.string().max(2000).nullish(),
@@ -220,7 +220,7 @@ export const zListConversationsResponse = z.object({
           email: z
             .email()
             .regex(
-              /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+              /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
             ),
           image: z.string().nullable(),
         })
@@ -286,7 +286,7 @@ export const zGetConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -340,7 +340,7 @@ export const zUpdateConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -388,7 +388,7 @@ export const zMarkConversationReadResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -441,7 +441,7 @@ export const zAssignConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -493,7 +493,7 @@ export const zUnassignConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -541,7 +541,7 @@ export const zCloseConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -589,7 +589,7 @@ export const zReopenConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -653,7 +653,7 @@ export const zListMessagesResponse = z.object({
           email: z
             .email()
             .regex(
-              /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+              /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
             ),
           image: z.string().nullable(),
         })
@@ -717,7 +717,7 @@ export const zSendMessageResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -795,7 +795,7 @@ export const zSendTemplateMessageResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -829,46 +829,48 @@ export const zStartConversationBody = z.object({
  * Default Response
  */
 export const zStartConversationResponse = z.object({
-  conversation: z.object({
-    id: z.string(),
-    whatsAppAccountId: z.string(),
-    contactId: z.string(),
-    assignedToId: z.string().nullable(),
-    teamId: z.string().nullable(),
-    status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
-    channel: z.enum(['WHATSAPP']),
-    subject: z.string().nullable(),
-    lastMessageAt: z.iso.datetime().nullable(),
-    lastMessageText: z.string().nullable(),
-    lastInboundAt: z.iso.datetime().nullable(),
-    unreadCount: z.number(),
-    assignedAt: z.iso.datetime().nullable(),
-    closedAt: z.iso.datetime().nullable(),
-    closedById: z.string().nullable(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-    contact: z.object({
+  conversation: z
+    .object({
       id: z.string(),
-      waId: z.string(),
-      phoneNumber: z.string(),
-      name: z.string().nullable(),
-      profileName: z.string().nullable(),
-      isBlocked: z.boolean(),
-    }),
-    assignedTo: z
-      .object({
+      whatsAppAccountId: z.string(),
+      contactId: z.string(),
+      assignedToId: z.string().nullable(),
+      teamId: z.string().nullable(),
+      status: z.enum(['OPEN', 'PENDING', 'CLOSED']),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+      channel: z.enum(['WHATSAPP']),
+      subject: z.string().nullable(),
+      lastMessageAt: z.iso.datetime().nullable(),
+      lastMessageText: z.string().nullable(),
+      lastInboundAt: z.iso.datetime().nullable(),
+      unreadCount: z.number(),
+      assignedAt: z.iso.datetime().nullable(),
+      closedAt: z.iso.datetime().nullable(),
+      closedById: z.string().nullable(),
+      createdAt: z.iso.datetime(),
+      updatedAt: z.iso.datetime(),
+      contact: z.object({
         id: z.string(),
-        name: z.string(),
-        email: z
-          .email()
-          .regex(
-            /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
-          ),
-        image: z.string().nullable(),
-      })
-      .nullable(),
-  }),
+        waId: z.string(),
+        phoneNumber: z.string(),
+        name: z.string().nullable(),
+        profileName: z.string().nullable(),
+        isBlocked: z.boolean(),
+      }),
+      assignedTo: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          email: z
+            .email()
+            .regex(
+              /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+            ),
+          image: z.string().nullable(),
+        })
+        .nullable(),
+    })
+    .nullable(),
   created: z.boolean(),
   previousAssignee: z
     .object({
@@ -877,7 +879,7 @@ export const zStartConversationResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
     })
@@ -894,7 +896,7 @@ export const zListMembersResponse = z.array(
     email: z
       .email()
       .regex(
-        /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+        /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
       ),
     image: z.string().nullable(),
     role: z.string().nullable(),
@@ -1005,7 +1007,7 @@ export const zListUsersResponse = z.object({
       email: z
         .email()
         .regex(
-          /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
+          /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/,
         ),
       image: z.string().nullable(),
       role: z.string().nullable(),

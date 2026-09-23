@@ -46,7 +46,6 @@ import {
   TemplateParameterForm,
   useTemplateParameters,
 } from '@/features/templates/components/template-parameter-form'
-import { useUserRole } from '@/hooks'
 import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
 import { useSelectedConversation } from '../../hooks'
@@ -104,7 +103,6 @@ export const NewConversationDialog = ({
   onOpenChange,
 }: NewConversationDialogProps) => {
   const queryClient = useQueryClient()
-  const { userId, hasRole } = useUserRole()
   const { selectConversation } = useSelectedConversation()
 
   /**
@@ -137,23 +135,20 @@ export const NewConversationDialog = ({
 
   const start = useMutation({
     ...startConversationMutation(),
-    onSuccess: ({ conversation, created }) => {
+    onSuccess: ({ conversation, created, previousAssignee }) => {
       invalidateByTags(queryClient, ['Conversations'])
+
+      // `conversation: null` = já existe conversa em andamento de outro
+      // atendente; a API só devolve quem está com ela
+      if (!conversation) {
+        setConflict({ ownerName: previousAssignee?.name ?? null })
+        return
+      }
 
       if (created) {
         toast.success('Conversa iniciada. O template foi enviado.')
         selectConversation(conversation.id)
         closeDialog()
-        return
-      }
-
-      // `created: false` = já existia conversa em andamento. Ela é buscada sem
-      // filtro de escopo, então pode ser de outro atendente — e abrir a de um
-      // colega devolve 404 para quem não é admin/gestor.
-      const isOwner = !!userId && conversation.assignedTo?.id === userId
-
-      if (!isOwner && !hasRole('admin', 'manager')) {
-        setConflict({ ownerName: conversation.assignedTo?.name ?? null })
         return
       }
 

@@ -28,20 +28,6 @@ export const bullBoardPlugin = fp(async (app: FastifyInstance) => {
       ),
   )
 
-  app.addHook('onRequest', async (request, reply) => {
-    if (!request.url.startsWith(BOARD_PATH)) return
-
-    const provided = Buffer.from(request.headers.authorization ?? '')
-
-    if (
-      provided.length !== expected.length ||
-      !timingSafeEqual(provided, expected)
-    ) {
-      reply.header('WWW-Authenticate', 'Basic realm="Bull Board"')
-      return reply.code(401).send({ error: 'Invalid credentials' })
-    }
-  })
-
   const serverAdapter = new FastifyAdapter()
   serverAdapter.setBasePath(BOARD_PATH)
 
@@ -50,8 +36,25 @@ export const bullBoardPlugin = fp(async (app: FastifyInstance) => {
     serverAdapter,
   })
 
-  await app.register(serverAdapter.registerPlugin(), {
-    prefix: BOARD_PATH,
+  // O hook vive no mesmo escopo encapsulado das rotas do board, então vale para
+  // toda rota dele. Checar `request.url` cru não servia: o roteador decodifica
+  // `%xx` antes de casar a rota, e `/%61dmin/queues` passava sem senha.
+  await app.register(async scope => {
+    scope.addHook('onRequest', async (request, reply) => {
+      const provided = Buffer.from(request.headers.authorization ?? '')
+
+      if (
+        provided.length !== expected.length ||
+        !timingSafeEqual(provided, expected)
+      ) {
+        reply.header('WWW-Authenticate', 'Basic realm="Bull Board"')
+        return reply.code(401).send({ error: 'Invalid credentials' })
+      }
+    })
+
+    await scope.register(serverAdapter.registerPlugin(), {
+      prefix: BOARD_PATH,
+    })
   })
 
   app.log.info(`Bull Board UI available at ${BOARD_PATH}`)

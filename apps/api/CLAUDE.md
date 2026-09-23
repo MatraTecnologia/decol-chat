@@ -249,7 +249,7 @@ app.emitRealtimeEvent({
 
 **Tag-based invalidation:** Each entity maps to Swagger tags via `ENTITY_INVALIDATION_TAGS` in `lib/realtime-events.ts`. The frontend uses these tags to invalidate React Query caches (both via socket events and manual `invalidateByTags()` calls). When adding a new entity, add it to `ENTITY_INVALIDATION_TAGS` with the corresponding Swagger `tags`.
 
-**Broadcast model:** Events are broadcast to all connected authenticated clients via `io.emit()`.
+**Broadcast model:** the socket handshake (`lib/socket.ts`) only accepts `CONVERSATION_READERS` (`admin`, `manager`, `agent`, `viewer`) that are not banned, and joins each socket to `user:<id>`, plus `readers:global` (admin/manager) and `role:admin`. Events without `payload` go to every socket. An event with `payload` goes whole to `readers:global` + the assignee room (looked up from `payload.conversationId`) and without `payload` to everyone else, who refetch through the scoped REST — never broadcast entity bodies with a bare `io.emit()`. Room names live in `lib/realtime-events.ts`. Emissions are serialized through one queue to keep `created`/`updated` in order.
 
 ### User enrichment
 

@@ -322,20 +322,26 @@ export const sendTemplateMessageResponseTransformer = async (
 export const startConversationResponseTransformer = async (
   data: any,
 ): Promise<StartConversationResponse> => {
-  if (data.conversation.lastMessageAt) {
-    data.conversation.lastMessageAt = new Date(data.conversation.lastMessageAt)
+  if (data.conversation) {
+    if (data.conversation.lastMessageAt) {
+      data.conversation.lastMessageAt = new Date(
+        data.conversation.lastMessageAt,
+      )
+    }
+    if (data.conversation.lastInboundAt) {
+      data.conversation.lastInboundAt = new Date(
+        data.conversation.lastInboundAt,
+      )
+    }
+    if (data.conversation.assignedAt) {
+      data.conversation.assignedAt = new Date(data.conversation.assignedAt)
+    }
+    if (data.conversation.closedAt) {
+      data.conversation.closedAt = new Date(data.conversation.closedAt)
+    }
+    data.conversation.createdAt = new Date(data.conversation.createdAt)
+    data.conversation.updatedAt = new Date(data.conversation.updatedAt)
   }
-  if (data.conversation.lastInboundAt) {
-    data.conversation.lastInboundAt = new Date(data.conversation.lastInboundAt)
-  }
-  if (data.conversation.assignedAt) {
-    data.conversation.assignedAt = new Date(data.conversation.assignedAt)
-  }
-  if (data.conversation.closedAt) {
-    data.conversation.closedAt = new Date(data.conversation.closedAt)
-  }
-  data.conversation.createdAt = new Date(data.conversation.createdAt)
-  data.conversation.updatedAt = new Date(data.conversation.updatedAt)
   return data
 }
 

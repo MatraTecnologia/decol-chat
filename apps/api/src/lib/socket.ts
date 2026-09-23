@@ -6,9 +6,21 @@ import {
   SECURE_SESSION_COOKIE,
   SESSION_COOKIE,
 } from '@workspace/shared/auth-cookie'
+import {
+  CONVERSATION_READERS,
+  isGlobalReader,
+} from '@/routes/conversations/guards.js'
 import { auth } from './auth.js'
 import { origins } from './cors.js'
 import { presence } from './presence.js'
+import { ADMIN_ROOM, GLOBAL_READERS_ROOM, userRoom } from './realtime-events.js'
+
+type Session = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>
+
+// Mesmo corte do REST: `user` não tem painel, e banido não tem sessão útil
+const canUseRealtime = ({ user }: Session) =>
+  !user.banned &&
+  (CONVERSATION_READERS as readonly string[]).includes(user.role ?? '')
 
 export const createSocketServer = (httpServer: HTTPServer) => {
   const io = new SocketIOServer(httpServer, {
@@ -28,6 +40,7 @@ export const createSocketServer = (httpServer: HTTPServer) => {
           headers: new Headers({ cookie: cookieHeader }),
         })
         if (session) {
+          if (!canUseRealtime(session)) return next(new Error('Forbidden'))
           socket.data.user = session.user
           socket.data.session = session.session
           return next()
@@ -44,6 +57,7 @@ export const createSocketServer = (httpServer: HTTPServer) => {
           headers: new Headers({ cookie: `${cookieName}=${token}` }),
         })
         if (session) {
+          if (!canUseRealtime(session)) return next(new Error('Forbidden'))
           socket.data.user = session.user
           socket.data.session = session.session
           return next()
@@ -58,6 +72,12 @@ export const createSocketServer = (httpServer: HTTPServer) => {
 
   io.on('connection', socket => {
     const userId = socket.data.user.id
+    const role = socket.data.user.role ?? ''
+
+    // Salas que decidem quem recebe o conteúdo (ver emissor em plugins/socket.ts)
+    void socket.join(userRoom(userId))
+    if (isGlobalReader(role)) void socket.join(GLOBAL_READERS_ROOM)
+    if (role === 'admin') void socket.join(ADMIN_ROOM)
 
     // Track presence and broadcast to all clients
     presence.add(userId, socket.id)

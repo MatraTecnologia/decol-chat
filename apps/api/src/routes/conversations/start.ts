@@ -20,6 +20,7 @@ import {
   CONVERSATION_READERS,
   canSendMessages,
   conversationRelationsInclude,
+  isGlobalReader,
 } from './guards.js'
 
 import { messageSelect } from './messages.js'
@@ -40,7 +41,11 @@ const resolveApprovedTemplate = createApprovedTemplateResolver(
 )
 
 const startResponseSchema = z.object({
-  conversation: conversationSchema,
+  /**
+   * `null` quando já há conversa em andamento que o solicitante não enxerga
+   * (de outro atendente): ele recebe só o `previousAssignee`.
+   */
+  conversation: conversationSchema.nullable(),
   /** `true` quando a conversa foi criada agora; `false` reaproveita a aberta. */
   created: z.boolean(),
   /**
@@ -149,8 +154,13 @@ const startRoutes: FastifyPluginAsyncZod = async app => {
       })
 
       if (ongoing) {
+        // A busca ignora o escopo só para detectar a duplicata; o conteúdo da
+        // conversa continua restrito a quem o REST deixaria ler.
+        const canRead =
+          isGlobalReader(role) || ongoing.assignedToId === session.user.id
+
         return {
-          conversation: ongoing,
+          conversation: canRead ? ongoing : null,
           created: false,
           previousAssignee: ongoing.assignedTo ?? null,
         }
