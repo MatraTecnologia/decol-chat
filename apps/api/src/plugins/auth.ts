@@ -36,6 +36,11 @@ export const authPlugin = async (app: FastifyInstance) => {
       return
     }
 
+    // O Better Auth lê o IP só do header (rate limit, sessão, audit) e aceita o
+    // valor que o cliente mandar. Sobrescreve com o request.ip, já validado pelo
+    // trustProxy contra o endereço do socket, para os dois usarem a mesma fonte
+    request.raw.headers['x-forwarded-for'] = request.ip
+
     await reply.hijack()
     handler(request.raw, reply.raw)
   })

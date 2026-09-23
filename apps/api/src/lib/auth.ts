@@ -56,6 +56,7 @@ export const auth = betterAuth({
       httpOnly: true,
       sameSite: 'lax',
     },
+    // plugins/auth.ts sobrescreve este header com o request.ip do Fastify
     ipAddress: {
       ipAddressHeaders: ['x-forwarded-for'],
     },
@@ -73,18 +74,16 @@ export const auth = betterAuth({
       '/request-password-reset': { window: 60, max: 3 },
       '/send-verification-email': { window: 60, max: 3 },
       '/two-factor/send-otp': { window: 30, max: 3 },
-      '/email-otp/send-otp': { window: 60, max: 3 },
-      '/email-otp/sign-in': { window: 30, max: 5 },
+      '/email-otp/send-verification-otp': { window: 60, max: 3 },
+      '/sign-in/email-otp': { window: 30, max: 5 },
 
       '/sign-in/email': { window: 30, max: 5 },
-      '/sign-in/social': { window: 30, max: 5 },
       '/two-factor/verify-totp': { window: 30, max: 5 },
       '/verify-password': { window: 30, max: 5 },
       '/reset-password': { window: 60, max: 5 },
       '/change-password': { window: 60, max: 5 },
 
       '/delete-user': { window: 60, max: 3 },
-      '/change-email': { window: 60, max: 3 },
     },
   },
   session: {
@@ -130,7 +129,9 @@ export const auth = betterAuth({
         user: userRole,
       },
     }),
-    openAPI(),
+    // Em produção só o schema fica exposto (aba "Auth" do /docs, via
+    // generateOpenAPISchema); a página própria /api/auth/reference sai
+    openAPI({ disableDefaultReference: env.NODE_ENV === 'production' }),
     i18n({
       defaultLocale: 'pt-BR',
       detection: ['cookie', 'header'],
@@ -142,6 +143,8 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 6,
       expiresIn: 300,
+      // Grava só o hash: leitura do banco/Redis não entrega um código válido
+      storeOTP: 'hashed',
       sendVerificationOTP: async ({ email, otp, type }, ctx) => {
         const locale = getEmailLocale(
           (ctx as { request?: Request } | undefined)?.request,
@@ -170,8 +173,8 @@ export const auth = betterAuth({
     }),
     twoFactor({
       issuer: env.APP_NAME,
-      backupCodeOptions: {},
       otpOptions: {
+        storeOTP: 'hashed',
         sendOTP: async ({ user, otp }, ctx) => {
           const locale = getEmailLocale(
             (ctx as { request?: Request } | undefined)?.request,
@@ -199,6 +202,9 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: false,
     requireEmailVerification: true,
+    // Reset por email derruba todas as sessões: quem redefine por suspeita de
+    // invasão não continua com o invasor logado
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }, request) => {
       const locale = getEmailLocale(request)
       const { renderResetPasswordEmail } = await emails()
@@ -316,4 +322,4 @@ export const auth = betterAuth({
 })
 
 // Rodar apos alguma alteração de plugin que alterar o banco de dados
-// pnpm dlx @better-auth/cli generate --config ./src/lib/auth.ts
+// npx auth@latest generate --config ./src/lib/auth.ts --output prisma/schema.prisma

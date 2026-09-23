@@ -93,6 +93,11 @@ export const en: TranslationDictionary = {
   TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE:
     'Too many attempts. Please request a new code.',
   INVALID_TWO_FACTOR_COOKIE: 'Invalid two-factor authentication cookie',
+  OTP_NOT_CONFIGURED: 'OTP is not available',
+  TOTP_ALREADY_ENABLED: 'TOTP is already enabled',
+  TOTP_NOT_CONFIGURED: 'TOTP is not available',
+  ACCOUNT_TEMPORARILY_LOCKED:
+    'Too many failed verification attempts. Your account is temporarily locked. Please try again later.',
 }
 
 export const ptBR: TranslationDictionary = {
@@ -193,4 +198,9 @@ export const ptBR: TranslationDictionary = {
   TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE:
     'Muitas tentativas. Por favor, solicite um novo código.',
   INVALID_TWO_FACTOR_COOKIE: 'Cookie de autenticação de dois fatores inválido',
+  OTP_NOT_CONFIGURED: 'Código por email não está disponível',
+  TOTP_ALREADY_ENABLED: 'O app autenticador já está habilitado',
+  TOTP_NOT_CONFIGURED: 'App autenticador não está disponível',
+  ACCOUNT_TEMPORARILY_LOCKED:
+    'Muitas tentativas de verificação falharam. Sua conta está temporariamente bloqueada. Tente novamente mais tarde.',
 }
