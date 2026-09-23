@@ -9,7 +9,7 @@
 # ── Base ─────────────────────────────────────────────
 FROM node:24-slim AS base
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@11.15.1 --activate
+RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 WORKDIR /app
 
 # ── Prune ────────────────────────────────────────────

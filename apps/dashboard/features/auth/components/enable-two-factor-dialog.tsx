@@ -73,8 +73,11 @@ export function EnableTwoFactorDialog({
       { password },
       {
         onSuccess: data => {
-          if (data?.totpURI) setTotpURI(data.totpURI)
-          if (data?.backupCodes) setBackupCodes(data.backupCodes)
+          // better-auth 1.7: resposta discriminada por `method`; sem `method` no body o default é 'totp'
+          if (data?.method === 'totp') {
+            setTotpURI(data.totpURI)
+            setBackupCodes(data.backupCodes)
+          }
           setStep('qrcode')
         },
       },
@@ -177,8 +180,8 @@ export function EnableTwoFactorDialog({
             <DialogHeader>
               <DialogTitle>Escaneie o QR code</DialogTitle>
               <DialogDescription>
-                Use seu app autenticador (Google Authenticator, Authy, etc.) para
-                escanear o código abaixo.
+                Use seu app autenticador (Google Authenticator, Authy, etc.)
+                para escanear o código abaixo.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -192,7 +195,7 @@ export function EnableTwoFactorDialog({
                     Ou insira a chave manualmente:
                   </Label>
                   <div className="flex items-center gap-2">
-                    <code className="bg-muted flex-1 break-all rounded px-3 py-2 font-mono text-xs">
+                    <code className="bg-muted flex-1 rounded px-3 py-2 font-mono text-xs break-all">
                       {secret}
                     </code>
                     <Button

@@ -4,6 +4,10 @@
     "outDir": "dist",
     "rootDir": ".",
     "incremental": false,
+    // app, não lib: nenhum consumidor dos .d.ts (o build já desliga). Com declaration
+    // ligado, o typecheck quebra no TS4023 do @better-auth/i18n 1.7 (tipos internos não exportados)
+    "declaration": false,
+    "declarationMap": false,
     "jsx": "react-jsx",
     "paths": {
       "@/*": ["./src/*"]

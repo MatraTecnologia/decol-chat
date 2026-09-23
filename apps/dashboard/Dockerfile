@@ -7,9 +7,8 @@
 # =============================================================================
 
 # ── Base ─────────────────────────────────────────────
-FROM node:24-alpine AS base
-RUN apk add --no-cache libc6-compat
-RUN corepack enable && corepack prepare pnpm@11.15.1 --activate
+FROM node:24-slim AS base
+RUN corepack enable && corepack prepare pnpm@11.25.0 --activate
 WORKDIR /app
 
 # ── Prune ────────────────────────────────────────────
@@ -63,7 +62,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 
 # Next standalone output (monorepo): server.js fica em apps/dashboard/server.js
 COPY --from=builder --chown=nextjs:nodejs /app/apps/dashboard/.next/standalone ./

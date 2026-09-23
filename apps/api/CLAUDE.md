@@ -112,16 +112,15 @@ Plugins are registered in `server.ts` in this order:
 3. `locale` — Locale detection → `request.locale` + `request.t()` (after cookie, before routes)
 4. `@fastify/helmet` — Security headers
 5. `@fastify/cors` — CORS handling
-6. `@fastify/rate-limit` — Rate limiting (500 req/min, globally)
-7. `@fastify/compress` — Response compression (gzip/deflate, 1KB threshold)
-8. `@fastify/etag` — Conditional caching (304 Not Modified)
-9. `@fastify/under-pressure` — Health monitoring + graceful degradation (503 when overloaded; enabled by default, disable with `UNDER_PRESSURE_ENABLED=false`)
-10. `swagger` — OpenAPI docs
-11. `auth` — Better Auth catch-all
-12. `socket` — Socket.io + emitRealtimeEvent
-13. `queue` — BullMQ queue initialization
-14. `bull-board` — Bull Board UI dashboard
-15. `@fastify/autoload` — Route auto-loading
+6. `@fastify/compress` — Response compression (gzip/deflate, 1KB threshold)
+7. `@fastify/etag` — Conditional caching (304 Not Modified)
+8. `@fastify/under-pressure` — Health monitoring + graceful degradation (503 when overloaded; enabled by default, disable with `UNDER_PRESSURE_ENABLED=false`)
+9. `swagger` — OpenAPI docs
+10. `auth` — Better Auth catch-all
+11. `socket` — Socket.io + emitRealtimeEvent
+12. `queue` — BullMQ queue initialization
+13. `bull-board` — Bull Board UI dashboard
+14. `@fastify/autoload` — Route auto-loading
 
 > Every response gets an `X-Request-Id` header propagated from `request.id` via an `onRequest` hook in `server.ts` — useful for cross-service tracing.
 
@@ -374,9 +373,9 @@ Active plugins:
 
 Writes are best-effort — `recordAudit()` swallows errors so auditing never breaks the auth flow (same posture as `cache.ts`). Old entries are pruned by the `cleanup-audit-logs` scheduled job (90-day retention; requires Redis/BullMQ). Query via `prisma.auditLog.findMany(...)` or Prisma Studio.
 
-**IP resolution / proxy:** Fastify runs with `trustProxy: 1` (`server.ts`) so `request.ip` resolves the real client IP from the last `X-Forwarded-For` hop (spoof-safe behind a single edge proxy like Traefik/EasyPanel). Better Auth's internal rate limiter reads it via `advanced.ipAddress.ipAddressHeaders: ['x-forwarded-for']`. If you add another proxy/CDN in front of Traefik, bump `trustProxy` to the number of hops.
+**IP resolution / proxy:** Fastify runs with `trustProxy: 'loopback,linklocal,uniquelocal'` (`server.ts`): only proxies on a private network (Traefik/EasyPanel on the Docker overlay) are trusted, so `request.ip` resolves the real client IP from `X-Forwarded-For` while a client hitting the API directly can't spoof it. Hop-count trust (`trustProxy: 1`) was removed in fastify 5.12 (GHSA-3m5p-2c4r-xxw2). Better Auth's internal rate limiter reads it via `advanced.ipAddress.ipAddressHeaders: ['x-forwarded-for']`. If you add a proxy/CDN with a public IP in front of Traefik (e.g. Cloudflare), add its IP ranges to `trustProxy`.
 
-**Internal rate limiting:** Better Auth has its own rate limiter (independent of `@fastify/rate-limit`) with per-endpoint rules — e.g. `/sign-up/email: 3/min`, `/sign-in/email: 5/30s`, `/forget-password: 3/min`. Configured inline in `lib/auth.ts`.
+**Internal rate limiting:** Better Auth has its own rate limiter (the only one in the API — there is no global `@fastify/rate-limit`) with per-endpoint rules — e.g. `/sign-up/email: 3/min`, `/sign-in/email: 5/30s`, `/forget-password: 3/min`. Configured inline in `lib/auth.ts`.
 
 **Cookie prefix:** `advanced.cookiePrefix` is set to `AUTH_COOKIE_PREFIX` (`turboreposaasstarter`, from `packages/shared/src/auth-cookie.ts`), so the session cookie is `turboreposaasstarter.session_token` (`__Secure-` prefixed in production). Consumers (dashboard proxy, socket-token, clear-session, socket auth) import `SESSION_COOKIE` / `SECURE_SESSION_COOKIE` from `@workspace/shared/auth-cookie` instead of hardcoding names.
 

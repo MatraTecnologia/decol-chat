@@ -135,8 +135,6 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
   app.get(
     '/whatsapp',
     {
-      // A Meta reenvia em erro e pode desativar a assinatura após falhas
-      config: { rateLimit: false },
       // O challenge volta cru, em text/plain — o serializer global do Zod
       // devolveria a string entre aspas (JSON)
       serializerCompiler: () => (data: unknown) => String(data),
@@ -179,7 +177,6 @@ const whatsappWebhook: FastifyPluginAsyncZod = async app => {
   app.post(
     '/whatsapp',
     {
-      config: { rateLimit: false },
       schema: {
         operationId: 'receiveWhatsappWebhook',
         tags: ['Webhooks'],

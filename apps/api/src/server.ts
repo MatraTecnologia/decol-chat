@@ -4,7 +4,6 @@ import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import etag from '@fastify/etag'
 import helmet from '@fastify/helmet'
-import rateLimit from '@fastify/rate-limit'
 import sensible from '@fastify/sensible'
 import underPressure from '@fastify/under-pressure'
 import Fastify, { type FastifyServerOptions } from 'fastify'
@@ -52,9 +51,11 @@ const envToLogger: Record<string, FastifyServerOptions['logger']> = {
 export const buildApp = async () => {
   const app = Fastify({
     logger: envToLogger[env.NODE_ENV] ?? true,
-    // Trust 1 proxy hop (Traefik/EasyPanel) so request.ip resolves the real
-    // client IP from X-Forwarded-For — spoof-safe behind a single edge proxy
-    trustProxy: 1,
+    // Confia só em proxy vindo de rede privada (Traefik/EasyPanel na overlay do
+    // Docker), então request.ip sai do X-Forwarded-For. Contagem de saltos
+    // (`trustProxy: 1`) foi removida no fastify 5.12 (GHSA-3m5p-2c4r-xxw2):
+    // não valida o peer imediato e deixa cliente direto falsificar o header
+    trustProxy: 'loopback,linklocal,uniquelocal',
     // Accept X-Request-Id from upstream (load balancer/proxy), fallback to UUID
     requestIdHeader: 'x-request-id',
     genReqId: () => randomUUID(),
@@ -96,13 +97,6 @@ export const buildApp = async () => {
     ],
     exposedHeaders: ['X-Request-Id'],
     maxAge: 86400,
-  })
-
-  // Rate limit — default keyGenerator uses request.ip, which resolves the real
-  // client IP via trustProxy (no manual X-Forwarded-For parsing, no spoofing)
-  await app.register(rateLimit, {
-    max: 500,
-    timeWindow: '1 minute',
   })
 
   // Response compression (gzip/deflate, threshold 1kb)
