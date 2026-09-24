@@ -325,7 +325,7 @@ See `config/env.ts` for all variables. Key ones:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Yes | Backend API URL (e.g., `http://localhost:3333`) |
-| `NEXT_PUBLIC_BASE_URL` | Yes | App base URL (e.g., `http://localhost:3001`) |
+| `NEXT_PUBLIC_BASE_URL` | Yes | App base URL (e.g., `http://localhost:3000`) |
 | `APP_NAME` | No | Server-side app name (default: `web`) |
 | `NEXT_PUBLIC_APP_NAME` | No | App display name (default: `SaaS App`) |
 | `NEXT_PUBLIC_APP_DESCRIPTION` | No | App description (default: `Full-stack SaaS starter template`) |

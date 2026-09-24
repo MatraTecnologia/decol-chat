@@ -53,7 +53,7 @@ npx skills experimental_install
 pnpm dev
 ```
 
-The dashboard runs at `http://localhost:3001` and the API at `http://localhost:3333`.
+The dashboard runs at `http://localhost:3000` and the API at `http://localhost:3333`.
 
 API docs available at `http://localhost:3333/docs` (Scalar UI).
 
@@ -127,7 +127,7 @@ Each user has a single global role (via Better Auth admin plugin). Default role 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Yes | Backend API URL (e.g., `http://localhost:3333`) |
-| `NEXT_PUBLIC_BASE_URL` | Yes | App base URL (e.g., `http://localhost:3001`) |
+| `NEXT_PUBLIC_BASE_URL` | Yes | App base URL (e.g., `http://localhost:3000`) |
 | `NEXT_PUBLIC_APP_NAME` | No | App name (default: "SaaS Starter") |
 | `NEXT_PUBLIC_INDEXABLE` | No | Enable search indexing (default: false) |
 
