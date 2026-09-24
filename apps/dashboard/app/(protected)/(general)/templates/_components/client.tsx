@@ -7,11 +7,12 @@ import {
   LayoutTemplate,
   Plus,
   RefreshCw,
+  SearchX,
   TriangleAlert,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useDebounce } from 'use-debounce'
 
@@ -158,7 +159,25 @@ export const Client = () => {
 
   if (nextPollInterval !== pollInterval) setPollInterval(nextPollInterval)
 
+  // Excluir o último item da última página (ou abrir um link antigo) deixaria a
+  // página fora do alcance, sem controle de paginação para voltar.
+  const lastPage = meta?.totalPages ?? 0
+
+  useEffect(() => {
+    if (lastPage > 0 && page > lastPage) void setPage(lastPage)
+  }, [lastPage, page, setPage])
+
   const resetPage = () => setPage(1)
+
+  const hasFilters = Boolean(search || category || status || language)
+
+  const clearFilters = () => {
+    void setSearch(null)
+    void setCategory(null)
+    void setStatus(null)
+    void setLanguage(null)
+    resetPage()
+  }
 
   const openEditor = (mode: EditorMode, id: string | null) => {
     setEditorMode(mode)
@@ -209,6 +228,25 @@ export const Client = () => {
       )
     }
 
+    if (templates.length === 0 && hasFilters) {
+      return (
+        <Empty className="border-muted-foreground/20 rounded-lg border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchX />
+            </EmptyMedia>
+            <EmptyTitle>Nenhum modelo com esses filtros</EmptyTitle>
+            <EmptyDescription>
+              Ajuste a busca ou limpe os filtros para ver o catálogo completo.
+            </EmptyDescription>
+          </EmptyHeader>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        </Empty>
+      )
+    }
+
     if (templates.length === 0) {
       return (
         <Empty className="border-muted-foreground/20 rounded-lg border border-dashed">
@@ -216,11 +254,11 @@ export const Client = () => {
             <EmptyMedia variant="icon">
               <LayoutTemplate />
             </EmptyMedia>
-            <EmptyTitle>Nenhum modelo encontrado</EmptyTitle>
+            <EmptyTitle>Nenhum modelo ainda</EmptyTitle>
             <EmptyDescription>
               {canManage
                 ? 'Crie um modelo do zero ou sincronize o catálogo já aprovado na Meta.'
-                : 'Nenhum modelo corresponde aos filtros aplicados.'}
+                : 'Ainda não há modelos nesta conta do WhatsApp.'}
             </EmptyDescription>
           </EmptyHeader>
 
@@ -289,7 +327,11 @@ export const Client = () => {
                 disabled={sync.isPending}
               >
                 <RefreshCw
-                  className={sync.isPending ? 'size-4 animate-spin' : 'size-4'}
+                  className={
+                    sync.isPending
+                      ? 'size-4 motion-safe:animate-spin'
+                      : 'size-4'
+                  }
                 />
                 {sync.isPending ? 'Sincronizando...' : 'Sincronizar'}
               </Button>
@@ -323,6 +365,7 @@ export const Client = () => {
               setLanguage(value)
               resetPage()
             }}
+            onClear={hasFilters ? clearFilters : undefined}
           />
         </motion.div>
 
@@ -332,7 +375,9 @@ export const Client = () => {
               <CardTitle className="text-sm font-medium">
                 {isLoading
                   ? 'Carregando...'
-                  : `${total} modelo${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
+                  : total === 0
+                    ? 'Modelos'
+                    : `${total} modelo${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
               </CardTitle>
             </CardHeader>
 
@@ -387,12 +432,16 @@ export const Client = () => {
       <SubmitTemplateDialog
         target={submitTarget}
         onClose={() => setSubmitTarget(null)}
+        onEdit={rowActions.onEdit}
       />
 
       <DeleteTemplateDialog
         target={deleteTarget}
         scope={deleteScope}
         onClose={() => setDeleteTarget(null)}
+        onTemplateRemoved={id => {
+          if (id === templateId) void setTemplateId(null)
+        }}
       />
     </div>
   )

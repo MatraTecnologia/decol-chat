@@ -17,6 +17,23 @@ export const REMOTE_STATUS_VALUES = [
 
 export type RemoteStatus = (typeof REMOTE_STATUS_VALUES)[number]
 
+/** Códigos no formato da Meta (underscore), como são gravados na sincronização. */
+export const LANGUAGE_OPTIONS = [
+  { value: 'pt_BR', label: 'Português (Brasil)' },
+  { value: 'pt_PT', label: 'Português (Portugal)' },
+  { value: 'en_US', label: 'Inglês (EUA)' },
+  { value: 'en_GB', label: 'Inglês (Reino Unido)' },
+  { value: 'es_ES', label: 'Espanhol (Espanha)' },
+  { value: 'es_AR', label: 'Espanhol (Argentina)' },
+  { value: 'es_MX', label: 'Espanhol (México)' },
+  { value: 'fr', label: 'Francês' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'de', label: 'Alemão' },
+]
+
+export const languageLabel = (code: string) =>
+  LANGUAGE_OPTIONS.find(option => option.value === code)?.label ?? code
+
 /** Estados em que a Meta ainda pode mudar o veredito sozinha. */
 export const TRANSIENT_REMOTE_STATUSES: string[] = [
   'PENDING',
@@ -45,8 +62,7 @@ const remoteStatusClasses: Record<string, string> = {
     'border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400',
   PENDING_DELETION:
     'border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400',
-  REJECTED:
-    'border-red-200 text-red-700 dark:border-red-800 dark:text-red-400',
+  REJECTED: 'border-red-200 text-red-700 dark:border-red-800 dark:text-red-400',
   DISABLED: 'text-muted-foreground',
   DELETED: 'text-muted-foreground',
   PAUSED:
@@ -131,7 +147,9 @@ const fullDate = new Intl.DateTimeFormat('pt-BR', {
 })
 
 export const formatTemplateDate = (value: Date | string | null) =>
-  value ? fullDate.format(value instanceof Date ? value : new Date(value)) : '--'
+  value
+    ? fullDate.format(value instanceof Date ? value : new Date(value))
+    : '--'
 
 export const apiErrorMessage = (error: unknown, fallback: string) =>
   typeof error === 'string'

@@ -25,7 +25,11 @@ import {
 
 import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
-import { apiErrorMessage, CATEGORY_LABELS } from './template-status-badge'
+import {
+  apiErrorMessage,
+  CATEGORY_LABELS,
+  languageLabel,
+} from './template-status-badge'
 
 import type { TemplateTarget } from './template-table'
 
@@ -37,6 +41,48 @@ interface ValidationIssue {
 interface SubmitTemplateDialogProps {
   target: TemplateTarget | null
   onClose: () => void
+  onEdit: (target: TemplateTarget) => void
+}
+
+/** Itens de lista: o índice seguinte vira "Botão 2". */
+const ITEM_LABELS: Record<string, string> = {
+  components: 'Componente',
+  buttons: 'Botão',
+  cards: 'Cartão',
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  components: 'componentes',
+  buttons: 'botões',
+  cards: 'cartões',
+  text: 'texto',
+  examples: 'exemplos',
+  format: 'formato',
+  url: 'URL',
+  phoneNumber: 'telefone',
+  language: 'idioma',
+  category: 'categoria',
+}
+
+/** `components.0.buttons.1.text` → `Componente 1 › Botão 2 › texto`. */
+const formatIssuePath = (path: string) => {
+  const segments = path.split('.')
+  const parts: string[] = []
+
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index] ?? ''
+    const next = segments[index + 1]
+    const item = ITEM_LABELS[segment]
+
+    if (item && next !== undefined && /^\d+$/.test(next)) {
+      parts.push(`${item} ${Number(next) + 1}`)
+      index++
+    } else {
+      parts.push(FIELD_LABELS[segment] ?? segment)
+    }
+  }
+
+  return parts.join(' › ')
 }
 
 const Attribute = ({ label, value }: { label: string; value: string }) => (
@@ -51,6 +97,7 @@ const Attribute = ({ label, value }: { label: string; value: string }) => (
 export const SubmitTemplateDialog = ({
   target,
   onClose,
+  onEdit,
 }: SubmitTemplateDialogProps) => {
   const queryClient = useQueryClient()
   const [issues, setIssues] = useState<ValidationIssue[]>([])
@@ -137,9 +184,11 @@ export const SubmitTemplateDialog = ({
           <Skeleton className="h-28 w-full" />
         ) : (
           <div className="space-y-2 rounded-lg border p-3">
-            <Attribute label="Conta" value="Conta ativa do WhatsApp" />
             <Attribute label="Modelo" value={rendered?.name ?? '--'} />
-            <Attribute label="Idioma" value={rendered?.language ?? '--'} />
+            <Attribute
+              label="Idioma"
+              value={rendered ? languageLabel(rendered.language) : '--'}
+            />
             <Attribute
               label="Categoria"
               value={
@@ -150,7 +199,9 @@ export const SubmitTemplateDialog = ({
             />
             <Attribute
               label="Revisão"
-              value={rendered?.draftVersion ? `v${rendered.draftVersion}` : '--'}
+              value={
+                rendered?.draftVersion ? `v${rendered.draftVersion}` : '--'
+              }
             />
           </div>
         )}
@@ -164,11 +215,27 @@ export const SubmitTemplateDialog = ({
             <ul className="space-y-1">
               {issues.map(issue => (
                 <li key={`${issue.path}-${issue.message}`} className="text-xs">
-                  <code className="text-muted-foreground">{issue.path}</code>{' '}
+                  {issue.path && (
+                    <span className="text-muted-foreground">
+                      {formatIssuePath(issue.path)}:{' '}
+                    </span>
+                  )}
                   {issue.message}
                 </li>
               ))}
             </ul>
+            {rendered && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleClose()
+                  onEdit(rendered)
+                }}
+              >
+                Abrir no editor
+              </Button>
+            )}
           </div>
         )}
 

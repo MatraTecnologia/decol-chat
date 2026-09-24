@@ -30,11 +30,17 @@ import { TemplateHistory } from './template-history'
 import {
   CATEGORY_LABELS,
   formatTemplateDate,
+  languageLabel,
   LocalDraftBadge,
   TemplateQualityBadge,
   TemplateStatusBadge,
 } from './template-status-badge'
-import { type TemplateTarget, toTemplateTarget } from './template-table'
+import {
+  canSubmit,
+  isLocalOnly,
+  type TemplateTarget,
+  toTemplateTarget,
+} from './template-table'
 
 interface TemplateDetailsSheetProps {
   templateId: string | null
@@ -137,7 +143,9 @@ export const TemplateDetailsSheet = ({
           <Attribute label="ID na Meta">
             {template.metaTemplateId ?? 'Ainda não enviado'}
           </Attribute>
-          <Attribute label="Idioma">{template.language}</Attribute>
+          <Attribute label="Idioma">
+            {languageLabel(template.language)}
+          </Attribute>
           <Attribute label="Categoria">
             {CATEGORY_LABELS[template.category] ?? template.category}
           </Attribute>
@@ -194,20 +202,21 @@ export const TemplateDetailsSheet = ({
               <Copy className="size-4" />
               Duplicar
             </Button>
-            {hasDraft && (
+            {canSubmit(target) && (
               <Button size="sm" onClick={() => onSubmit(target)}>
                 <CloudUpload className="size-4" />
-                Enviar
+                Enviar para aprovação
               </Button>
             )}
             {hasDraft && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
+                className="text-destructive hover:text-destructive"
                 onClick={() => onDeleteDraft(target)}
               >
                 <Trash2 className="size-4" />
-                Excluir rascunho
+                {isLocalOnly(target) ? 'Excluir modelo' : 'Excluir rascunho'}
               </Button>
             )}
             {target.metaTemplateId && (
@@ -226,9 +235,7 @@ export const TemplateDetailsSheet = ({
         <Separator />
 
         <div className="space-y-2">
-          <p className="text-muted-foreground text-xs">
-            Histórico de revisões (imutável)
-          </p>
+          <p className="text-muted-foreground text-xs">Histórico de revisões</p>
           <TemplateHistory templateId={template.id} />
         </div>
       </div>
@@ -246,7 +253,7 @@ export const TemplateDetailsSheet = ({
         <SheetHeader>
           <SheetTitle>Detalhes do modelo</SheetTitle>
           <SheetDescription>
-            Estado local, espelho da Meta e histórico de revisões.
+            Status na Meta, rascunho local e histórico de revisões.
           </SheetDescription>
         </SheetHeader>
 

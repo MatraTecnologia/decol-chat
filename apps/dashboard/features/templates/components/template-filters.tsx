@@ -1,7 +1,8 @@
 'use client'
 
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
+import { Button } from '@workspace/ui/components/button'
 import { Card, CardContent } from '@workspace/ui/components/card'
 import { Input } from '@workspace/ui/components/input'
 
@@ -15,22 +16,12 @@ import {
 
 import {
   CATEGORY_LABELS,
+  LANGUAGE_OPTIONS,
   REMOTE_STATUS_LABELS,
   REMOTE_STATUS_VALUES,
 } from './template-status-badge'
 
 const CATEGORY_VALUES = ['MARKETING', 'UTILITY', 'AUTHENTICATION']
-
-/** Códigos no formato da Meta (underscore), como são gravados na sincronização. */
-const LANGUAGE_OPTIONS = [
-  { value: 'pt_BR', label: 'Português (Brasil)' },
-  { value: 'pt_PT', label: 'Português (Portugal)' },
-  { value: 'en_US', label: 'Inglês (EUA)' },
-  { value: 'en_GB', label: 'Inglês (Reino Unido)' },
-  { value: 'es_ES', label: 'Espanhol (Espanha)' },
-  { value: 'es_AR', label: 'Espanhol (Argentina)' },
-  { value: 'es_MX', label: 'Espanhol (México)' },
-]
 
 interface TemplateFiltersProps {
   search: string
@@ -41,6 +32,8 @@ interface TemplateFiltersProps {
   onStatusChange: (value: string | null) => void
   language: string | null
   onLanguageChange: (value: string | null) => void
+  /** Presente só com algum filtro ativo. */
+  onClear?: () => void
 }
 
 export const TemplateFilters = ({
@@ -52,6 +45,7 @@ export const TemplateFilters = ({
   onStatusChange,
   language,
   onLanguageChange,
+  onClear,
 }: TemplateFiltersProps) => {
   // Um idioma vindo da URL pode não estar na lista curada; sem isso o Select
   // ficaria com o gatilho vazio mesmo com o filtro ativo.
@@ -98,7 +92,9 @@ export const TemplateFilters = ({
 
         <Select
           value={status ?? 'all'}
-          onValueChange={value => onStatusChange(value === 'all' ? null : value)}
+          onValueChange={value =>
+            onStatusChange(value === 'all' ? null : value)
+          }
         >
           <SelectTrigger className="w-full lg:w-44">
             <SelectValue placeholder="Todos os status" />
@@ -131,6 +127,13 @@ export const TemplateFilters = ({
             ))}
           </SelectContent>
         </Select>
+
+        {onClear && (
+          <Button variant="ghost" onClick={onClear} className="lg:shrink-0">
+            <X className="size-4" />
+            Limpar
+          </Button>
+        )}
       </CardContent>
     </Card>
   )

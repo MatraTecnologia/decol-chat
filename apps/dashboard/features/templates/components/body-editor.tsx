@@ -42,7 +42,11 @@ interface FieldErrorProps {
 }
 
 export const FieldError = ({ message }: FieldErrorProps) =>
-  message ? <p className="text-destructive text-xs">{message}</p> : null
+  message ? (
+    <p data-field-error role="alert" className="text-destructive text-xs">
+      {message}
+    </p>
+  ) : null
 
 interface ExamplesFieldsProps {
   text: string

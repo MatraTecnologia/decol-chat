@@ -103,7 +103,9 @@ export interface UpdateDraftInput {
 
 /**
  * Rascunho é editado no lugar; revisão já enviada é imutável, então a edição
- * abre a próxima versão. Nos dois caminhos a trava otimista tem que bater.
+ * abre a próxima versão. Modelo só sincronizado ainda não tem revisão: a
+ * primeira edição abre a v1, com trava esperada 0. Nos três caminhos a trava
+ * otimista tem que bater.
  */
 export const updateDraft = async (
   input: UpdateDraftInput,
@@ -112,19 +114,30 @@ export const updateDraft = async (
   if (!template) return notFound()
 
   const latest = latestRevision(template)
-  if (!latest) return conflict('O modelo não tem nenhuma revisão.')
 
-  if (!matchesExpectedLockVersion(latest.lockVersion, input.expectedLockVersion)) {
+  if (
+    !matchesExpectedLockVersion(
+      latest?.lockVersion ?? 0,
+      input.expectedLockVersion,
+    )
+  ) {
     return conflict('O modelo mudou desde que você abriu o editor.')
   }
 
   const { definition } = input
+
+  // O idioma faz parte da identidade na Meta (nome + idioma) e da linha local
+  // usada nos envios; trocá-lo aqui divergiria os dois.
+  if (definition.language !== template.language) {
+    return invalid('O idioma de um modelo existente não pode ser alterado.')
+  }
+
   const payload = {
     definition: asJson(definition),
     parameterFormat: definition.parameterFormat,
   }
 
-  if (latest.state === 'DRAFT') {
+  if (latest?.state === 'DRAFT') {
     const applied = await applyDraftUpdate(
       latest.id,
       input.expectedLockVersion,

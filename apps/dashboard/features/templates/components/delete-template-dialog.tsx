@@ -26,7 +26,7 @@ import { invalidateByTags } from '@/lib/invalidate-by-tags'
 
 import { apiErrorMessage } from './template-status-badge'
 
-import type { TemplateTarget } from './template-table'
+import { isLocalOnly, type TemplateTarget } from './template-table'
 
 export type DeleteScope = 'local' | 'remote'
 
@@ -34,12 +34,15 @@ interface DeleteTemplateDialogProps {
   target: TemplateTarget | null
   scope: DeleteScope
   onClose: () => void
+  /** Chamado quando o modelo inteiro deixou de existir localmente. */
+  onTemplateRemoved?: (id: string) => void
 }
 
 export const DeleteTemplateDialog = ({
   target,
   scope,
   onClose,
+  onTemplateRemoved,
 }: DeleteTemplateDialogProps) => {
   const queryClient = useQueryClient()
   const [confirmName, setConfirmName] = useState('')
@@ -59,7 +62,8 @@ export const DeleteTemplateDialog = ({
 
   const deleteDraft = useMutation({
     ...deleteWhatsappTemplateDraftMutation(),
-    onSuccess: result => {
+    onSuccess: (result, variables) => {
+      if (result.removedTemplate) onTemplateRemoved?.(variables.path.id)
       finish(
         result.removedTemplate
           ? 'Modelo removido — ele nunca havia sido enviado à Meta.'
@@ -79,14 +83,14 @@ export const DeleteTemplateDialog = ({
       finish('Modelo excluído na Meta. O histórico local foi preservado.')
     },
     onError: error => {
-      toast.error(
-        apiErrorMessage(error, 'A Meta recusou a exclusão do modelo'),
-      )
+      toast.error(apiErrorMessage(error, 'A Meta recusou a exclusão do modelo'))
     },
   })
 
   const isPending = deleteDraft.isPending || deleteRemote.isPending
   const isRemote = scope === 'remote'
+  const removesTemplate =
+    !isRemote && rendered !== null && isLocalOnly(rendered)
   const canConfirm = !isRemote || confirmName.trim() === rendered?.name
 
   const handleClose = () => {
@@ -117,12 +121,18 @@ export const DeleteTemplateDialog = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isRemote ? 'Excluir modelo na Meta?' : 'Excluir rascunho local?'}
+            {isRemote
+              ? 'Excluir modelo na Meta?'
+              : removesTemplate
+                ? 'Excluir modelo?'
+                : 'Excluir rascunho local?'}
           </DialogTitle>
           <DialogDescription>
             {isRemote
               ? `O modelo "${rendered?.name}" será apagado na Meta e deixa de poder ser enviado. O histórico de revisões continua disponível aqui.`
-              : `Somente o rascunho não enviado de "${rendered?.name}" será removido. Revisões já enviadas e o espelho da Meta permanecem.`}
+              : removesTemplate
+                ? `O modelo "${rendered?.name}" nunca foi enviado à Meta e será removido por completo, junto com o rascunho.`
+                : `Somente o rascunho não enviado de "${rendered?.name}" será removido. Revisões já enviadas e o espelho da Meta permanecem.`}
           </DialogDescription>
         </DialogHeader>
 

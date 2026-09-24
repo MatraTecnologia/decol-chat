@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { useFieldArray, useWatch } from 'react-hook-form'
 import type { UseFormReturn } from 'react-hook-form'
 
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@workspace/ui/components/dropdown-menu'
 
-import { BodyEditor, FooterEditor } from './body-editor'
+import { BodyEditor, FieldError, FooterEditor } from './body-editor'
 import { ButtonsEditor } from './buttons-editor'
 import { CarouselEditor } from './carousel-editor'
 import { HeaderEditor } from './header-editor'
@@ -85,7 +86,9 @@ export const makeSetter =
     form.setValue(
       (suffix ? `${base}.${suffix}` : base) as 'definition',
       value as never,
-      { shouldDirty: true },
+      // Depois da primeira tentativa de salvar, o erro some assim que o campo
+      // é corrigido, em vez de esperar o próximo envio.
+      { shouldDirty: true, shouldValidate: form.formState.isSubmitted },
     )
 
 export const makeErrorFor =
@@ -101,22 +104,36 @@ const RawComponent = ({
   raw: Record<string, unknown>
   set: SetField
   disabled: boolean
-}) => (
-  <Textarea
-    rows={6}
-    spellCheck={false}
-    disabled={disabled}
-    className="font-mono text-xs"
-    defaultValue={JSON.stringify(raw ?? {}, null, 2)}
-    onBlur={event => {
-      try {
-        set('raw', JSON.parse(event.target.value || '{}'))
-      } catch {
-        set('raw', raw ?? {})
-      }
-    }}
-  />
-)
+}) => {
+  const [invalid, setInvalid] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Textarea
+        rows={6}
+        spellCheck={false}
+        disabled={disabled}
+        className="font-mono text-xs"
+        aria-invalid={invalid}
+        defaultValue={JSON.stringify(raw ?? {}, null, 2)}
+        onBlur={event => {
+          try {
+            set('raw', JSON.parse(event.target.value || '{}'))
+            setInvalid(false)
+          } catch {
+            set('raw', raw ?? {})
+            setInvalid(true)
+          }
+        }}
+      />
+      <FieldError
+        message={
+          invalid ? 'JSON inválido: o valor anterior foi mantido.' : undefined
+        }
+      />
+    </div>
+  )
+}
 
 interface ComponentEditorProps {
   form: UseFormReturn<TemplateFormValues>
@@ -263,6 +280,10 @@ export const ComponentEditor = ({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <FieldError
+        message={messageAt(form.formState.errors, 'definition.components')}
+      />
     </div>
   )
 }

@@ -125,7 +125,7 @@ export const TemplateMediaField = ({
 
       {!revisionId ? (
         <p className="text-muted-foreground text-xs">
-          Salve o rascunho antes de enviar a mídia de exemplo.
+          A mídia de exemplo é enviada depois que o rascunho for salvo.
         </p>
       ) : (
         <>

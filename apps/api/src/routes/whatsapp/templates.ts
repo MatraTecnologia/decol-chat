@@ -68,7 +68,7 @@ const createDraftBodySchema = z.object({
 })
 
 const updateDraftBodySchema = z.object({
-  expectedLockVersion: z.number().int().positive(),
+  expectedLockVersion: z.number().int().nonnegative(),
   definition: templateDefinitionSchema,
 })
 

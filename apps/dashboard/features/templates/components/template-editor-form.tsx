@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Braces, LayoutTemplate } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -82,6 +82,17 @@ const emptyDefinition: TemplateDefinition = {
   components: [{ type: 'BODY', text: '', examples: [] }],
 }
 
+/**
+ * O contrato compartilhado não traz mensagem própria nos `.min(1)`; sem isso o
+ * usuário veria o texto padrão do zod, em inglês.
+ */
+const formErrorMap: z.core.$ZodErrorMap = issue => {
+  if (issue.code !== 'too_small') return undefined
+  if (issue.origin === 'string') return 'Preencha este campo.'
+  if (issue.origin === 'array') return 'Adicione pelo menos um item.'
+  return undefined
+}
+
 const statusOf = (error: unknown) =>
   (error as { statusCode?: unknown } | null)?.statusCode
 
@@ -91,6 +102,15 @@ const errorText = (error: unknown, fallback: string) => {
     ? message || fallback
     : fallback
 }
+
+const MEDIA_FORMATS = ['IMAGE', 'VIDEO', 'DOCUMENT']
+
+const needsMedia = (definition: TemplateDefinition) =>
+  definition.components.some(
+    component =>
+      component.type === 'CAROUSEL' ||
+      (component.type === 'HEADER' && MEDIA_FORMATS.includes(component.format)),
+  )
 
 const duplicatedName = (name: string) => `${name}_copia`.slice(0, 512)
 
@@ -102,7 +122,13 @@ const toFormValues = (
 
   return {
     name: mode === 'duplicate' ? duplicatedName(template.name) : template.name,
-    definition: (template.definition as TemplateDefinition) ?? emptyDefinition,
+    // Espelho remoto que não passou no schema chega sem definição; o idioma e a
+    // categoria da linha continuam valendo, já que o idioma não pode mudar.
+    definition: (template.definition as TemplateDefinition) ?? {
+      ...emptyDefinition,
+      language: template.language,
+      category: template.category as TemplateDefinition['category'],
+    },
   }
 }
 
@@ -110,6 +136,8 @@ interface TemplateEditorFormProps {
   template: LoadedTemplate | null
   mode: TemplateEditorMode
   onClose: () => void
+  onCancel: () => void
+  onDirtyChange: (dirty: boolean) => void
   onReload: () => Promise<LoadedTemplate | undefined>
 }
 
@@ -117,12 +145,14 @@ export const TemplateEditorForm = ({
   template,
   mode,
   onClose,
+  onCancel,
+  onDirtyChange,
   onReload,
 }: TemplateEditorFormProps) => {
   const queryClient = useQueryClient()
 
   const form = useForm<TemplateFormValues>({
-    resolver: zodResolver(templateFormSchema),
+    resolver: zodResolver(templateFormSchema, { error: formErrorMap }),
     defaultValues: toFormValues(template, mode),
   })
 
@@ -137,14 +167,36 @@ export const TemplateEditorForm = ({
   )
 
   const definition = useWatch({ control: form.control, name: 'definition' })
-  const revisionId = template?.draftRevision?.id ?? null
 
+  // O texto do modo JSON não está no formulário: abrir o modo já conta.
+  const isDirty = form.formState.isDirty || jsonMode
+
+  useEffect(() => {
+    onDirtyChange(isDirty)
+  }, [isDirty, onDirtyChange])
+
+  // Na duplicação o rascunho aberto é o da origem: mídia enviada ali ficaria
+  // presa à revisão de outro modelo.
+  const revisionId =
+    mode === 'duplicate' ? null : (template?.draftRevision?.id ?? null)
+
+  /**
+   * 409 na edição é a trava otimista; na criação e na duplicação é nome já em
+   * uso neste idioma, e a mensagem vai para o campo.
+   */
   const onMutationError = (error: unknown, fallback: string) => {
-    if (statusOf(error) === 409) {
+    if (statusOf(error) !== 409) {
+      toast.error(errorText(error, fallback))
+      return
+    }
+
+    if (mode === 'edit') {
       setConflict(true)
       return
     }
-    toast.error(errorText(error, fallback))
+
+    form.setError('name', { message: errorText(error, fallback) })
+    form.setFocus('name')
   }
 
   const createMutation = useMutation({
@@ -212,7 +264,11 @@ export const TemplateEditorForm = ({
 
     if (mode === 'create') {
       await createMutation.mutateAsync({ body: values })
-      toast.success('Rascunho criado.')
+      toast.success(
+        needsMedia(values.definition)
+          ? 'Rascunho criado. Abra-o em Editar para enviar a mídia de exemplo.'
+          : 'Rascunho criado.',
+      )
       finish()
       return
     }
@@ -238,7 +294,11 @@ export const TemplateEditorForm = ({
         })
       }
 
-      toast.success('Modelo duplicado.')
+      toast.success(
+        needsMedia(values.definition)
+          ? 'Modelo duplicado. Abra a cópia em Editar para enviar a mídia de exemplo.'
+          : 'Modelo duplicado.',
+      )
       finish()
       return
     }
@@ -248,18 +308,43 @@ export const TemplateEditorForm = ({
       body: { expectedLockVersion: lockVersion, definition: values.definition },
     })
 
+    // A mídia de exemplo só pode ser enviada para um rascunho: se ele acabou de
+    // nascer e o modelo pede mídia, o editor continua aberto sobre ele.
+    if (!revisionId && needsMedia(values.definition)) {
+      const fresh = await onReload()
+      if (fresh) {
+        form.reset(toFormValues(fresh, mode))
+        setLockVersion(fresh.latestRevision?.lockVersion ?? 0)
+        invalidateByTags(queryClient, ['WhatsAppTemplates'])
+        toast.success('Rascunho salvo. Agora envie a mídia de exemplo.')
+        return
+      }
+    }
+
     setLockVersion(saved.latestRevision?.lockVersion ?? lockVersion)
     toast.success('Rascunho salvo.')
     finish()
   }
 
-  const validateAndSubmit = form.handleSubmit(async values => {
-    try {
-      await submit(values)
-    } catch {
-      // O estado de erro já foi tratado no `onError` de cada mutation.
-    }
-  })
+  const validateAndSubmit = form.handleSubmit(
+    async values => {
+      try {
+        await submit(values)
+      } catch {
+        // O estado de erro já foi tratado no `onError` de cada mutation.
+      }
+    },
+    () => {
+      // Os sub-editores não usam `register`, então o RHF não sabe onde focar:
+      // leva o primeiro erro para a área visível do diálogo.
+      toast.error('Corrija os campos destacados antes de salvar.')
+      requestAnimationFrame(() => {
+        document
+          .querySelector('[data-field-error], [data-slot="form-message"]')
+          ?.scrollIntoView({ block: 'center' })
+      })
+    },
+  )
 
   /**
    * No modo JSON o formulário ainda guarda a versão anterior: aplicar antes de
@@ -277,7 +362,9 @@ export const TemplateEditorForm = ({
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {conflict && (
           <Alert variant="destructive">
-            <AlertTitle>O modelo mudou desde que você abriu o editor</AlertTitle>
+            <AlertTitle>
+              O modelo mudou desde que você abriu o editor
+            </AlertTitle>
             <AlertDescription className="flex flex-col items-start gap-2">
               <span>
                 Suas alterações continuam aqui. Recarregue a última revisão para
@@ -305,6 +392,7 @@ export const TemplateEditorForm = ({
             <TemplateIdentityFields
               control={form.control}
               nameDisabled={mode === 'edit'}
+              languageDisabled={mode !== 'create'}
               disabled={isPending}
             />
 
@@ -352,11 +440,11 @@ export const TemplateEditorForm = ({
           <TemplatePreview definition={definition} />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="bg-background sticky bottom-0 -mx-6 -mb-6 border-t px-6 py-4">
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={onCancel}
             disabled={isPending}
           >
             Cancelar

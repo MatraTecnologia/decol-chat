@@ -11,7 +11,6 @@ import {
 
 import type { ListWhatsappTemplatesResponse } from '@workspace/api-client/types'
 
-import { Badge } from '@workspace/ui/components/badge'
 import { Button } from '@workspace/ui/components/button'
 
 import {
@@ -34,9 +33,11 @@ import {
 import {
   CATEGORY_LABELS,
   formatTemplateDate,
+  languageLabel,
   LocalDraftBadge,
   TemplateQualityBadge,
   TemplateStatusBadge,
+  TRANSIENT_REMOTE_STATUSES,
 } from './template-status-badge'
 
 export type TemplateRow = ListWhatsappTemplatesResponse['data'][number]
@@ -48,8 +49,10 @@ export interface TemplateTarget {
   language: string
   category: string
   metaTemplateId: string | null
+  remoteStatus: string | null
   draftRevisionId: string | null
   draftVersion: number | null
+  hasSubmission: boolean
 }
 
 interface TemplateLike {
@@ -58,7 +61,9 @@ interface TemplateLike {
   language: string
   category: string
   metaTemplateId: string | null
+  remoteStatus: string | null
   draftRevision: { id: string; version: number } | null
+  submittedRevision: { id: string } | null
 }
 
 export const toTemplateTarget = (template: TemplateLike): TemplateTarget => ({
@@ -67,9 +72,23 @@ export const toTemplateTarget = (template: TemplateLike): TemplateTarget => ({
   language: template.language,
   category: template.category,
   metaTemplateId: template.metaTemplateId,
+  remoteStatus: template.remoteStatus,
   draftRevisionId: template.draftRevision?.id ?? null,
   draftVersion: template.draftRevision?.version ?? null,
+  hasSubmission: template.submittedRevision !== null,
 })
+
+/**
+ * Espelha `deleteDraft` da API: sem ID na Meta e sem revisão enviada, excluir
+ * o rascunho apaga o modelo inteiro.
+ */
+export const isLocalOnly = (target: TemplateTarget) =>
+  !target.metaTemplateId && !target.hasSubmission
+
+/** A Meta só aceita um novo envio depois do veredito da análise em curso. */
+export const canSubmit = (target: TemplateTarget) =>
+  target.draftRevisionId !== null &&
+  !TRANSIENT_REMOTE_STATUSES.includes((target.remoteStatus ?? '').toUpperCase())
 
 interface TemplateTableProps {
   templates: TemplateRow[]
@@ -118,7 +137,16 @@ export const TemplateTable = ({
             >
               <TableCell>
                 <div className="min-w-0 space-y-1">
-                  <div className="truncate font-medium">{template.name}</div>
+                  <button
+                    type="button"
+                    onClick={event => {
+                      event.stopPropagation()
+                      onSelect(template.id)
+                    }}
+                    className="block max-w-full truncate text-left font-medium hover:underline focus-visible:underline focus-visible:outline-none"
+                  >
+                    {template.name}
+                  </button>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {hasDraft && <LocalDraftBadge />}
                     {template.rejectionReason && (
@@ -133,8 +161,8 @@ export const TemplateTable = ({
               <TableCell className="text-muted-foreground text-sm">
                 {CATEGORY_LABELS[template.category] ?? template.category}
               </TableCell>
-              <TableCell>
-                <Badge variant="outline">{template.language}</Badge>
+              <TableCell className="text-muted-foreground text-sm">
+                {languageLabel(template.language)}
               </TableCell>
               <TableCell>
                 <TemplateStatusBadge status={template.remoteStatus} />
@@ -154,7 +182,11 @@ export const TemplateTable = ({
                 {canManage && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Ações de ${template.name}`}
+                      >
                         <MoreHorizontal className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -167,7 +199,7 @@ export const TemplateTable = ({
                         <Copy className="size-4" />
                         Duplicar
                       </DropdownMenuItem>
-                      {hasDraft && (
+                      {canSubmit(target) && (
                         <DropdownMenuItem onClick={() => onSubmit(target)}>
                           <CloudUpload className="size-4" />
                           Enviar para aprovação
@@ -182,7 +214,9 @@ export const TemplateTable = ({
                           className="text-destructive"
                         >
                           <Trash2 className="size-4" />
-                          Excluir rascunho local
+                          {isLocalOnly(target)
+                            ? 'Excluir modelo'
+                            : 'Excluir rascunho'}
                         </DropdownMenuItem>
                       )}
                       {target.metaTemplateId && (

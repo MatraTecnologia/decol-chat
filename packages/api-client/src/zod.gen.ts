@@ -1925,7 +1925,7 @@ export const zGetWhatsappTemplateResponse = z.object({
 })
 
 export const zUpdateWhatsappTemplateDraftBody = z.object({
-  expectedLockVersion: z.int().gt(0).lte(9007199254740991),
+  expectedLockVersion: z.int().gte(0).lte(9007199254740991),
   definition: z.object({
     category: z.enum(['MARKETING', 'UTILITY', 'AUTHENTICATION']),
     language: z.string().min(2),

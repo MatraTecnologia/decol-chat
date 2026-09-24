@@ -22,6 +22,7 @@ import {
 } from '@workspace/ui/components/select'
 
 import type { TemplateFormValues } from './template-editor-form'
+import { LANGUAGE_OPTIONS } from './template-status-badge'
 
 const categories = [
   { value: 'MARKETING', label: 'Marketing' },
@@ -29,18 +30,11 @@ const categories = [
   { value: 'AUTHENTICATION', label: 'Autenticação' },
 ]
 
-const languages = [
-  { value: 'pt_BR', label: 'Português (Brasil)' },
-  { value: 'pt_PT', label: 'Português (Portugal)' },
-  { value: 'en_US', label: 'Inglês (EUA)' },
-  { value: 'en_GB', label: 'Inglês (Reino Unido)' },
-  { value: 'es_ES', label: 'Espanhol (Espanha)' },
-  { value: 'es_AR', label: 'Espanhol (Argentina)' },
-  { value: 'es_MX', label: 'Espanhol (México)' },
-  { value: 'fr', label: 'Francês' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'de', label: 'Alemão' },
-]
+/** Modelo sincronizado pode vir num idioma fora da lista curada. */
+const withCurrentLanguage = (value: string) =>
+  LANGUAGE_OPTIONS.some(option => option.value === value)
+    ? LANGUAGE_OPTIONS
+    : [...LANGUAGE_OPTIONS, { value, label: value }]
 
 const parameterFormats = [
   { value: 'POSITIONAL', label: 'Posicional — {{1}}, {{2}}' },
@@ -50,12 +44,15 @@ const parameterFormats = [
 interface TemplateIdentityFieldsProps {
   control: Control<TemplateFormValues>
   nameDisabled: boolean
+  /** Nome e idioma formam a identidade do modelo na Meta. */
+  languageDisabled: boolean
   disabled: boolean
 }
 
 export const TemplateIdentityFields = ({
   control,
   nameDisabled,
+  languageDisabled,
   disabled,
 }: TemplateIdentityFieldsProps) => (
   <div className="grid gap-4 sm:grid-cols-2">
@@ -69,7 +66,8 @@ export const TemplateIdentityFields = ({
             <Input
               placeholder="confirmacao_pedido"
               autoComplete="off"
-              disabled={disabled || nameDisabled}
+              disabled={disabled}
+              readOnly={nameDisabled}
               {...field}
               onChange={event =>
                 field.onChange(event.target.value.toLowerCase())
@@ -124,7 +122,7 @@ export const TemplateIdentityFields = ({
           <Select
             value={field.value}
             onValueChange={field.onChange}
-            disabled={disabled}
+            disabled={disabled || languageDisabled}
           >
             <FormControl>
               <SelectTrigger className="w-full">
@@ -132,13 +130,18 @@ export const TemplateIdentityFields = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {languages.map(language => (
+              {withCurrentLanguage(field.value).map(language => (
                 <SelectItem key={language.value} value={language.value}>
                   {language.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {languageDisabled && (
+            <FormDescription>
+              Para outro idioma, crie um novo modelo.
+            </FormDescription>
+          )}
           <FormMessage />
         </FormItem>
       )}
